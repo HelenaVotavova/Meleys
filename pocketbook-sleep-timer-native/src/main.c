@@ -232,7 +232,6 @@ static void draw_centered(int y, const char *text)
 
 static void draw_screen(void)
 {
-    int sw = ScreenWidth();
     int sh = ScreenHeight();
     char label[64];
 
