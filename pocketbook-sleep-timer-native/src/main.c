@@ -107,7 +107,6 @@ static void start_timer(int minutes)
 }
 
 static imenu control_menu[] = {
-    {ITEM_HEADER, 0, "Casovac bezi", NULL},
     {ITEM_ACTIVE, 201, "Zrusit casovac", NULL},
     {ITEM_ACTIVE, 202, "Zmenit cas", NULL},
     {ITEM_ACTIVE, 203, "Zavrit aplikaci", NULL},
@@ -115,7 +114,6 @@ static imenu control_menu[] = {
 };
 
 static imenu timer_menu[] = {
-    {ITEM_HEADER, 0, "Vyber cas vypnuti", NULL},
     {ITEM_ACTIVE, 101, "5 min", NULL},
     {ITEM_ACTIVE, 102, "10 min", NULL},
     {ITEM_ACTIVE, 103, "15 min", NULL},
@@ -178,7 +176,7 @@ static void open_timer_menu(void)
 {
     if (!timer_active) {
         menu_opened = 1;
-        OpenMenu(timer_menu, 1, ScreenWidth() / 12, 120, timer_menu_handler);
+        OpenMenu(timer_menu, 1, ScreenWidth() / 2, ScreenHeight() / 2, timer_menu_handler);
     }
 }
 
@@ -212,13 +210,14 @@ static void open_control_menu(void)
 {
     if (timer_active) {
         menu_opened = 1;
-        OpenMenu(control_menu, 1, ScreenWidth() / 12, 120, control_menu_handler);
+        OpenMenu(control_menu, 1, ScreenWidth() / 2, ScreenHeight() / 2, control_menu_handler);
     }
 }
 
 static void draw_screen(void)
 {
     int sw = ScreenWidth();
+    int sh = ScreenHeight();
     int margin = sw / 14;
     char label[64];
 
@@ -255,10 +254,10 @@ static void draw_screen(void)
         return;
     }
 
-    DrawString(margin, 145, "Vyber delku casovace");
-    DrawString(margin, 215, "v systemovem menu.");
-    DrawString(margin, 315, "Klepnutim otevres");
-    DrawString(margin, 365, "nabidku casu.");
+    DrawString(margin, 140, "Vyber cas vypnuti");
+    DrawString(margin, 205, "z nabidky uprostred.");
+    DrawString(margin, sh - 135, "Zavri nabidku krizkem");
+    DrawString(margin, sh - 85, "nebo klepni pro otevreni.");
 
     FullUpdate();
 }
