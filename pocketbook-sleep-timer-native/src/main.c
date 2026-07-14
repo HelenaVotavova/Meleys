@@ -179,7 +179,7 @@ static void open_timer_menu(void)
         int sw = ScreenWidth();
         int sh = ScreenHeight();
         menu_opened = 1;
-        OpenMenu(timer_menu, 1, sw / 4, sh / 3, timer_menu_handler);
+        OpenMenu(timer_menu, 1, sw / 2, sh / 3, timer_menu_handler);
     }
 }
 
@@ -215,7 +215,7 @@ static void open_control_menu(void)
         int sw = ScreenWidth();
         int sh = ScreenHeight();
         menu_opened = 1;
-        OpenMenu(control_menu, 1, sw / 4, sh / 3, control_menu_handler);
+        OpenMenu(control_menu, 1, sw / 2, sh / 3, control_menu_handler);
     }
 }
 
@@ -262,7 +262,7 @@ static void draw_screen(void)
         }
         snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
         draw_centered(390, label);
-        draw_centered(sh - 150, "Klepnutim otevres volby.");
+        draw_centered(sh - 70, "Klepnutim otevres volby.");
 
         FullUpdate();
         return;
@@ -270,7 +270,7 @@ static void draw_screen(void)
 
     draw_centered(165, "Vyber delku casovace");
     draw_centered(230, "v nabidce uprostred");
-    draw_centered(sh - 150, "Klepnutim nabidku otevres znovu.");
+    draw_centered(sh - 70, "Klepnutim nabidku otevres znovu.");
 
     FullUpdate();
 }
