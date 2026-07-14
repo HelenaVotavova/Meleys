@@ -4,6 +4,8 @@ MINUTES="$1"
 STATE_DIR="/mnt/ext1/system/config"
 PID_FILE="$STATE_DIR/meleys-sleep-timer.pid"
 LOG_FILE="$STATE_DIR/meleys-sleep-timer.log"
+APP_DIR="$(dirname "$0")"
+WORKER="$APP_DIR/sleep-timer-worker.app"
 
 case "$MINUTES" in
   ''|*[!0-9]*)
@@ -20,21 +22,16 @@ if [ -f "$PID_FILE" ]; then
   fi
 fi
 
-(
-  echo "$(date 2>/dev/null) sleep timer started: ${MINUTES} minutes" >> "$LOG_FILE"
-  echo "$$" > "$PID_FILE"
-  sleep "$((MINUTES * 60))"
-  rm -f "$PID_FILE"
-  echo "$(date 2>/dev/null) sleep timer expired, powering off" >> "$LOG_FILE"
+echo "$(date 2>/dev/null) sleep timer requested: ${MINUTES} minutes" >> "$LOG_FILE"
 
-  /sbin/poweroff >/dev/null 2>&1 && exit 0
-  /bin/poweroff >/dev/null 2>&1 && exit 0
-  poweroff >/dev/null 2>&1 && exit 0
-  /sbin/shutdown -h now >/dev/null 2>&1 && exit 0
-  shutdown -h now >/dev/null 2>&1 && exit 0
-
-  echo "$(date 2>/dev/null) poweroff failed" >> "$LOG_FILE"
-) &
+if command -v setsid >/dev/null 2>&1; then
+  setsid "$WORKER" "$MINUTES" >/dev/null 2>&1 &
+elif command -v nohup >/dev/null 2>&1; then
+  nohup "$WORKER" "$MINUTES" >/dev/null 2>&1 &
+else
+  "$WORKER" "$MINUTES" >/dev/null 2>&1 &
+fi
+echo "$!" > "$PID_FILE"
+echo "$(date 2>/dev/null) sleep timer background pid: $!" >> "$LOG_FILE"
 
 exit 0
-
