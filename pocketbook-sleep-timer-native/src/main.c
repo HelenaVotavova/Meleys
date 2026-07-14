@@ -225,7 +225,13 @@ static int main_handler(int type, int par1, int par2)
         draw_screen();
         break;
 
-    case EVT_POINTERUP:
+    case EVT_POINTERDOWN:
+        {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "touch down: x=%d y=%d timer_active=%d", par1, par2, timer_active);
+            write_log(msg);
+        }
+
         if (in_button(&cancel_button, par1, par2)) {
             cancel_timer();
             Message(ICON_INFORMATION, "Meleys Sleep Timer", "Casovac zrusen.", 2000);
@@ -237,7 +243,8 @@ static int main_handler(int type, int par1, int par2)
             for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
                 if (in_button(&buttons[i], par1, par2)) {
                     char msg[96];
-                    snprintf(msg, sizeof(msg), "button selected: index %d, %d minutes", i, buttons[i].minutes);
+                    snprintf(msg, sizeof(msg), "button selected: index %d, %d minutes, y=%d range=%d-%d",
+                             i, buttons[i].minutes, par2, buttons[i].y, buttons[i].y + buttons[i].h);
                     write_log(msg);
                     active_minutes = buttons[i].minutes;
                     start_timer(active_minutes);
