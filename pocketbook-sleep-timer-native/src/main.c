@@ -216,9 +216,9 @@ static int main_handler(int type, int par1, int par2)
     switch (type) {
     case EVT_INIT:
         OpenScreen();
-        font_title = OpenFont(DEFAULTFONTB, 40, 1);
-        font_body = OpenFont(DEFAULTFONT, 32, 1);
-        font_large = OpenFont(DEFAULTFONTB, 76, 1);
+        font_title = OpenFont(DEFAULTFONTB, 42, 1);
+        font_body = OpenFont(DEFAULTFONT, 34, 1);
+        font_large = OpenFont(DEFAULTFONTB, 78, 1);
         draw_screen();
         break;
 
