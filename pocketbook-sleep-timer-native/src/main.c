@@ -27,10 +27,12 @@ static ifont *font_body;
 static ifont *font_large;
 static int active_minutes;
 static int timer_active;
+static int menu_opened;
 static time_t end_time;
 
 static void draw_screen(void);
 static void update_countdown(void);
+static void open_timer_menu(void);
 
 static void write_log(const char *message)
 {
@@ -114,6 +116,73 @@ static void start_timer(int minutes)
     draw_screen();
 }
 
+static imenu timer_menu[] = {
+    {ITEM_HEADER, 0, "Vyber cas vypnuti", NULL},
+    {ITEM_ACTIVE, 101, "5 min", NULL},
+    {ITEM_ACTIVE, 102, "10 min", NULL},
+    {ITEM_ACTIVE, 103, "15 min", NULL},
+    {ITEM_ACTIVE, 104, "20 min", NULL},
+    {ITEM_ACTIVE, 105, "30 min", NULL},
+    {ITEM_ACTIVE, 106, "45 min", NULL},
+    {ITEM_ACTIVE, 107, "60 min", NULL},
+    {0, 0, NULL, NULL}
+};
+
+static void timer_menu_handler(int index)
+{
+    int minutes = 0;
+
+    switch (index) {
+    case 1:
+    case 101:
+        minutes = 5;
+        break;
+    case 2:
+    case 102:
+        minutes = 10;
+        break;
+    case 3:
+    case 103:
+        minutes = 15;
+        break;
+    case 4:
+    case 104:
+        minutes = 20;
+        break;
+    case 5:
+    case 105:
+        minutes = 30;
+        break;
+    case 6:
+    case 106:
+        minutes = 45;
+        break;
+    case 7:
+    case 107:
+        minutes = 60;
+        break;
+    default:
+        break;
+    }
+
+    if (minutes > 0) {
+        char msg[96];
+        snprintf(msg, sizeof(msg), "menu selected: index %d, %d minutes", index, minutes);
+        write_log(msg);
+        start_timer(minutes);
+    } else {
+        write_log("timer menu closed without selection");
+    }
+}
+
+static void open_timer_menu(void)
+{
+    if (!timer_active) {
+        menu_opened = 1;
+        OpenMenu(timer_menu, 1, ScreenWidth() / 12, 120, timer_menu_handler);
+    }
+}
+
 static int in_button(const button_t *button, int x, int y)
 {
     return x >= button->x && x <= button->x + button->w &&
@@ -192,7 +261,7 @@ static void draw_screen(void)
         return;
     }
 
-    DrawString(margin, 130, "Vyber cas vypnuti:");
+    DrawString(margin, 130, "Vyber cas v menu.");
 
     for (int i = 0; i < count; ++i) {
         buttons[i].minutes = presets[i];
@@ -219,10 +288,14 @@ static int main_handler(int type, int par1, int par2)
         font_body = OpenFont(DEFAULTFONT, 34, 1);
         font_large = OpenFont(DEFAULTFONTB, 78, 1);
         draw_screen();
+        open_timer_menu();
         break;
 
     case EVT_REPAINT:
         draw_screen();
+        if (!timer_active && !menu_opened) {
+            open_timer_menu();
+        }
         break;
 
     case EVT_POINTERDOWN:
@@ -240,17 +313,8 @@ static int main_handler(int type, int par1, int par2)
         }
 
         if (!timer_active) {
-            for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
-                if (in_button(&buttons[i], par1, par2)) {
-                    char msg[96];
-                    snprintf(msg, sizeof(msg), "button selected: index %d, %d minutes, y=%d range=%d-%d",
-                             i, buttons[i].minutes, par2, buttons[i].y, buttons[i].y + buttons[i].h);
-                    write_log(msg);
-                    active_minutes = buttons[i].minutes;
-                    start_timer(active_minutes);
-                    return 0;
-                }
-            }
+            open_timer_menu();
+            return 0;
         }
         break;
 
