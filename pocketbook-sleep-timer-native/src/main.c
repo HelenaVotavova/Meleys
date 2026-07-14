@@ -185,13 +185,6 @@ static int main_handler(int type, int par1, int par2)
         }
         break;
 
-    case EVT_KEYDOWN:
-        if (par1 == KEY_BACK || par1 == KEY_POWER) {
-            CloseApp();
-            return 0;
-        }
-        break;
-
     case EVT_EXIT:
         if (font_title) {
             CloseFont(font_title);
