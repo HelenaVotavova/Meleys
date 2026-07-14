@@ -23,6 +23,7 @@ static void draw_screen(void);
 static void update_countdown(void);
 static void open_timer_menu(void);
 static void open_control_menu(void);
+static void draw_centered(int y, const char *text);
 
 static void write_log(const char *message)
 {
@@ -175,8 +176,10 @@ static void timer_menu_handler(int index)
 static void open_timer_menu(void)
 {
     if (!timer_active) {
+        int sw = ScreenWidth();
+        int sh = ScreenHeight();
         menu_opened = 1;
-        OpenMenu(timer_menu, 1, ScreenWidth() / 2, ScreenHeight() / 2, timer_menu_handler);
+        OpenMenu(timer_menu, 1, sw / 4, sh / 3, timer_menu_handler);
     }
 }
 
@@ -209,16 +212,28 @@ static void control_menu_handler(int index)
 static void open_control_menu(void)
 {
     if (timer_active) {
+        int sw = ScreenWidth();
+        int sh = ScreenHeight();
         menu_opened = 1;
-        OpenMenu(control_menu, 1, ScreenWidth() / 2, ScreenHeight() / 2, control_menu_handler);
+        OpenMenu(control_menu, 1, sw / 4, sh / 3, control_menu_handler);
     }
+}
+
+static void draw_centered(int y, const char *text)
+{
+    int sw = ScreenWidth();
+    int text_w = StringWidth(text);
+    int x = (sw - text_w) / 2;
+    if (x < 0) {
+        x = 0;
+    }
+    DrawString(x, y, text);
 }
 
 static void draw_screen(void)
 {
     int sw = ScreenWidth();
     int sh = ScreenHeight();
-    int margin = sw / 14;
     char label[64];
 
     ClearScreen();
@@ -226,7 +241,7 @@ static void draw_screen(void)
     if (font_title) {
         SetFont(font_title, BLACK);
     }
-    DrawString(margin, 58, "Helcin casovac na vypnuti");
+    draw_centered(70, "Helcin casovac na vypnuti");
 
     if (font_body) {
         SetFont(font_body, BLACK);
@@ -235,29 +250,28 @@ static void draw_screen(void)
         int left = remaining_seconds();
         int min = (left + 59) / 60;
 
-        DrawString(margin, 140, "Zbyva do vypnuti");
+        draw_centered(165, "Zbyva do vypnuti");
 
         if (font_large) {
             SetFont(font_large, BLACK);
         }
         snprintf(label, sizeof(label), "%d min", min);
-        DrawString(margin, 220, label);
+        draw_centered(255, label);
 
         if (font_body) {
             SetFont(font_body, BLACK);
         }
         snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
-        DrawString(margin, 340, label);
-        DrawString(margin, 420, "Klepnutim otevres volby.");
+        draw_centered(390, label);
+        draw_centered(sh - 150, "Klepnutim otevres volby.");
 
         FullUpdate();
         return;
     }
 
-    DrawString(margin, 140, "Vyber cas vypnuti");
-    DrawString(margin, 205, "z nabidky uprostred.");
-    DrawString(margin, sh - 135, "Zavri nabidku krizkem");
-    DrawString(margin, sh - 85, "nebo klepni pro otevreni.");
+    draw_centered(165, "Vyber delku casovace");
+    draw_centered(230, "v nabidce uprostred");
+    draw_centered(sh - 150, "Klepnutim nabidku otevres znovu.");
 
     FullUpdate();
 }
