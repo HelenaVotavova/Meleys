@@ -2,19 +2,13 @@
 
 #include <inkview.h>
 
-#include <errno.h>
-#include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <time.h>
-#include <unistd.h>
 
 #define STATE_DIR "/mnt/ext1/system/config"
-#define PID_FILE STATE_DIR "/meleys-sleep-timer.pid"
 #define LOG_FILE STATE_DIR "/meleys-sleep-timer.log"
+#define TIMER_NAME "meleys-sleep-timer"
 
 typedef struct {
     int minutes;
@@ -30,6 +24,7 @@ static button_t cancel_button;
 static ifont *font_title;
 static ifont *font_body;
 static int active_minutes;
+static int timer_active;
 
 static void write_log(const char *message)
 {
@@ -45,108 +40,46 @@ static void write_log(const char *message)
     fclose(f);
 }
 
-static void save_pid(pid_t pid)
+static void poweroff_timer(void)
 {
-    mkdir(STATE_DIR, 0777);
+    write_log("native timer expired, calling PocketBook PowerOff()");
+    ClearTimer(poweroff_timer);
+    timer_active = 0;
 
-    FILE *f = fopen(PID_FILE, "w");
-    if (!f) {
-        return;
-    }
+    PowerOff();
 
-    fprintf(f, "%ld\n", (long)pid);
-    fclose(f);
-}
-
-static pid_t read_pid(void)
-{
-    FILE *f = fopen(PID_FILE, "r");
-    long pid = 0;
-
-    if (!f) {
-        return 0;
-    }
-
-    if (fscanf(f, "%ld", &pid) != 1) {
-        pid = 0;
-    }
-    fclose(f);
-
-    return (pid_t)pid;
+    write_log("PowerOff() returned, forcing sleep fallback");
+    ForcingSleep();
+    GoSleep(0, 1);
 }
 
 static void cancel_timer(void)
 {
-    pid_t pid = read_pid();
-    if (pid > 1) {
-        kill(pid, SIGTERM);
-    }
-    unlink(PID_FILE);
-    write_log("timer cancelled");
-}
-
-static void try_poweroff(void)
-{
-    const char *commands[] = {
-        "/sbin/poweroff",
-        "/bin/poweroff",
-        "poweroff",
-        "/sbin/shutdown -h now",
-        "shutdown -h now",
-        NULL
-    };
-
-    for (int i = 0; commands[i]; ++i) {
-        int rc = system(commands[i]);
-        if (rc == 0) {
-            _exit(0);
-        }
-    }
-
-    write_log("poweroff failed");
-}
-
-static void timer_child(int minutes)
-{
-    char msg[96];
-
-    setsid();
-    snprintf(msg, sizeof(msg), "timer child sleeping for %d minutes", minutes);
-    write_log(msg);
-
-    sleep((unsigned int)minutes * 60U);
-    unlink(PID_FILE);
-    write_log("timer expired");
-    try_poweroff();
-    _exit(1);
+    ClearTimer(poweroff_timer);
+    ClearTimerByName(TIMER_NAME);
+    timer_active = 0;
+    active_minutes = 0;
+    write_log("native timer cancelled");
 }
 
 static void start_timer(int minutes)
 {
     char msg[128];
-    pid_t pid;
 
     cancel_timer();
+    active_minutes = minutes;
+    timer_active = 1;
+    SetHardTimer(TIMER_NAME, poweroff_timer, minutes * 60 * 1000);
+    SetAutoPowerOff(1);
+    BanSleep(minutes * 60 + 30);
+    PostponeTimedPoweroff();
 
-    pid = fork();
-    if (pid < 0) {
-        snprintf(msg, sizeof(msg), "fork failed: %d", errno);
-        write_log(msg);
-        Message(ICON_ERROR, "Meleys Sleep Timer", "Casovac se nepodarilo spustit.", 3000);
-        return;
-    }
-
-    if (pid == 0) {
-        timer_child(minutes);
-    }
-
-    save_pid(pid);
-    snprintf(msg, sizeof(msg), "timer started: %d minutes, pid %ld", minutes, (long)pid);
+    snprintf(msg, sizeof(msg), "native timer started: %d minutes", minutes);
     write_log(msg);
 
     snprintf(msg, sizeof(msg), "Casovac nastaven na %d minut.", minutes);
     Message(ICON_INFORMATION, "Meleys Sleep Timer", msg, 2000);
-    CloseApp();
+    GoToBackground();
 }
 
 static int in_button(const button_t *button, int x, int y)
@@ -190,7 +123,12 @@ static void draw_screen(void)
     if (font_body) {
         SetFont(font_body, BLACK);
     }
-    DrawString(margin, 112, "Vyber cas, po kterem se ctecka vypne.");
+    if (timer_active) {
+        snprintf(label, sizeof(label), "Bezi casovac: %d min", active_minutes);
+        DrawString(margin, 112, label);
+    } else {
+        DrawString(margin, 112, "Vyber cas, po kterem se ctecka vypne.");
+    }
 
     for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
         int row = i / cols;
