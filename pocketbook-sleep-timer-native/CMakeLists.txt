@@ -32,6 +32,16 @@ find_library(INKVIEW_LIBRARY inkview
     "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/lib"
 )
 
+find_path(FREETYPE_INCLUDE_DIR ft2build.h
+  HINTS
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/include/freetype2"
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include/freetype2"
+    "$ENV{SDK_ROOT}/usr/include/freetype2"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/include/freetype2"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include/freetype2"
+    "$ENV{SDK_BASE}/usr/include/freetype2"
+)
+
 if(NOT INKVIEW_INCLUDE_DIR)
   message(FATAL_ERROR "inkview.h not found. Set SDK_ROOT to your PocketBook SDK directory.")
 endif()
@@ -42,8 +52,13 @@ endif()
 
 add_executable(MeleysSleepTimer.app src/main.c)
 target_include_directories(MeleysSleepTimer.app PRIVATE "${INKVIEW_INCLUDE_DIR}")
+if(FREETYPE_INCLUDE_DIR)
+  target_include_directories(MeleysSleepTimer.app PRIVATE "${FREETYPE_INCLUDE_DIR}")
+endif()
 target_link_libraries(MeleysSleepTimer.app PRIVATE "${INKVIEW_LIBRARY}")
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   target_compile_options(MeleysSleepTimer.app PRIVATE -Wall -Wextra -Wno-unused-parameter)
 endif()
+
+target_compile_definitions(MeleysSleepTimer.app PRIVATE _GNU_SOURCE)
