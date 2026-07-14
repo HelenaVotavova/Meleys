@@ -110,7 +110,7 @@ static void start_timer(int minutes)
     write_log(msg);
 
     snprintf(msg, sizeof(msg), "Casovac nastaven na %d minut.", minutes);
-    Message(ICON_INFORMATION, "Meleys Sleep Timer", msg, 1500);
+    Message(ICON_INFORMATION, "Helcin casovac na vypnuti", msg, 1500);
     draw_screen();
 }
 
@@ -151,7 +151,7 @@ static void draw_screen(void)
     if (font_title) {
         SetFont(font_title, BLACK);
     }
-    DrawString(margin, 58, "Meleys Sleep Timer");
+    DrawString(margin, 58, "Helcin casovac na vypnuti");
 
     if (font_body) {
         SetFont(font_body, BLACK);
@@ -234,7 +234,7 @@ static int main_handler(int type, int par1, int par2)
 
         if (in_button(&cancel_button, par1, par2)) {
             cancel_timer();
-            Message(ICON_INFORMATION, "Meleys Sleep Timer", "Casovac zrusen.", 2000);
+            Message(ICON_INFORMATION, "Helcin casovac na vypnuti", "Casovac zrusen.", 2000);
             CloseApp();
             return 0;
         }
