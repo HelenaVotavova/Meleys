@@ -151,8 +151,7 @@ static void draw_screen(void)
     if (font_title) {
         SetFont(font_title, BLACK);
     }
-    DrawString(margin, 48, "Helcin casovac");
-    DrawString(margin, 88, "na vypnuti");
+    DrawString(margin, 58, "Helcin casovac na vypnuti");
 
     if (font_body) {
         SetFont(font_body, BLACK);
