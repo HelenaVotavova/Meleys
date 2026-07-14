@@ -9,9 +9,13 @@ find_path(INKVIEW_INCLUDE_DIR inkview.h
     "$ENV{SDK_ROOT}/include"
     "$ENV{SDK_ROOT}/PBSDK/include"
     "$ENV{SDK_ROOT}/usr/include"
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include"
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/include"
     "$ENV{SDK_BASE}/include"
     "$ENV{SDK_BASE}/PBSDK/include"
     "$ENV{SDK_BASE}/usr/include"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/include"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/include"
 )
 
 find_library(INKVIEW_LIBRARY inkview
@@ -19,9 +23,13 @@ find_library(INKVIEW_LIBRARY inkview
     "$ENV{SDK_ROOT}/lib"
     "$ENV{SDK_ROOT}/PBSDK/lib"
     "$ENV{SDK_ROOT}/usr/lib"
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/lib"
+    "$ENV{SDK_ROOT}/usr/arm-obreey-linux-gnueabi/sysroot/usr/lib"
     "$ENV{SDK_BASE}/lib"
     "$ENV{SDK_BASE}/PBSDK/lib"
     "$ENV{SDK_BASE}/usr/lib"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/local/lib"
+    "$ENV{SDK_BASE}/usr/arm-obreey-linux-gnueabi/sysroot/usr/lib"
 )
 
 if(NOT INKVIEW_INCLUDE_DIR)

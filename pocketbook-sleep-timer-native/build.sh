@@ -9,7 +9,13 @@ if [ -z "$SDK_ROOT" ]; then
   exit 1
 fi
 
-TOOLCHAIN="${CMAKE_TOOLCHAIN_FILE:-$SDK_ROOT/share/cmake/arm_conf.cmake}"
+if [ -n "${CMAKE_TOOLCHAIN_FILE:-}" ]; then
+  TOOLCHAIN="$CMAKE_TOOLCHAIN_FILE"
+elif [ -f "$SDK_ROOT/config.cmake" ]; then
+  TOOLCHAIN="$SDK_ROOT/config.cmake"
+else
+  TOOLCHAIN="$SDK_ROOT/share/cmake/arm_conf.cmake"
+fi
 
 if [ ! -f "$TOOLCHAIN" ]; then
   echo "Toolchain file not found: $TOOLCHAIN" >&2

@@ -20,7 +20,7 @@ jobs:
             -v "$PWD:/project" \
             -w /project/pocketbook-sleep-timer-native \
             5keeve/pocketbook-sdk:6.3.0-b288-v1 \
-            ./build.sh
+            /bin/bash -lc 'set -ex; echo "SDK_BASE=$SDK_BASE"; echo "CMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE"; ls -la "$SDK_BASE"; find "$SDK_BASE" -maxdepth 5 \( -name inkview.h -o -name "libinkview*" -o -name config.cmake -o -name arm_conf.cmake \) -print; ./build.sh'
 
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
