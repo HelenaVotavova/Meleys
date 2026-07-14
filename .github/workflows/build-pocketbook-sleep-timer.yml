@@ -1,0 +1,29 @@
+name: Build PocketBook Sleep Timer
+
+on:
+  push:
+    paths:
+      - "pocketbook-sleep-timer-native/**"
+      - ".github/workflows/build-pocketbook-sleep-timer.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build native PocketBook app
+        run: |
+          docker run --rm \
+            -v "$PWD:/project" \
+            -w /project/pocketbook-sleep-timer-native \
+            5keeve/pocketbook-sdk:6.3.0-b288-v1 \
+            ./build.sh
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeleysSleepTimer-pocketbook-app
+          path: pocketbook-sleep-timer-native/build/MeleysSleepTimer.app

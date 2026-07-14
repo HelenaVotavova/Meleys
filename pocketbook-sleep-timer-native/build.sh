@@ -1,7 +1,9 @@
 #!/bin/sh
 set -eu
 
-if [ -z "${SDK_ROOT:-}" ]; then
+SDK_ROOT="${SDK_ROOT:-${SDK_BASE:-}}"
+
+if [ -z "$SDK_ROOT" ]; then
   echo "Set SDK_ROOT to the PocketBook SDK directory." >&2
   echo "Example: SDK_ROOT=/path/to/SDK_6.3.0 ./build.sh" >&2
   exit 1
@@ -19,4 +21,3 @@ cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" -DCMAKE_BUILD_TYPE=Relea
 cmake --build build --config Release
 
 echo "Built: build/MeleysSleepTimer.app"
-
