@@ -9,6 +9,7 @@
 #define STATE_DIR "/mnt/ext1/system/config"
 #define LOG_FILE STATE_DIR "/meleys-sleep-timer.log"
 #define TIMER_NAME "meleys-sleep-timer"
+#define REFRESH_TIMER_NAME "meleys-sleep-timer-refresh"
 
 typedef struct {
     int minutes;
@@ -23,8 +24,13 @@ static button_t buttons[sizeof(presets) / sizeof(presets[0])];
 static button_t cancel_button;
 static ifont *font_title;
 static ifont *font_body;
+static ifont *font_large;
 static int active_minutes;
 static int timer_active;
+static time_t end_time;
+
+static void draw_screen(void);
+static void update_countdown(void);
 
 static void write_log(const char *message)
 {
@@ -44,6 +50,7 @@ static void poweroff_timer(void)
 {
     write_log("native timer expired, calling PocketBook PowerOff()");
     ClearTimer(poweroff_timer);
+    ClearTimerByName(REFRESH_TIMER_NAME);
     timer_active = 0;
 
     PowerOff();
@@ -56,10 +63,33 @@ static void poweroff_timer(void)
 static void cancel_timer(void)
 {
     ClearTimer(poweroff_timer);
+    ClearTimer(update_countdown);
     ClearTimerByName(TIMER_NAME);
+    ClearTimerByName(REFRESH_TIMER_NAME);
     timer_active = 0;
     active_minutes = 0;
+    end_time = 0;
     write_log("native timer cancelled");
+}
+
+static int remaining_seconds(void)
+{
+    time_t now = time(NULL);
+    int seconds = (int)(end_time - now);
+    return seconds > 0 ? seconds : 0;
+}
+
+static void update_countdown(void)
+{
+    if (!timer_active) {
+        return;
+    }
+
+    draw_screen();
+
+    if (remaining_seconds() > 0) {
+        SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 1000);
+    }
 }
 
 static void start_timer(int minutes)
@@ -69,7 +99,9 @@ static void start_timer(int minutes)
     cancel_timer();
     active_minutes = minutes;
     timer_active = 1;
+    end_time = time(NULL) + minutes * 60;
     SetHardTimer(TIMER_NAME, poweroff_timer, minutes * 60 * 1000);
+    SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 1000);
     SetAutoPowerOff(1);
     BanSleep(minutes * 60 + 30);
     PostponeTimedPoweroff();
@@ -78,8 +110,8 @@ static void start_timer(int minutes)
     write_log(msg);
 
     snprintf(msg, sizeof(msg), "Casovac nastaven na %d minut.", minutes);
-    Message(ICON_INFORMATION, "Meleys Sleep Timer", msg, 2000);
-    GoToBackground();
+    Message(ICON_INFORMATION, "Meleys Sleep Timer", msg, 1500);
+    draw_screen();
 }
 
 static int in_button(const button_t *button, int x, int y)
@@ -106,12 +138,13 @@ static void draw_screen(void)
     int sw = ScreenWidth();
     int sh = ScreenHeight();
     int margin = sw / 12;
-    int gap = 18;
-    int cols = 2;
-    int bw = (sw - 2 * margin - gap) / cols;
-    int bh = 74;
-    int start_y = 170;
-    char label[32];
+    int gap = 12;
+    int count = (int)(sizeof(presets) / sizeof(presets[0]));
+    int bw = sw - 2 * margin;
+    int start_y = 155;
+    int available = sh - start_y - 125;
+    int bh = (available - gap * (count - 1)) / count;
+    char label[64];
 
     ClearScreen();
 
@@ -123,24 +156,11 @@ static void draw_screen(void)
     if (font_body) {
         SetFont(font_body, BLACK);
     }
-    if (timer_active) {
-        snprintf(label, sizeof(label), "Bezi casovac: %d min", active_minutes);
-        DrawString(margin, 112, label);
-    } else {
-        DrawString(margin, 112, "Vyber cas, po kterem se ctecka vypne.");
+    if (bh > 72) {
+        bh = 72;
     }
-
-    for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
-        int row = i / cols;
-        int col = i % cols;
-        buttons[i].minutes = presets[i];
-        buttons[i].x = margin + col * (bw + gap);
-        buttons[i].y = start_y + row * (bh + gap);
-        buttons[i].w = bw;
-        buttons[i].h = bh;
-
-        snprintf(label, sizeof(label), "%d min", presets[i]);
-        draw_button(&buttons[i], label);
+    if (bh < 44) {
+        bh = 44;
     }
 
     cancel_button.minutes = 0;
@@ -148,6 +168,44 @@ static void draw_screen(void)
     cancel_button.y = sh - 110;
     cancel_button.w = sw - 2 * margin;
     cancel_button.h = 66;
+
+    if (timer_active) {
+        int left = remaining_seconds();
+        int min = left / 60;
+        int sec = left % 60;
+
+        DrawString(margin, 112, "Zbyva do vypnuti:");
+
+        if (font_large) {
+            SetFont(font_large, BLACK);
+        }
+        snprintf(label, sizeof(label), "%02d:%02d", min, sec);
+        DrawString(margin, 185, label);
+
+        if (font_body) {
+            SetFont(font_body, BLACK);
+        }
+        snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
+        DrawString(margin, 285, label);
+
+        draw_button(&cancel_button, "Cancel");
+        FullUpdate();
+        return;
+    }
+
+    DrawString(margin, 112, "Vyber cas, po kterem se ctecka vypne.");
+
+    for (int i = 0; i < count; ++i) {
+        buttons[i].minutes = presets[i];
+        buttons[i].x = margin;
+        buttons[i].y = start_y + i * (bh + gap);
+        buttons[i].w = bw;
+        buttons[i].h = bh;
+
+        snprintf(label, sizeof(label), "%d min", presets[i]);
+        draw_button(&buttons[i], label);
+    }
+
     draw_button(&cancel_button, "Cancel");
 
     FullUpdate();
@@ -160,6 +218,7 @@ static int main_handler(int type, int par1, int par2)
         OpenScreen();
         font_title = OpenFont(DEFAULTFONTB, 34, 1);
         font_body = OpenFont(DEFAULTFONT, 24, 1);
+        font_large = OpenFont(DEFAULTFONTB, 58, 1);
         draw_screen();
         break;
 
@@ -193,6 +252,10 @@ static int main_handler(int type, int par1, int par2)
         if (font_body) {
             CloseFont(font_body);
             font_body = NULL;
+        }
+        if (font_large) {
+            CloseFont(font_large);
+            font_large = NULL;
         }
         break;
     }
