@@ -88,7 +88,7 @@ static void update_countdown(void)
     draw_screen();
 
     if (remaining_seconds() > 0) {
-        SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 1000);
+        SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 60000);
     }
 }
 
@@ -101,7 +101,7 @@ static void start_timer(int minutes)
     timer_active = 1;
     end_time = time(NULL) + minutes * 60;
     SetHardTimer(TIMER_NAME, poweroff_timer, minutes * 60 * 1000);
-    SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 1000);
+    SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 60000);
     SetAutoPowerOff(1);
     BanSleep(minutes * 60 + 30);
     PostponeTimedPoweroff();
@@ -171,15 +171,14 @@ static void draw_screen(void)
 
     if (timer_active) {
         int left = remaining_seconds();
-        int min = left / 60;
-        int sec = left % 60;
+        int min = (left + 59) / 60;
 
         DrawString(margin, 112, "Zbyva do vypnuti:");
 
         if (font_large) {
             SetFont(font_large, BLACK);
         }
-        snprintf(label, sizeof(label), "%02d:%02d", min, sec);
+        snprintf(label, sizeof(label), "%d min", min);
         DrawString(margin, 185, label);
 
         if (font_body) {
@@ -227,20 +226,24 @@ static int main_handler(int type, int par1, int par2)
         break;
 
     case EVT_POINTERUP:
-    case EVT_TOUCHUP:
-        for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
-            if (in_button(&buttons[i], par1, par2)) {
-                active_minutes = buttons[i].minutes;
-                start_timer(active_minutes);
-                return 0;
-            }
-        }
-
         if (in_button(&cancel_button, par1, par2)) {
             cancel_timer();
             Message(ICON_INFORMATION, "Meleys Sleep Timer", "Casovac zrusen.", 2000);
             CloseApp();
             return 0;
+        }
+
+        if (!timer_active) {
+            for (int i = 0; i < (int)(sizeof(presets) / sizeof(presets[0])); ++i) {
+                if (in_button(&buttons[i], par1, par2)) {
+                    char msg[96];
+                    snprintf(msg, sizeof(msg), "button selected: index %d, %d minutes", i, buttons[i].minutes);
+                    write_log(msg);
+                    active_minutes = buttons[i].minutes;
+                    start_timer(active_minutes);
+                    return 0;
+                }
+            }
         }
         break;
 
