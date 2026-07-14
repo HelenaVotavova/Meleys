@@ -129,7 +129,7 @@ static void draw_button(const button_t *button, const char *label)
     DrawRect(button->x, button->y, button->w, button->h, BLACK);
     text_w = StringWidth(label);
     text_x = button->x + (button->w - text_w) / 2;
-    text_y = button->y + button->h / 2 - 12;
+    text_y = button->y + button->h / 2 - 16;
     DrawString(text_x, text_y, label);
 }
 
@@ -137,12 +137,12 @@ static void draw_screen(void)
 {
     int sw = ScreenWidth();
     int sh = ScreenHeight();
-    int margin = sw / 12;
-    int gap = 12;
+    int margin = sw / 14;
+    int gap = 10;
     int count = (int)(sizeof(presets) / sizeof(presets[0]));
     int bw = sw - 2 * margin;
-    int start_y = 155;
-    int available = sh - start_y - 125;
+    int start_y = 165;
+    int available = sh - start_y - 118;
     int bh = (available - gap * (count - 1)) / count;
     char label[64];
 
@@ -151,48 +151,49 @@ static void draw_screen(void)
     if (font_title) {
         SetFont(font_title, BLACK);
     }
-    DrawString(margin, 58, "Helcin casovac na vypnuti");
+    DrawString(margin, 48, "Helcin casovac");
+    DrawString(margin, 88, "na vypnuti");
 
     if (font_body) {
         SetFont(font_body, BLACK);
     }
-    if (bh > 72) {
-        bh = 72;
+    if (bh > 82) {
+        bh = 82;
     }
-    if (bh < 44) {
-        bh = 44;
+    if (bh < 50) {
+        bh = 50;
     }
 
     cancel_button.minutes = 0;
     cancel_button.x = margin;
-    cancel_button.y = sh - 110;
+    cancel_button.y = sh - 100;
     cancel_button.w = sw - 2 * margin;
-    cancel_button.h = 66;
+    cancel_button.h = 72;
 
     if (timer_active) {
         int left = remaining_seconds();
         int min = (left + 59) / 60;
 
-        DrawString(margin, 112, "Zbyva do vypnuti:");
+        DrawString(margin, 150, "Zbyva do vypnuti:");
 
         if (font_large) {
             SetFont(font_large, BLACK);
         }
         snprintf(label, sizeof(label), "%d min", min);
-        DrawString(margin, 185, label);
+        DrawString(margin, 230, label);
 
         if (font_body) {
             SetFont(font_body, BLACK);
         }
         snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
-        DrawString(margin, 285, label);
+        DrawString(margin, 340, label);
 
         draw_button(&cancel_button, "Cancel");
         FullUpdate();
         return;
     }
 
-    DrawString(margin, 112, "Vyber cas, po kterem se ctecka vypne.");
+    DrawString(margin, 130, "Vyber cas vypnuti:");
 
     for (int i = 0; i < count; ++i) {
         buttons[i].minutes = presets[i];
@@ -215,9 +216,9 @@ static int main_handler(int type, int par1, int par2)
     switch (type) {
     case EVT_INIT:
         OpenScreen();
-        font_title = OpenFont(DEFAULTFONTB, 34, 1);
-        font_body = OpenFont(DEFAULTFONT, 24, 1);
-        font_large = OpenFont(DEFAULTFONTB, 58, 1);
+        font_title = OpenFont(DEFAULTFONTB, 40, 1);
+        font_body = OpenFont(DEFAULTFONT, 32, 1);
+        font_large = OpenFont(DEFAULTFONTB, 76, 1);
         draw_screen();
         break;
 
