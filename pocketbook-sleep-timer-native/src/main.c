@@ -11,17 +11,6 @@
 #define TIMER_NAME "meleys-sleep-timer"
 #define REFRESH_TIMER_NAME "meleys-sleep-timer-refresh"
 
-typedef struct {
-    int minutes;
-    int x;
-    int y;
-    int w;
-    int h;
-} button_t;
-
-static const int presets[] = {5, 10, 15, 20, 30, 45, 60};
-static button_t buttons[sizeof(presets) / sizeof(presets[0])];
-static button_t cancel_button;
 static ifont *font_title;
 static ifont *font_body;
 static ifont *font_large;
@@ -33,6 +22,7 @@ static time_t end_time;
 static void draw_screen(void);
 static void update_countdown(void);
 static void open_timer_menu(void);
+static void open_control_menu(void);
 
 static void write_log(const char *message)
 {
@@ -116,6 +106,14 @@ static void start_timer(int minutes)
     draw_screen();
 }
 
+static imenu control_menu[] = {
+    {ITEM_HEADER, 0, "Casovac bezi", NULL},
+    {ITEM_ACTIVE, 201, "Zrusit casovac", NULL},
+    {ITEM_ACTIVE, 202, "Zmenit cas", NULL},
+    {ITEM_ACTIVE, 203, "Zavrit aplikaci", NULL},
+    {0, 0, NULL, NULL}
+};
+
 static imenu timer_menu[] = {
     {ITEM_HEADER, 0, "Vyber cas vypnuti", NULL},
     {ITEM_ACTIVE, 101, "5 min", NULL},
@@ -131,6 +129,7 @@ static imenu timer_menu[] = {
 static void timer_menu_handler(int index)
 {
     int minutes = 0;
+    menu_opened = 0;
 
     switch (index) {
     case 1:
@@ -183,36 +182,44 @@ static void open_timer_menu(void)
     }
 }
 
-static int in_button(const button_t *button, int x, int y)
+static void control_menu_handler(int index)
 {
-    return x >= button->x && x <= button->x + button->w &&
-           y >= button->y && y <= button->y + button->h;
+    menu_opened = 0;
+
+    switch (index) {
+    case 1:
+    case 201:
+        cancel_timer();
+        Message(ICON_INFORMATION, "Helcin casovac na vypnuti", "Casovac zrusen.", 1500);
+        draw_screen();
+        break;
+    case 2:
+    case 202:
+        cancel_timer();
+        draw_screen();
+        open_timer_menu();
+        break;
+    case 3:
+    case 203:
+        CloseApp();
+        break;
+    default:
+        break;
+    }
 }
 
-static void draw_button(const button_t *button, const char *label)
+static void open_control_menu(void)
 {
-    int text_w;
-    int text_x;
-    int text_y;
-
-    DrawRect(button->x, button->y, button->w, button->h, BLACK);
-    text_w = StringWidth(label);
-    text_x = button->x + (button->w - text_w) / 2;
-    text_y = button->y + button->h / 2 - 16;
-    DrawString(text_x, text_y, label);
+    if (timer_active) {
+        menu_opened = 1;
+        OpenMenu(control_menu, 1, ScreenWidth() / 12, 120, control_menu_handler);
+    }
 }
 
 static void draw_screen(void)
 {
     int sw = ScreenWidth();
-    int sh = ScreenHeight();
     int margin = sw / 14;
-    int gap = 10;
-    int count = (int)(sizeof(presets) / sizeof(presets[0]));
-    int bw = sw - 2 * margin;
-    int start_y = 165;
-    int available = sh - start_y - 118;
-    int bh = (available - gap * (count - 1)) / count;
     char label[64];
 
     ClearScreen();
@@ -225,56 +232,33 @@ static void draw_screen(void)
     if (font_body) {
         SetFont(font_body, BLACK);
     }
-    if (bh > 82) {
-        bh = 82;
-    }
-    if (bh < 50) {
-        bh = 50;
-    }
-
-    cancel_button.minutes = 0;
-    cancel_button.x = margin;
-    cancel_button.y = sh - 100;
-    cancel_button.w = sw - 2 * margin;
-    cancel_button.h = 72;
-
     if (timer_active) {
         int left = remaining_seconds();
         int min = (left + 59) / 60;
 
-        DrawString(margin, 150, "Zbyva do vypnuti:");
+        DrawString(margin, 140, "Zbyva do vypnuti");
 
         if (font_large) {
             SetFont(font_large, BLACK);
         }
         snprintf(label, sizeof(label), "%d min", min);
-        DrawString(margin, 230, label);
+        DrawString(margin, 220, label);
 
         if (font_body) {
             SetFont(font_body, BLACK);
         }
         snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
         DrawString(margin, 340, label);
+        DrawString(margin, 420, "Klepnutim otevres volby.");
 
-        draw_button(&cancel_button, "Cancel");
         FullUpdate();
         return;
     }
 
-    DrawString(margin, 130, "Vyber cas v menu.");
-
-    for (int i = 0; i < count; ++i) {
-        buttons[i].minutes = presets[i];
-        buttons[i].x = margin;
-        buttons[i].y = start_y + i * (bh + gap);
-        buttons[i].w = bw;
-        buttons[i].h = bh;
-
-        snprintf(label, sizeof(label), "%d min", presets[i]);
-        draw_button(&buttons[i], label);
-    }
-
-    draw_button(&cancel_button, "Cancel");
+    DrawString(margin, 145, "Vyber delku casovace");
+    DrawString(margin, 215, "v systemovem menu.");
+    DrawString(margin, 315, "Klepnutim otevres");
+    DrawString(margin, 365, "nabidku casu.");
 
     FullUpdate();
 }
@@ -305,14 +289,10 @@ static int main_handler(int type, int par1, int par2)
             write_log(msg);
         }
 
-        if (in_button(&cancel_button, par1, par2)) {
-            cancel_timer();
-            Message(ICON_INFORMATION, "Helcin casovac na vypnuti", "Casovac zrusen.", 2000);
-            CloseApp();
+        if (timer_active) {
+            open_control_menu();
             return 0;
-        }
-
-        if (!timer_active) {
+        } else {
             open_timer_menu();
             return 0;
         }
