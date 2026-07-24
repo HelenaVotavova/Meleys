@@ -1,19 +1,50 @@
 #!/usr/bin/env python3
 import argparse
+import base64
 import json
+import os
+import secrets
 import subprocess
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
+AUTH = os.environ.get("QUALITY_LAB_AUTH", "meleys:meleys")
 
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(HERE / "static"), **kwargs)
 
+    def _authorized(self):
+        if not AUTH:
+            return True
+        header = self.headers.get("Authorization", "")
+        if not header.startswith("Basic "):
+            return False
+        try:
+            value = base64.b64decode(header[6:]).decode("utf-8")
+        except Exception:
+            return False
+        return secrets.compare_digest(value, AUTH)
+
+    def _require_auth(self):
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="AI Six Sigma Quality Lab"')
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def do_GET(self):
+        if not self._authorized():
+            self._require_auth()
+            return
+        super().do_GET()
+
     def do_POST(self):
+        if not self._authorized():
+            self._require_auth()
+            return
         if self.path != "/api/consult":
             self.send_error(404)
             return
@@ -95,4 +126,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
