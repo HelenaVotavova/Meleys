@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Six Sigma Quality Lab</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>AI Six Sigma Quality Lab</h1>
+        <p>SPC, způsobilost procesu, Pareto vad a AI konzultace.</p>
+      </div>
+      <button id="demoBtn" class="primary">Demo data</button>
+    </header>
+
+    <section class="controls">
+      <label>LSL <input id="lsl" type="number" step="0.01" value="9.50"></label>
+      <label>Target <input id="target" type="number" step="0.01" value="10.00"></label>
+      <label>USL <input id="usl" type="number" step="0.01" value="10.50"></label>
+      <label>Název procesu <input id="processName" value="Průměr otvoru - linka A"></label>
+      <button id="analyzeBtn" class="primary">Analyzovat</button>
+      <button id="consultBtn">AI konzultant</button>
+    </section>
+
+    <section class="input-grid">
+      <div class="panel input-panel">
+        <div class="panel-head">
+          <h2>Vstupní CSV</h2>
+          <span>sloupce: value, defect</span>
+        </div>
+        <textarea id="csvInput" spellcheck="false"></textarea>
+      </div>
+      <div class="panel consultant-panel">
+        <div class="panel-head">
+          <h2>Hermes konzultant</h2>
+          <span>spouští se jen tlačítkem</span>
+        </div>
+        <div id="consultant" class="consultant">Nejdřív spusť analýzu. Potom může Hermes doplnit interpretaci a DMAIC doporučení.</div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <div><span>n</span><strong id="kN">-</strong></div>
+      <div><span>Mean</span><strong id="kMean">-</strong></div>
+      <div><span>Sigma</span><strong id="kSigma">-</strong></div>
+      <div><span>Cp</span><strong id="kCp">-</strong></div>
+      <div><span>Cpk</span><strong id="kCpk">-</strong></div>
+      <div><span>PPM mimo</span><strong id="kPpm">-</strong></div>
+    </section>
+
+    <section class="charts">
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <h2>SPC individual chart</h2>
+          <span id="spcStatus">-</span>
+        </div>
+        <canvas id="spcChart" width="920" height="340"></canvas>
+      </div>
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <h2>Histogram</h2>
+          <span>rozložení měření</span>
+        </div>
+        <canvas id="histChart" width="460" height="340"></canvas>
+      </div>
+      <div class="panel chart-panel">
+        <div class="panel-head">
+          <h2>Pareto vad</h2>
+          <span>defect sloupec</span>
+        </div>
+        <canvas id="paretoChart" width="460" height="340"></canvas>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
+
