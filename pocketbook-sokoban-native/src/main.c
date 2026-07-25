@@ -94,6 +94,7 @@ static ifont *font_body;
 static ifont *font_small;
 
 static void draw_game(void);
+static void redraw_after_move(int old_px, int old_py, int new_px, int new_py, int box_x, int box_y);
 
 static int is_player(char c) { return c == '@' || c == '+'; }
 static int is_box(char c) { return c == '$' || c == '*'; }
@@ -172,6 +173,9 @@ static void move_player(int dir)
     int y1 = game.py + dy;
     int x2 = game.px + 2 * dx;
     int y2 = game.py + 2 * dy;
+    int old_px = game.px;
+    int old_py = game.py;
+    int box_moved = 0;
     char c1 = game.cells[y1][x1];
     char c2 = game.cells[y2][x2];
 
@@ -191,6 +195,7 @@ static void move_player(int dir)
         game.py = y1;
         game.moves++;
         game.pushes++;
+        box_moved = 1;
     } else {
         push_undo();
         game.cells[y1][x1] = with_player(c1);
@@ -200,7 +205,7 @@ static void move_player(int dir)
         game.moves++;
     }
 
-    draw_game();
+    redraw_after_move(old_px, old_py, game.px, game.py, box_moved ? x2 : -1, box_moved ? y2 : -1);
     if (completed()) {
         Message(ICON_INFORMATION, "Helcin Sokoban", "Level hotovy.", 1200);
         load_level(level_index + 1);
@@ -255,7 +260,7 @@ static void draw_tile(int x, int y, int size, char c)
     }
 }
 
-static void draw_game(void)
+static void board_geometry(int *tile_out, int *bx, int *by)
 {
     int sw = ScreenWidth();
     int sh = ScreenHeight();
@@ -269,9 +274,35 @@ static void draw_game(void)
         tile = 92;
     }
     int board_w = tile * MAP_W;
-    int bx = (sw - board_w) / 2;
-    int by = 150;
+    *tile_out = tile;
+    *bx = (sw - board_w) / 2;
+    *by = 150;
+}
+
+static void clear_rect(int x, int y, int w, int h)
+{
+    for (int i = 0; i < h; ++i) {
+        DrawLine(x, y + i, x + w, y + i, WHITE);
+    }
+}
+
+static void draw_status_line(void)
+{
     char line[96];
+
+    if (font_body) {
+        SetFont(font_body, BLACK);
+    }
+    clear_rect(0, 96, ScreenWidth(), 42);
+    snprintf(line, sizeof(line), "Level %d/%d   Tahy %d   Tlaky %d", level_index + 1, level_count, game.moves, game.pushes);
+    draw_centered(100, line);
+}
+
+static void draw_game(void)
+{
+    int sh = ScreenHeight();
+    int tile, bx, by;
+    board_geometry(&tile, &bx, &by);
 
     ClearScreen();
     if (font_title) {
@@ -279,11 +310,7 @@ static void draw_game(void)
     }
     draw_centered(45, "Helcin Sokoban");
 
-    if (font_body) {
-        SetFont(font_body, BLACK);
-    }
-    snprintf(line, sizeof(line), "Level %d/%d   Tahy %d   Tlaky %d", level_index + 1, level_count, game.moves, game.pushes);
-    draw_centered(100, line);
+    draw_status_line();
 
     for (int y = 0; y < MAP_H; ++y) {
         for (int x = 0; x < MAP_W; ++x) {
@@ -296,6 +323,28 @@ static void draw_game(void)
     }
     draw_centered(sh - 82, "Klepni kolem hrace pro pohyb. Nahore menu.");
     FullUpdate();
+}
+
+static void redraw_cell(int mx, int my)
+{
+    int tile, bx, by;
+    if (mx < 0 || my < 0 || mx >= MAP_W || my >= MAP_H) {
+        return;
+    }
+    board_geometry(&tile, &bx, &by);
+    int x = bx + mx * tile;
+    int y = by + my * tile;
+    clear_rect(x, y, tile + 1, tile + 1);
+    draw_tile(x, y, tile, game.cells[my][mx]);
+}
+
+static void redraw_after_move(int old_px, int old_py, int new_px, int new_py, int box_x, int box_y)
+{
+    draw_status_line();
+    redraw_cell(old_px, old_py);
+    redraw_cell(new_px, new_py);
+    redraw_cell(box_x, box_y);
+    PartialUpdate(0, 90, ScreenWidth(), ScreenHeight() - 90);
 }
 
 static imenu game_menu[] = {
