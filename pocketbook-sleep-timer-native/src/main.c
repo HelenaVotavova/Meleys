@@ -17,6 +17,9 @@ static ifont *font_large;
 static int active_minutes;
 static int timer_active;
 static int menu_opened;
+static int custom_mode;
+static int custom_minutes = 25;
+static int shown_remaining_minutes = -1;
 static time_t end_time;
 
 static void draw_screen(void);
@@ -24,6 +27,8 @@ static void update_countdown(void);
 static void open_timer_menu(void);
 static void open_control_menu(void);
 static void draw_centered(int y, const char *text);
+static void draw_custom_screen(void);
+static void draw_countdown_value(int partial);
 
 static void write_log(const char *message)
 {
@@ -61,6 +66,7 @@ static void cancel_timer(void)
     ClearTimerByName(REFRESH_TIMER_NAME);
     timer_active = 0;
     active_minutes = 0;
+    shown_remaining_minutes = -1;
     end_time = 0;
     write_log("native timer cancelled");
 }
@@ -78,7 +84,7 @@ static void update_countdown(void)
         return;
     }
 
-    draw_screen();
+    draw_countdown_value(1);
 
     if (remaining_seconds() > 0) {
         SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 60000);
@@ -92,6 +98,8 @@ static void start_timer(int minutes)
     cancel_timer();
     active_minutes = minutes;
     timer_active = 1;
+    custom_mode = 0;
+    shown_remaining_minutes = -1;
     end_time = time(NULL) + minutes * 60;
     SetHardTimer(TIMER_NAME, poweroff_timer, minutes * 60 * 1000);
     SetWeakTimer(REFRESH_TIMER_NAME, update_countdown, 60000);
@@ -122,6 +130,7 @@ static imenu timer_menu[] = {
     {ITEM_ACTIVE, 105, "30 min", NULL},
     {ITEM_ACTIVE, 106, "45 min", NULL},
     {ITEM_ACTIVE, 107, "60 min", NULL},
+    {ITEM_ACTIVE, 108, "Vlastni cas", NULL},
     {0, 0, NULL, NULL}
 };
 
@@ -159,6 +168,11 @@ static void timer_menu_handler(int index)
     case 107:
         minutes = 60;
         break;
+    case 8:
+    case 108:
+        custom_mode = 1;
+        draw_custom_screen();
+        return;
     default:
         break;
     }
@@ -175,7 +189,7 @@ static void timer_menu_handler(int index)
 
 static void open_timer_menu(void)
 {
-    if (!timer_active) {
+    if (!timer_active && !custom_mode) {
         int sw = ScreenWidth();
         int sh = ScreenHeight();
         menu_opened = 1;
@@ -230,6 +244,150 @@ static void draw_centered(int y, const char *text)
     DrawString(x, y, text);
 }
 
+static void clear_rect(int x, int y, int w, int h)
+{
+    for (int i = 0; i < h; ++i) {
+        DrawLine(x, y + i, x + w, y + i, WHITE);
+    }
+}
+
+static void draw_countdown_value(int partial)
+{
+    char label[64];
+    int left = remaining_seconds();
+    int min = (left + 59) / 60;
+
+    if (partial && min == shown_remaining_minutes) {
+        return;
+    }
+    shown_remaining_minutes = min;
+
+    clear_rect(0, 235, ScreenWidth(), 125);
+    if (font_large) {
+        SetFont(font_large, BLACK);
+    }
+    snprintf(label, sizeof(label), "%d min", min);
+    draw_centered(255, label);
+
+    if (partial) {
+        PartialUpdate(0, 235, ScreenWidth(), 125);
+    }
+}
+
+static void draw_button(int x, int y, int w, int h, const char *text)
+{
+    DrawRect(x, y, w, h, BLACK);
+    if (font_body) {
+        SetFont(font_body, BLACK);
+    }
+    DrawString(x + (w - StringWidth(text)) / 2, y + (h - 38) / 2, text);
+}
+
+static void custom_layout(int *x, int *w, int *y_value, int *y_row1, int *y_row2, int *y_row3)
+{
+    int sw = ScreenWidth();
+    int sh = ScreenHeight();
+    *w = sw > 760 ? 560 : sw - 80;
+    *x = (sw - *w) / 2;
+    *y_value = sh / 4;
+    *y_row1 = *y_value + 135;
+    *y_row2 = *y_row1 + 95;
+    *y_row3 = *y_row2 + 115;
+}
+
+static void draw_custom_minutes(int partial)
+{
+    char label[64];
+    int x, w, y_value, y_row1, y_row2, y_row3;
+    (void)y_row1;
+    (void)y_row2;
+    (void)y_row3;
+    custom_layout(&x, &w, &y_value, &y_row1, &y_row2, &y_row3);
+
+    (void)x;
+    (void)w;
+    clear_rect(0, y_value - 10, ScreenWidth(), 110);
+    if (font_large) {
+        SetFont(font_large, BLACK);
+    }
+    snprintf(label, sizeof(label), "%d min", custom_minutes);
+    draw_centered(y_value, label);
+
+    if (partial) {
+        PartialUpdate(0, y_value - 10, ScreenWidth(), 110);
+    }
+}
+
+static void draw_custom_screen(void)
+{
+    int x, w, y_value, y_row1, y_row2, y_row3;
+    int gap = 18;
+    int half;
+    custom_layout(&x, &w, &y_value, &y_row1, &y_row2, &y_row3);
+    half = (w - gap) / 2;
+
+    ClearScreen();
+    if (font_title) {
+        SetFont(font_title, BLACK);
+    }
+    draw_centered(70, "Vlastni cas vypnuti");
+
+    draw_custom_minutes(0);
+
+    draw_button(x, y_row1, half, 72, "-10");
+    draw_button(x + half + gap, y_row1, half, 72, "+10");
+    draw_button(x, y_row2, half, 72, "-1");
+    draw_button(x + half + gap, y_row2, half, 72, "+1");
+    draw_button(x, y_row3, w, 82, "Start");
+
+    if (font_body) {
+        SetFont(font_body, BLACK);
+    }
+    draw_centered(ScreenHeight() - 70, "Klepnutim mimo tlacitka se vratis.");
+    FullUpdate();
+}
+
+static int in_rect(int px, int py, int x, int y, int w, int h)
+{
+    return px >= x && px <= x + w && py >= y && py <= y + h;
+}
+
+static int handle_custom_touch(int px, int py)
+{
+    int x, w, y_value, y_row1, y_row2, y_row3;
+    int gap = 18;
+    int half;
+    (void)y_value;
+    custom_layout(&x, &w, &y_value, &y_row1, &y_row2, &y_row3);
+    half = (w - gap) / 2;
+
+    if (in_rect(px, py, x, y_row1, half, 72)) {
+        custom_minutes -= 10;
+    } else if (in_rect(px, py, x + half + gap, y_row1, half, 72)) {
+        custom_minutes += 10;
+    } else if (in_rect(px, py, x, y_row2, half, 72)) {
+        custom_minutes -= 1;
+    } else if (in_rect(px, py, x + half + gap, y_row2, half, 72)) {
+        custom_minutes += 1;
+    } else if (in_rect(px, py, x, y_row3, w, 82)) {
+        start_timer(custom_minutes);
+        return 1;
+    } else {
+        custom_mode = 0;
+        draw_screen();
+        open_timer_menu();
+        return 1;
+    }
+
+    if (custom_minutes < 1) {
+        custom_minutes = 1;
+    } else if (custom_minutes > 999) {
+        custom_minutes = 999;
+    }
+    draw_custom_minutes(1);
+    return 1;
+}
+
 static void draw_screen(void)
 {
     int sh = ScreenHeight();
@@ -246,16 +404,8 @@ static void draw_screen(void)
         SetFont(font_body, BLACK);
     }
     if (timer_active) {
-        int left = remaining_seconds();
-        int min = (left + 59) / 60;
-
         draw_centered(165, "Zbyva do vypnuti");
-
-        if (font_large) {
-            SetFont(font_large, BLACK);
-        }
-        snprintf(label, sizeof(label), "%d min", min);
-        draw_centered(255, label);
+        draw_countdown_value(0);
 
         if (font_body) {
             SetFont(font_body, BLACK);
@@ -288,8 +438,12 @@ static int main_handler(int type, int par1, int par2)
         break;
 
     case EVT_REPAINT:
-        draw_screen();
-        if (!timer_active && !menu_opened) {
+        if (custom_mode) {
+            draw_custom_screen();
+        } else {
+            draw_screen();
+        }
+        if (!timer_active && !menu_opened && !custom_mode) {
             open_timer_menu();
         }
         break;
@@ -301,7 +455,10 @@ static int main_handler(int type, int par1, int par2)
             write_log(msg);
         }
 
-        if (timer_active) {
+        if (custom_mode) {
+            handle_custom_touch(par1, par2);
+            return 0;
+        } else if (timer_active) {
             open_control_menu();
             return 0;
         } else {

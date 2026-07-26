@@ -11,9 +11,11 @@ Ucel: spustit casovac pro usinani u audioknihy a po zvolene dobe vypnout ctecku.
 - 30 minut
 - 45 minut
 - 60 minut
-- Cancel
+- vlastni cas nastavitelny tlacitky -10, -1, +1, +10
+- zruseni nebo zmenu aktivniho casovace
 
-Po zvoleni casu aplikace spusti samostatny proces na pozadi, ulozi jeho PID do `/mnt/ext1/system/config/meleys-sleep-timer.pid` a ukonci UI. Proces po uplynuti casu zkusi vypnout zarizeni prikazy `poweroff` / `shutdown`.
+Po zvoleni casu aplikace nastavi nativni PocketBook timer a po uplynuti casu zavola `PowerOff()`.
+Pri aktivnim casovaci zobrazuje zbyvajici minuty a prekresluje jen radek s poctem minut.
 
 ## Build
 
@@ -43,4 +45,3 @@ UI aplikace by melo jit postavit standardne pres SDK. Jedina nejistota je, zda f
 ```
 
 Pak bude potreba zjistit konkretni systemovy prikaz nebo sluzbu pro power-off na InkPad 4.
-
