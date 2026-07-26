@@ -22,6 +22,7 @@ typedef struct {
     int py;
     int moves;
     int pushes;
+    int dir;
 } state_t;
 
 typedef struct {
@@ -333,6 +334,7 @@ static void load_level(int idx)
     }
     level_index = idx;
     memset(&game, 0, sizeof(game));
+    game.dir = DIR_DOWN;
     for (int y = 0; y < MAP_H; ++y) {
         strncpy(game.cells[y], levels[level_index][y], MAP_W);
         game.cells[y][MAP_W] = 0;
@@ -386,6 +388,7 @@ static void move_player(int dir)
             return;
         }
         push_undo();
+        game.dir = dir;
         game.cells[y2][x2] = with_box(c2);
         game.cells[y1][x1] = with_player(floor_of(c1));
         game.cells[game.py][game.px] = floor_of(game.cells[game.py][game.px]);
@@ -396,6 +399,7 @@ static void move_player(int dir)
         box_moved = 1;
     } else {
         push_undo();
+        game.dir = dir;
         game.cells[y1][x1] = with_player(c1);
         game.cells[game.py][game.px] = floor_of(game.cells[game.py][game.px]);
         game.px = x1;
@@ -435,6 +439,56 @@ static void fill_rect(int x, int y, int w, int h)
     }
 }
 
+static void draw_player(int x, int y, int size)
+{
+    int cx = x + size / 2;
+    int cy = y + size / 2;
+    int hx = cx;
+    int hy = cy;
+    int shoulder_x1;
+    int shoulder_y1;
+    int shoulder_x2;
+    int shoulder_y2;
+
+    if (game.dir == DIR_UP) {
+        hy = y + size / 3;
+        shoulder_x1 = cx - size / 4;
+        shoulder_y1 = cy + size / 10;
+        shoulder_x2 = cx + size / 4;
+        shoulder_y2 = cy + size / 10;
+        DrawLine(cx - size / 10, cy + size / 4, cx - size / 5, cy + size / 2, BLACK);
+        DrawLine(cx + size / 10, cy + size / 4, cx + size / 5, cy + size / 2, BLACK);
+    } else if (game.dir == DIR_DOWN) {
+        hy = y + size * 2 / 3;
+        shoulder_x1 = cx - size / 4;
+        shoulder_y1 = cy - size / 10;
+        shoulder_x2 = cx + size / 4;
+        shoulder_y2 = cy - size / 10;
+        DrawLine(cx - size / 10, cy - size / 4, cx - size / 5, y + size / 8, BLACK);
+        DrawLine(cx + size / 10, cy - size / 4, cx + size / 5, y + size / 8, BLACK);
+    } else if (game.dir == DIR_LEFT) {
+        hx = x + size / 3;
+        shoulder_x1 = cx + size / 10;
+        shoulder_y1 = cy - size / 4;
+        shoulder_x2 = cx + size / 10;
+        shoulder_y2 = cy + size / 4;
+        DrawLine(cx + size / 4, cy - size / 10, x + size * 7 / 8, cy - size / 5, BLACK);
+        DrawLine(cx + size / 4, cy + size / 10, x + size * 7 / 8, cy + size / 5, BLACK);
+    } else {
+        hx = x + size * 2 / 3;
+        shoulder_x1 = cx - size / 10;
+        shoulder_y1 = cy - size / 4;
+        shoulder_x2 = cx - size / 10;
+        shoulder_y2 = cy + size / 4;
+        DrawLine(cx - size / 4, cy - size / 10, x + size / 8, cy - size / 5, BLACK);
+        DrawLine(cx - size / 4, cy + size / 10, x + size / 8, cy + size / 5, BLACK);
+    }
+
+    DrawCircle(hx, hy, size / 8, BLACK);
+    DrawCircle(cx, cy, size / 5, BLACK);
+    DrawLine(shoulder_x1, shoulder_y1, shoulder_x2, shoulder_y2, BLACK);
+}
+
 static void draw_tile(int x, int y, int size, char c)
 {
     DrawRect(x, y, size, size, BLACK);
@@ -457,14 +511,7 @@ static void draw_tile(int x, int y, int size, char c)
         }
     }
     if (is_player(c)) {
-        int cx = x + size / 2;
-        int cy = y + size / 2;
-        DrawCircle(cx, y + size / 3, size / 8, BLACK);
-        DrawCircle(cx, cy + size / 9, size / 5, BLACK);
-        DrawLine(cx - size / 4, cy + size / 8, cx - size / 9, cy + size / 8, BLACK);
-        DrawLine(cx + size / 9, cy + size / 8, cx + size / 4, cy + size / 8, BLACK);
-        DrawLine(cx - size / 9, cy + size / 3, cx - size / 5, cy + size / 2, BLACK);
-        DrawLine(cx + size / 9, cy + size / 3, cx + size / 5, cy + size / 2, BLACK);
+        draw_player(x, y, size);
     }
 }
 
