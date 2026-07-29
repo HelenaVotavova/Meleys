@@ -1,0 +1,25 @@
+name: Build PocketBook Reading Journal
+
+on:
+  push:
+    paths:
+      - "pocketbook-reading-journal-native/**"
+      - ".github/workflows/build-pocketbook-reading-journal.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build native PocketBook app
+        run: |
+          docker run --rm \
+            -v "$PWD:/project" \
+            -w /project/pocketbook-reading-journal-native \
+            5keeve/pocketbook-sdk:6.3.0-b288-v1 \
+            -lc 'set -ex; ./build.sh'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HelcinCtenarskyDenik-pocketbook-app
+          path: pocketbook-reading-journal-native/build/HelcinCtenarskyDenik.app
