@@ -1,0 +1,20 @@
+name: Build PocketBook Aladin Weather
+on:
+  push:
+    paths:
+      - "pocketbook-aladin-weather-native/**"
+      - ".github/workflows/build-pocketbook-aladin-weather.yml"
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build native PocketBook weather app
+        run: |
+          docker run --rm -v "$PWD:/project" -w /project/pocketbook-aladin-weather-native \
+            5keeve/pocketbook-sdk:6.3.0-b288-v1 -lc 'set -ex; ./build.sh'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HelcinoPocasi-pocketbook-app
+          path: pocketbook-aladin-weather-native/build/HelcinoPocasi.app
