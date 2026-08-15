@@ -11,9 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build native PocketBook weather app
+        shell: bash
         run: |
+          set +e
           docker run --rm -v "$PWD:/project" -w /project/pocketbook-aladin-weather-native \
-            5keeve/pocketbook-sdk:6.3.0-b288-v1 -lc 'set -ex; ./build.sh'
+            5keeve/pocketbook-sdk:6.3.0-b288-v1 -lc 'set -ex; ./build.sh' 2>&1 | tee /tmp/pocketbook-build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            message=$(tail -40 /tmp/pocketbook-build.log | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error title=PocketBook compiler::$message"
+          fi
+          exit "$status"
       - uses: actions/upload-artifact@v4
         with:
           name: HelcinoPocasi-pocketbook-app
