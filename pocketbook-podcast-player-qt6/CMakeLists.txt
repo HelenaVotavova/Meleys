@@ -23,4 +23,9 @@ pocketbook_add_app(HelcinyPodcastyQt
   QRC qml/app.qrc
   LIBRARIES Qt6::Multimedia
 )
+set_target_properties(HelcinyPodcastyQt PROPERTIES OUTPUT_NAME "HelcinyPodcastyQt.bin")
 
+pocketbook_add_app(HelcinyPodcastyQtLauncher
+  SOURCES src/launcher.cpp
+)
+set_target_properties(HelcinyPodcastyQtLauncher PROPERTIES OUTPUT_NAME "HelcinyPodcastyQt.app")
