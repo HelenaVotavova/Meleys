@@ -26,6 +26,7 @@ jobs:
               cp -L /usr/lib/arm-linux-gnueabi/libQt6Multimedia.so.6 package/HelcinyPodcastyQt-libs/
               find /usr/lib/arm-linux-gnueabi/qt6/plugins/multimedia -type f -name "*.so" \
                 -exec cp -L {} package/HelcinyPodcastyQt-plugins/multimedia/ \;
+              sh ./collect-runtime.sh package
             '
       - uses: actions/upload-artifact@v4
         with:
