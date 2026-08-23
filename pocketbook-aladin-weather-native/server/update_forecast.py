@@ -39,14 +39,14 @@ def recommendation(rows):
     near = rows[:12]
     low, high = min(r[1] for r in near), max(r[1] for r in near)
     rain, gust = max(r[2] for r in near), max(r[4] for r in near)
-    if high < 2: clothes = "Zimni bunda, cepice a rukavice."
-    elif high < 9: clothes = "Tepla bunda a uzavrene boty."
-    elif high < 15: clothes = "Bunda nebo svetr, idealne ve vrstvach."
-    elif high < 21: clothes = "Lehka bunda nebo mikina."
-    else: clothes = "Tricko a lehke obleceni."
-    extra = " Destnik nebo plastenka se budou hodit." if rain >= .4 else ""
-    if gust >= 12: extra += " Pocitej se silnym vetrem."
-    return f"{clothes}{extra} Rozmezi {low:.0f} az {high:.0f} C."
+    if high < 2: clothes = "Vezmi si zimni bundu, cepici a rukavice."
+    elif high < 9: clothes = "Vezmi si teplou bundu a teple boty."
+    elif high < 15: clothes = "Vezmi si bundu nebo teplou mikinu."
+    elif high < 21: clothes = "Vezmi si lehkou mikinu."
+    else: clothes = "Staci tricko a lehke obleceni."
+    extra = " Vezmi si take destnik." if rain >= .4 else ""
+    if gust >= 12: extra += " Bude hodne foukat!"
+    return clothes + extra
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--output", default="public/weather.dat")
