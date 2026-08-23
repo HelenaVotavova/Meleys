@@ -64,6 +64,7 @@ static void start_initializer(void) {
   initializer_pid = fork();
   if (initializer_pid == 0) {
     execl("/ebrmain/cramfs/bin/audio_initializer", "audio_initializer", (char *)NULL);
+    execl("/ebrmain/bin/audio_initializer", "audio_initializer", (char *)NULL);
     _exit(127);
   }
   if (initializer_pid < 0) {
@@ -115,4 +116,3 @@ static int handler(int type, int p1, int p2) {
 }
 
 int main(void) { InkViewMain(handler); return 0; }
-
