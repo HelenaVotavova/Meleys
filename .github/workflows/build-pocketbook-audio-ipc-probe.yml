@@ -18,4 +18,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: PocketBook-Audio-IPC-Probe
-          path: pocketbook-audio-ipc-probe-native/build/AudioIPCProbe.app
+          path: |
+            pocketbook-audio-ipc-probe-native/build/AudioIPCProbe.app
+            pocketbook-audio-ipc-probe-native/build/AudioBackendTest.app

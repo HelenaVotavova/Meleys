@@ -8,4 +8,8 @@ add_executable(AudioIPCProbe.app src/main.c)
 target_include_directories(AudioIPCProbe.app PRIVATE "${INKVIEW_INCLUDE_DIR}" "${FREETYPE_INCLUDE_DIR}")
 target_link_libraries(AudioIPCProbe.app PRIVATE "${INKVIEW_LIBRARY}")
 target_compile_definitions(AudioIPCProbe.app PRIVATE _GNU_SOURCE)
+add_executable(AudioBackendTest.app src/backend_test.c)
+target_include_directories(AudioBackendTest.app PRIVATE "${INKVIEW_INCLUDE_DIR}" "${FREETYPE_INCLUDE_DIR}")
+target_link_libraries(AudioBackendTest.app PRIVATE "${INKVIEW_LIBRARY}")
+target_compile_definitions(AudioBackendTest.app PRIVATE _GNU_SOURCE)
 
