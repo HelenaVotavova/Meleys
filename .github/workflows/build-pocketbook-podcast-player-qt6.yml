@@ -1,0 +1,22 @@
+name: Build PocketBook Qt6 Audio Test
+on:
+  push:
+    paths:
+      - "pocketbook-podcast-player-qt6/**"
+      - ".github/workflows/build-pocketbook-podcast-player-qt6.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Qt6 audio test
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src/pocketbook-podcast-player-qt6 \
+            ghcr.io/fstanis/pocketbook-sdk-qt6-builder \
+            bash -lc 'apt-get update && apt-get install -y --no-install-recommends qt6-multimedia-dev:armel && cmake -B build && cmake --build build -j2'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HelcinyPodcastyQt-audio-test
+          path: pocketbook-podcast-player-qt6/build/HelcinyPodcastyQt.app
