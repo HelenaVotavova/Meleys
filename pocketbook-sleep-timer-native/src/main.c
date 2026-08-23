@@ -246,9 +246,7 @@ static void draw_centered(int y, const char *text)
 
 static void clear_rect(int x, int y, int w, int h)
 {
-    for (int i = 0; i < h; ++i) {
-        DrawLine(x, y + i, x + w, y + i, WHITE);
-    }
+    FillArea(x, y, w, h, WHITE);
 }
 
 static void draw_countdown_value(int partial)
@@ -262,15 +260,15 @@ static void draw_countdown_value(int partial)
     }
     shown_remaining_minutes = min;
 
-    clear_rect(0, 235, ScreenWidth(), 125);
+    clear_rect(0, 350, ScreenWidth(), 125);
     if (font_large) {
         SetFont(font_large, BLACK);
     }
     snprintf(label, sizeof(label), "%d min", min);
-    draw_centered(255, label);
+    draw_centered(370, label);
 
     if (partial) {
-        PartialUpdate(0, 235, ScreenWidth(), 125);
+        PartialUpdate(0, 350, ScreenWidth(), 125);
     }
 }
 
@@ -375,7 +373,6 @@ static int handle_custom_touch(int px, int py)
     } else {
         custom_mode = 0;
         draw_screen();
-        open_timer_menu();
         return 1;
     }
 
@@ -390,8 +387,10 @@ static int handle_custom_touch(int px, int py)
 
 static void draw_screen(void)
 {
-    int sh = ScreenHeight();
+    int sw = ScreenWidth();
     char label[64];
+    static const int values[] = {5, 10, 15, 20, 30, 45, 60};
+    int i, bw = sw > 760 ? 560 : sw - 80, bx = (sw - bw) / 2;
 
     ClearScreen();
 
@@ -404,23 +403,29 @@ static void draw_screen(void)
         SetFont(font_body, BLACK);
     }
     if (timer_active) {
-        draw_centered(165, "Zbyva do vypnuti");
+        DrawCircle(sw / 2, 210, 54, BLACK);
+        FillArea(sw / 2 + 4, 145, 65, 105, WHITE);
+        draw_centered(315, "Zbyva do vypnuti");
         draw_countdown_value(0);
 
         if (font_body) {
             SetFont(font_body, BLACK);
         }
         snprintf(label, sizeof(label), "Nastaveno: %d min", active_minutes);
-        draw_centered(390, label);
-        draw_centered(sh - 70, "Klepnutim otevres volby.");
+        draw_centered(475, label);
+        draw_button(bx, 565, bw, 92, "ZMENIT CAS");
+        draw_button(bx, 685, bw, 92, "ZRUSIT CASOVAC");
 
         FullUpdate();
         return;
     }
 
-    draw_centered(165, "Vyber delku casovace");
-    draw_centered(230, "v nabidce uprostred");
-    draw_centered(sh - 70, "Klepnutim nabidku otevres znovu.");
+    draw_centered(145, "Vyber cas vypnuti");
+    for (i = 0; i < 7; ++i) {
+        snprintf(label, sizeof(label), "%d minut", values[i]);
+        draw_button(bx, 220 + i * 105, bw, 82, label);
+    }
+    draw_button(bx, 965, bw, 88, "VLASTNI CAS");
 
     FullUpdate();
 }
@@ -434,7 +439,6 @@ static int main_handler(int type, int par1, int par2)
         font_body = OpenFont(DEFAULTFONT, 34, 1);
         font_large = OpenFont(DEFAULTFONTB, 78, 1);
         draw_screen();
-        open_timer_menu();
         break;
 
     case EVT_REPAINT:
@@ -442,9 +446,6 @@ static int main_handler(int type, int par1, int par2)
             draw_custom_screen();
         } else {
             draw_screen();
-        }
-        if (!timer_active && !menu_opened && !custom_mode) {
-            open_timer_menu();
         }
         break;
 
@@ -459,10 +460,34 @@ static int main_handler(int type, int par1, int par2)
             handle_custom_touch(par1, par2);
             return 0;
         } else if (timer_active) {
-            open_control_menu();
+            int sw = ScreenWidth();
+            int bw = sw > 760 ? 560 : sw - 80;
+            int bx = (sw - bw) / 2;
+            if (in_rect(par1, par2, bx, 565, bw, 92)) {
+                cancel_timer();
+                draw_screen();
+            } else if (in_rect(par1, par2, bx, 685, bw, 92)) {
+                cancel_timer();
+                Message(ICON_INFORMATION, "Helcin casovac na vypnuti", "Casovac zrusen.", 1500);
+                draw_screen();
+            }
             return 0;
         } else {
-            open_timer_menu();
+            static const int values[] = {5, 10, 15, 20, 30, 45, 60};
+            int sw = ScreenWidth();
+            int bw = sw > 760 ? 560 : sw - 80;
+            int bx = (sw - bw) / 2;
+            int i;
+            for (i = 0; i < 7; ++i) {
+                if (in_rect(par1, par2, bx, 220 + i * 105, bw, 82)) {
+                    start_timer(values[i]);
+                    return 0;
+                }
+            }
+            if (in_rect(par1, par2, bx, 965, bw, 88)) {
+                custom_mode = 1;
+                draw_custom_screen();
+            }
             return 0;
         }
         break;

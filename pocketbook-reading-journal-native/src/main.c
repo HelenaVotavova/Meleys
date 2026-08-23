@@ -35,6 +35,7 @@ static char folder[PATH_LEN] = "/mnt/ext1";
 static ifont *font_title, *font_head, *font_body, *font_small;
 static char keyboard_buf[256];
 static int edit_field;
+static int new_entry, delete_armed;
 
 static int inside(int x, int y, int bx, int by, int bw, int bh) {
     return x >= bx && x < bx + bw && y >= by && y < by + bh;
@@ -47,7 +48,7 @@ static void text_center(const char *s, int y) {
 static void button(int x, int y, int w, int h, const char *label, int dark) {
     if (dark) { FillArea(x, y, w, h, BLACK); SetFont(font_body, WHITE); }
     else { DrawRect(x, y, w, h, BLACK); SetFont(font_body, BLACK); }
-    DrawString(x + (w - StringWidth(label)) / 2, y + (h - 34) / 2, label);
+    DrawTextRect(x + 12, y + 5, w - 24, h - 10, label, ALIGN_CENTER | VALIGN_MIDDLE | DOTS);
 }
 
 static const char *safe(const char *s) { return s ? s : ""; }
@@ -191,7 +192,7 @@ static void add_selected(void) {
 static int visible_count(void) {
     int i, n = 0;
     for (i = 0; i < book_count; ++i)
-        if (filter == ALL || (filter == READING && strcmp(books[i].status, "Dokonceno")) ||
+        if (filter == ALL || (filter == READING && (!strcmp(books[i].status, "Ctu") || !strcmp(books[i].status, "Posloucham"))) ||
             (filter == FINISHED && !strcmp(books[i].status, "Dokonceno"))) n++;
     return n;
 }
@@ -199,7 +200,7 @@ static int visible_count(void) {
 static int visible_index(int pos) {
     int i, n = 0;
     for (i = 0; i < book_count; ++i) {
-        int ok = filter == ALL || (filter == READING && strcmp(books[i].status, "Dokonceno")) ||
+        int ok = filter == ALL || (filter == READING && (!strcmp(books[i].status, "Ctu") || !strcmp(books[i].status, "Posloucham"))) ||
             (filter == FINISHED && !strcmp(books[i].status, "Dokonceno"));
         if (ok && n++ == pos) return i;
     }
@@ -218,12 +219,13 @@ static void draw_home(void) {
     header("Helcin ctenarsky denik", 0);
     SetFont(font_head, BLACK); text_center("Moje knihovna", 135);
     SetFont(font_small, BLACK); text_center("Knihy, e-knihy i audioknihy na jednom miste", 188);
-    button(50, 255, cardw, 92, "Rozectene a rozposlouchane", 1);
-    button(50, 371, cardw, 92, "Dokoncene tituly", 0);
-    button(50, 487, cardw, 92, "+ Pridat titul", 0);
-    button(50, 603, cardw, 92, "Vybrat soubory ve ctecce", 0);
-    button(50, 719, (cardw - 20) / 2, 82, "Import CSV", 0);
-    button(70 + cardw / 2, 719, (cardw - 20) / 2, 82, "Export CSV", 0);
+    button(50, 245, cardw, 82, "Vsechny tituly", 1);
+    button(50, 345, cardw, 82, "Rozectene a rozposlouchane", 0);
+    button(50, 445, cardw, 82, "Dokoncene tituly", 0);
+    button(50, 545, cardw, 82, "+ Pridat titul", 0);
+    button(50, 645, cardw, 82, "Vybrat soubory ve ctecce", 0);
+    button(50, 745, (cardw - 20) / 2, 78, "Import CSV", 0);
+    button(70 + cardw / 2, 745, (cardw - 20) / 2, 78, "Export CSV", 0);
     SetFont(font_small, BLACK);
     { char s[80]; snprintf(s, sizeof(s), "V deniku: %d titulu", book_count); text_center(s, 850); }
 }
@@ -233,9 +235,9 @@ static void draw_list(void) {
     header(filter == FINISHED ? "Dokoncene" : filter == READING ? "Rozectene" : "Vsechny tituly", 1);
     for (i = 0; i < 7 && start + i < n; ++i) {
         int idx = visible_index(start + i), y = 120 + i * 112; entry_t *b = &books[idx];
-        SetFont(font_head, BLACK); DrawString(42, y, b->title);
-        SetFont(font_small, BLACK); DrawString(42, y + 44, b->author[0] ? b->author : "Autor neuveden");
-        DrawString(ScreenWidth() - 190, y + 44, b->type);
+        SetFont(font_head, BLACK); DrawTextRect(42, y, ScreenWidth()-84, 40, b->title, ALIGN_LEFT|DOTS);
+        SetFont(font_small, BLACK); DrawTextRect(42, y + 44, ScreenWidth()-270, 34, b->author[0] ? b->author : "Autor neuveden", ALIGN_LEFT|DOTS);
+        DrawTextRect(ScreenWidth() - 220, y + 44, 178, 34, b->type, ALIGN_RIGHT|DOTS);
         DrawLine(35, y + 94, ScreenWidth() - 35, y + 94, BLACK);
     }
     SetFont(font_small, BLACK);
@@ -247,15 +249,15 @@ static void draw_list(void) {
 static void draw_detail(void) {
     entry_t *b = &books[current]; char s[300]; int y = 140;
     header("Detail titulu", 1);
-    SetFont(font_title, BLACK); DrawString(45, y, b->title); y += 65;
-    SetFont(font_body, BLACK); DrawString(45, y, b->author[0] ? b->author : "Autor neuveden"); y += 62;
+    SetFont(font_title, BLACK); DrawTextRect(45, y, ScreenWidth()-90, 58, b->title, ALIGN_LEFT|DOTS); y += 65;
+    SetFont(font_body, BLACK); DrawTextRect(45, y, ScreenWidth()-90, 50, b->author[0] ? b->author : "Autor neuveden", ALIGN_LEFT|DOTS); y += 62;
     snprintf(s, sizeof(s), "Typ: %s", b->type); DrawString(45, y, s); y += 52;
     snprintf(s, sizeof(s), "Stav: %s", b->status); DrawString(45, y, s); y += 52;
     snprintf(s, sizeof(s), "Postup: %d %%", b->progress); DrawString(45, y, s); y += 52;
     snprintf(s, sizeof(s), "Hodnoceni: %d / 5", b->rating); DrawString(45, y, s); y += 70;
     DrawRect(45, y, ScreenWidth() - 90, 28, BLACK);
     if (b->progress) FillArea(48, y + 3, (ScreenWidth() - 96) * b->progress / 100, 22, BLACK);
-    SetFont(font_small, BLACK); DrawString(45, y + 70, b->note[0] ? b->note : "Bez poznamky");
+    SetFont(font_small, BLACK); DrawTextRect(45, y + 70, ScreenWidth()-90, 150, b->note[0] ? b->note : "Bez poznamky", ALIGN_LEFT|DOTS);
     button(45, ScreenHeight() - 110, ScreenWidth() - 90, 72, "Upravit zaznam", 1);
 }
 
@@ -272,7 +274,8 @@ static void draw_edit(void) {
     snprintf(s, sizeof(s), "Postup: %d %%", b->progress); button(45, 650, w, 68, s, 0);
     SetFont(font_small, BLACK); DrawString(48, 740, "Poznamka");
     button(45, 774, w, 68, b->note[0] ? b->note : "Pridat poznamku", 0);
-    button(45, ScreenHeight() - 100, w, 68, "Ulozit", 1);
+    button(45, 900, (w-20)/2, 72, delete_armed ? "OPRAVDU SMAZAT?" : (new_entry ? "ZRUSIT" : "SMAZAT"), 0);
+    button(65+(w-20)/2, 900, (w-20)/2, 72, "ULOZIT", 1);
 }
 
 static void draw_files(void) {
@@ -284,7 +287,7 @@ static void draw_files(void) {
         DrawRect(38, y + 10, 38, 38, BLACK);
         if (f->dir) { SetFont(font_body, BLACK); DrawString(45, y + 6, ">"); }
         else if (f->selected) { SetFont(font_body, BLACK); DrawString(45, y + 6, "X"); }
-        SetFont(font_body, BLACK); DrawString(95, y, f->name);
+        SetFont(font_body, BLACK); DrawTextRect(95, y, ScreenWidth()-135, 54, f->name, ALIGN_LEFT|VALIGN_MIDDLE|DOTS);
         DrawLine(35, y + 70, ScreenWidth() - 35, y + 70, BLACK);
     }
     snprintf(s, sizeof(s), "Oznaceno: %d", selected_count); SetFont(font_small, BLACK); DrawString(40, ScreenHeight() - 142, s);
@@ -324,7 +327,13 @@ static void new_book(void) {
     copy_field(books[current].type, sizeof(books[current].type), "Kniha");
     copy_field(books[current].status, sizeof(books[current].status), "Chci cist");
     copy_field(books[current].title, sizeof(books[current].title), "Novy titul");
-    view = EDIT;
+    new_entry = 1; delete_armed = 0; view = EDIT;
+}
+
+static void remove_current(void) {
+    if (current < 0 || current >= book_count) return;
+    memmove(&books[current], &books[current+1], (book_count-current-1)*sizeof(books[0]));
+    book_count--; current=-1; new_entry=delete_armed=0; save_db_to(DB_PATH); view=HOME;
 }
 
 static void go_parent(void) {
@@ -339,16 +348,19 @@ static void go_parent(void) {
 static void touch(int x, int y) {
     int w = ScreenWidth(), h = ScreenHeight();
     if (y < 100 && x < 90 && view != HOME) {
-        view = (view == DETAIL || view == FILES || view == BOOK_LIST) ? HOME : DETAIL; repaint(); return;
+        if (view==EDIT && new_entry) { book_count--; current=-1; new_entry=delete_armed=0; view=HOME; }
+        else { delete_armed=0; view = (view == DETAIL || view == FILES || view == BOOK_LIST) ? HOME : DETAIL; }
+        repaint(); return;
     }
     if (view == HOME) {
-        if (inside(x,y,50,255,w-100,92)) { filter=READING; list_page=0; view=BOOK_LIST; }
-        else if (inside(x,y,50,371,w-100,92)) { filter=FINISHED; list_page=0; view=BOOK_LIST; }
-        else if (inside(x,y,50,487,w-100,92)) new_book();
-        else if (inside(x,y,50,603,w-100,92)) { strcpy(folder,"/mnt/ext1"); read_folder(); view=FILES; }
-        else if (inside(x,y,50,719,(w-120)/2,82)) {
+        if (inside(x,y,50,245,w-100,82)) { filter=ALL; list_page=0; view=BOOK_LIST; }
+        else if (inside(x,y,50,345,w-100,82)) { filter=READING; list_page=0; view=BOOK_LIST; }
+        else if (inside(x,y,50,445,w-100,82)) { filter=FINISHED; list_page=0; view=BOOK_LIST; }
+        else if (inside(x,y,50,545,w-100,82)) new_book();
+        else if (inside(x,y,50,645,w-100,82)) { strcpy(folder,"/mnt/ext1"); read_folder(); view=FILES; }
+        else if (inside(x,y,50,745,(w-120)/2,78)) {
             int n=load_csv(IMPORT_PATH,1); if(n>=0){save_db_to(DB_PATH); Message(ICON_INFORMATION,"Import CSV","Import byl dokoncen.",2000);} else Message(ICON_WARNING,"Import CSV","Soubor HelcinDenik-import.csv nebyl nalezen.",3000);
-        } else if (y >= 719) { save_db_to(EXPORT_PATH); Message(ICON_INFORMATION,"Export CSV","Soubor byl ulozen do korenove slozky ctecky.",2500); }
+        } else if (inside(x,y,20+w/2,745,(w-120)/2,78)) { save_db_to(EXPORT_PATH); Message(ICON_INFORMATION,"Export CSV","Soubor byl ulozen do korenove slozky ctecky.",2500); }
     } else if (view == BOOK_LIST) {
         if (y >= 120 && y < 904) { int row=(y-120)/112, idx=visible_index(list_page*7+row); if(idx>=0){current=idx;view=DETAIL;} }
         else if (y > h-110 && x < w/2 && list_page) list_page--;
@@ -364,7 +376,8 @@ static void touch(int x, int y) {
         else if (inside(x,y,45,560,w-90,68)) b->rating=(b->rating+1)%6;
         else if (inside(x,y,45,650,w-90,68)) b->progress=(b->progress+10)%110;
         else if (inside(x,y,45,774,w-90,68)) open_keyboard_field(3,b->note,"Poznamka");
-        else if (y > h-130) { save_db_to(DB_PATH); view=DETAIL; }
+        else if (inside(x,y,45,900,(w-110)/2,72)) { if(new_entry){book_count--;current=-1;new_entry=0;view=HOME;}else if(delete_armed)remove_current();else{delete_armed=1;} }
+        else if (inside(x,y,65+(w-110)/2,900,(w-110)/2,72)) { new_entry=delete_armed=0;save_db_to(DB_PATH);view=DETAIL; }
     } else if (view == FILES) {
         if (y >= 155 && y < 813) {
             int idx=file_page*7+(y-155)/94;
@@ -394,7 +407,7 @@ static int handler(int type, int par1, int par2) {
     } else if (type == EVT_REPAINT) repaint();
     else if (type == EVT_POINTERUP) touch(par1,par2);
     else if (type == EVT_KEYDOWN && par1 == IV_KEY_BACK) {
-        if(view==HOME) CloseApp(); else {view=HOME;repaint();}
+        if(view==HOME) CloseApp(); else if(view==EDIT&&new_entry){book_count--;current=-1;new_entry=delete_armed=0;view=HOME;repaint();}else{delete_armed=0;view=HOME;repaint();}
     } else if (type == EVT_EXIT) {
         save_db_to(DB_PATH); CloseFont(font_title); CloseFont(font_head); CloseFont(font_body); CloseFont(font_small);
     }
