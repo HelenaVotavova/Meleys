@@ -29,9 +29,6 @@ static int load(void){
 }
 static void refresh(void){
  char cmd[800];snprintf(cmd,sizeof cmd,"rm -f '%s'; /bin/busybox wget -q -T 25 -O '%s' '%s' || wget -q -T 25 -O '%s' '%s'; test -s '%s' && mv '%s' '%s'",TMP,TMP,URL,TMP,URL,TMP,TMP,DATA);
- FillArea(35,100,ScreenWidth()-70,55,WHITE);
- text(40,105,ScreenWidth()-80,45,"Obnovuji predpoved pres WiFi...",small,ALIGN_LEFT);
- PartialUpdate(35,100,ScreenWidth()-70,55);
  if(system(cmd)==0){load();page=0;}else snprintf(updated,sizeof(updated),"Chyba spojeni - zkontroluj WiFi");
 }
 static void repaint(void){
@@ -45,7 +42,7 @@ static void repaint(void){
  for(i=0;i<n;i++){Hour*q=&hours[page*12+i];x=left+i*(right-left)/(n-1);py=bottom-(int)((q->temp-minT)/(maxT-minT)*(bottom-top));if(i){Hour*p=&hours[page*12+i-1];px=left+(i-1)*(right-left)/(n-1);int ppy=bottom-(int)((p->temp-minT)/(maxT-minT)*(bottom-top));DrawLine(px,ppy,x,py,BLACK);}FillArea(x-4,py-4,9,9,BLACK);{char s[16];snprintf(s,sizeof s,"%.0f",q->temp);text(x-25,py-43,50,34,s,small,ALIGN_CENTER);}}
  {int ry=675,rh=140;float maxR=1;for(i=0;i<n;i++)if(hours[page*12+i].rain>maxR)maxR=hours[page*12+i].rain;text(25,ry-40,300,35,"SRAZKY (mm/h)",small,ALIGN_LEFT);DrawLine(left,ry+rh,right,ry+rh,BLACK);for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);int bh=(int)(hours[page*12+i].rain/maxR*rh);if(bh)FillArea(x-12,ry+rh-bh,24,bh,BLACK);}}
  {int wy=875;text(25,wy-42,350,35,"VITR / NARAZY (m/s)",small,ALIGN_LEFT);for(i=0;i<n;i++){char s[24];x=left+i*(right-left)/(n-1);snprintf(s,sizeof s,"%.0f/%.0f",hours[page*12+i].wind,hours[page*12+i].gust);text(x-38,wy,76,38,s,tiny,ALIGN_CENTER);}}
- {int by=995,navy=h-192;DrawRect(35,by,w-70,645,BLACK);text(65,by+28,w-130,48,"CO SI VZIT NA SEBE",body,ALIGN_LEFT);text(65,by+105,w-130,500,rec,advice,ALIGN_CENTER|VALIGN_MIDDLE);button(35,navy,240,150,"<");{char s[30];snprintf(s,sizeof s,"%d / %d",page+1,(count+11)/12);text(300,navy,w-600,150,s,body,ALIGN_CENTER|VALIGN_MIDDLE);}button(w-275,navy,240,150,">");}
+ {int by=995,navy=h-192;DrawRect(35,by,w-70,485,BLACK);text(65,by+28,w-130,48,"CO SI VZIT NA SEBE",body,ALIGN_LEFT);text(65,by+90,w-130,355,rec,advice,ALIGN_CENTER|VALIGN_MIDDLE);button(35,navy,240,150,"<");{char s[30];snprintf(s,sizeof s,"%d / %d",page+1,(count+11)/12);text(300,navy,w-600,150,s,body,ALIGN_CENTER|VALIGN_MIDDLE);}button(w-275,navy,240,150,">");}
  FullUpdate();
 }
 static int handler(int type,int p1,int p2){if(type==EVT_INIT){title=OpenFont(DEFAULTFONTB,46,1);body=OpenFont(DEFAULTFONT,32,1);small=OpenFont(DEFAULTFONTB,25,1);tiny=OpenFont(DEFAULTFONT,22,1);advice=OpenFont(DEFAULTFONTB,56,1);load();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP){int w=ScreenWidth(),h=ScreenHeight();if(inside(p1,p2,w-270,24,230,75)){refresh();repaint();}else if(inside(p1,p2,35,h-202,250,170)&&page>0){page--;repaint();}else if(inside(p1,p2,w-285,h-202,250,170)&&(page+1)*12<count){page++;repaint();}}else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK)CloseApp();else if(type==EVT_EXIT){CloseFont(title);CloseFont(body);CloseFont(small);CloseFont(tiny);CloseFont(advice);}return 0;}
