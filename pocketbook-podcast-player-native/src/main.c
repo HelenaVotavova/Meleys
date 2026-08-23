@@ -18,6 +18,7 @@ static Episode ep[MAXE]; static int count,view,feed,page,autoplay,current_audio=
 static char status_text[100]="";
 static const char *feed_ids[]={"karlik","minecraft","otazky"};
 static const char *feed_names[]={"Karlikovy minecrafticke pohadky","Minecraft pribehy na dobrou noc","Same otazky"};
+static void repaint(void);
 
 static void txt(int x,int y,int w,int h,const char*s,ifont*f,int flags){SetFont(f,BLACK);DrawTextRect(x,y,w,h,s,flags|DOTS);}
 static void btn(int x,int y,int w,int h,const char*s,int dark){if(dark){FillArea(x,y,w,h,BLACK);SetFont(f_body,WHITE);}else{DrawRect(x,y,w,h,BLACK);SetFont(f_body,BLACK);}DrawTextRect(x,y+8,w,h-12,s,ALIGN_CENTER|VALIGN_MIDDLE);}
