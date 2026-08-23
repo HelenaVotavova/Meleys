@@ -27,6 +27,13 @@ jobs:
               find /usr/lib/arm-linux-gnueabi/qt6/plugins/multimedia -type f -name "*.so" \
                 -exec cp -L {} package/HelcinyPodcastyQt-plugins/multimedia/ \;
               sh ./collect-runtime.sh package
+              mkdir -p package/HelcinyAudioWorker-libs package/HelcinyAudioWorker-plugins/multimedia
+              cp build/AudioWorkerTest.app build/HelcinyAudioWorker.bin package/
+              cp -L /usr/lib/arm-linux-gnueabi/libQt6Core.so.6 package/HelcinyAudioWorker-libs/
+              cp -L /usr/lib/arm-linux-gnueabi/libQt6Multimedia.so.6 package/HelcinyAudioWorker-libs/
+              find /usr/lib/arm-linux-gnueabi/qt6/plugins/multimedia -type f -name "*.so" \
+                -exec cp -L {} package/HelcinyAudioWorker-plugins/multimedia/ \;
+              sh ./collect-worker-runtime.sh package
             '
       - uses: actions/upload-artifact@v4
         with:

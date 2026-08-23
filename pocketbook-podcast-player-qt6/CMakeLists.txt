@@ -29,3 +29,12 @@ pocketbook_add_app(HelcinyPodcastyQtLauncher
   SOURCES src/launcher.cpp
 )
 set_target_properties(HelcinyPodcastyQtLauncher PROPERTIES OUTPUT_NAME "HelcinyPodcastyQt.app")
+
+add_executable(HelcinyAudioWorker src/audio_worker.cpp)
+set_target_properties(HelcinyAudioWorker PROPERTIES OUTPUT_NAME "HelcinyAudioWorker.bin" SUFFIX "")
+target_link_libraries(HelcinyAudioWorker PRIVATE Qt6::Multimedia Qt6::Core)
+
+add_executable(AudioWorkerTest src/audio_worker_launcher.cpp)
+set_target_properties(AudioWorkerTest PROPERTIES OUTPUT_NAME "AudioWorkerTest.app" SUFFIX "")
+target_link_libraries(AudioWorkerTest PRIVATE PocketBook::InkView)
+target_include_directories(AudioWorkerTest PRIVATE "${POCKETBOOK_SDK_INCLUDE_DIR}" "/usr/include/freetype2")
