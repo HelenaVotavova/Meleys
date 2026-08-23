@@ -32,13 +32,18 @@ int handler(int type, int key, int) {
 int main(int argc, char **argv) {
   std::string self = argc > 0 ? argv[0] : "/mnt/ext1/applications/HelcinyPodcastyQt.app";
   const auto slash = self.find_last_of('/');
-  const std::string dir = slash == std::string::npos ? "." : self.substr(0, slash);
+  std::string dir = slash == std::string::npos ? "." : self.substr(0, slash);
   std::string binary = dir + "/HelcinyPodcastyQt.bin";
   if (access(binary.c_str(), R_OK) != 0) {
-    binary = "/mnt/ext1/applications/HelcinyPodcastyQt.bin";
+    dir = "/mnt/ext1/applications";
+    binary = dir + "/HelcinyPodcastyQt.bin";
   }
   const char *log = "/mnt/ext1/Podcasts/qt-audio-loader.log";
-  std::string command = "QT_DEBUG_PLUGINS=1 '" + binary + "' >'" + log + "' 2>&1";
+  const std::string libs = dir + "/HelcinyPodcastyQt-libs";
+  const std::string plugins = dir + "/HelcinyPodcastyQt-plugins";
+  std::string command = "LD_LIBRARY_PATH='" + libs + ":/ebrmain/lib' "
+                        "QT_PLUGIN_PATH='" + plugins + ":/ebrmain/plugins' "
+                        "QT_DEBUG_PLUGINS=1 '" + binary + "' >'" + log + "' 2>&1";
   const int rc = std::system(command.c_str());
   std::snprintf(report, sizeof(report), "Qt proces skoncil, kod: %d\nSoubor: %s\n\n",
                 rc, binary.c_str());
