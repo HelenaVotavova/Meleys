@@ -1,4 +1,5 @@
 #include <inkview.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,7 @@
 #define ROOT "/mnt/ext1/system/config/helciny-podcasty"
 #define DATA ROOT "/catalog.dat"
 #define CFG ROOT "/settings"
+#define IMAGE_CACHE_V2 ROOT "/images-v2"
 #define BASE "http://38.19.198.69:8093/podcasts/"
 #define MAXE 180
 typedef struct { char feed[16],key[20],title[160],date[40],duration[16],image[80],audio[700]; } Episode;
@@ -18,6 +20,7 @@ static void txt(int x,int y,int w,int h,const char*s,ifont*f,int flags){SetFont(
 static void btn(int x,int y,int w,int h,const char*s,int dark){if(dark){FillArea(x,y,w,h,BLACK);SetFont(f_body,WHITE);}else{DrawRect(x,y,w,h,BLACK);SetFont(f_body,BLACK);}DrawTextRect(x,y+8,w,h-12,s,ALIGN_CENTER|VALIGN_MIDDLE);}
 static int hit(int x,int y,int bx,int by,int bw,int bh){return x>=bx&&x<bx+bw&&y>=by&&y<by+bh;}
 static void mkdirs(void){mkdir(ROOT,0777);mkdir(ROOT "/images",0777);}
+static void migrate_image_cache(void){DIR*d;struct dirent*de;char path[400];FILE*f;if(!access(IMAGE_CACHE_V2,R_OK))return;d=opendir(ROOT "/images");if(d){while((de=readdir(d)))if(strstr(de->d_name,".jpg")){snprintf(path,sizeof path,ROOT "/images/%s",de->d_name);remove(path);}closedir(d);}f=fopen(IMAGE_CACHE_V2,"w");if(f){fputs("2\n",f);fclose(f);}}
 static void save_cfg(void){FILE*f=fopen(CFG,"w");if(f){fprintf(f,"%d\n",autoplay);fclose(f);}}
 static void load_cfg(void){FILE*f=fopen(CFG,"r");if(f){fscanf(f,"%d",&autoplay);fclose(f);}}
 static int split(char*s,char**v,int max){int n=0;while(n<max&&(v[n]=strsep(&s,"|"))!=NULL)n++;return n;}
@@ -32,5 +35,5 @@ static void play_episode(int selected){int ids[5],total=indices(ids);if(selected
 static void play_next(void){int i;if(!autoplay||current_play<0)return;for(i=current_play+1;i<count;i++)if(!strcmp(ep[i].feed,ep[current_play].feed)){play_index(i);return;}}
 static void repaint(void){ClearScreen();if(view==0)draw_home();else draw_list();FullUpdate();}
 static void touch(int x,int y){int w=ScreenWidth(),i;if(view==0){for(i=0;i<3;i++)if(hit(x,y,55,170+i*98,w-110,88)){feed=i;page=0;view=1;repaint();return;}if(hit(x,y,55,480,w-110,88)){autoplay=!autoplay;save_cfg();repaint();}else if(hit(x,y,55,578,w-110,88)){refresh();repaint();}}else{if(y>=130&&y<1155&&x>=40&&x<w-40&&(y-130)%205<175){i=(y-130)/205;if(i<5)play_episode(i);}else if(hit(x,y,35,1165,190,110)){view=0;repaint();}else if(hit(x,y,w-430,1165,190,110)&&page>0){page--;repaint();}else if(hit(x,y,w-230,1165,200,110)){int ids[5];if((page+1)*5<indices(ids)){page++;repaint();}}}}
-static int handler(int type,int p1,int p2){if(type==EVT_INIT){f_title=OpenFont(DEFAULTFONTB,42,1);f_body=OpenFont(DEFAULTFONT,30,1);f_small=OpenFont(DEFAULTFONT,23,1);mkdirs();load_cfg();load_catalog();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP)touch(p1,p2);else if(type==EVT_MP_STATECHANGED&&p1==MP_TRACK_FINISHED)play_next();else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK){if(view){view=0;repaint();}else CloseApp();}else if(type==EVT_EXIT){CloseFont(f_title);CloseFont(f_body);CloseFont(f_small);}return 0;}
+static int handler(int type,int p1,int p2){if(type==EVT_INIT){f_title=OpenFont(DEFAULTFONTB,42,1);f_body=OpenFont(DEFAULTFONT,30,1);f_small=OpenFont(DEFAULTFONT,23,1);mkdirs();migrate_image_cache();load_cfg();load_catalog();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP)touch(p1,p2);else if(type==EVT_MP_STATECHANGED&&p1==MP_TRACK_FINISHED)play_next();else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK){if(view){view=0;repaint();}else CloseApp();}else if(type==EVT_EXIT){CloseFont(f_title);CloseFont(f_body);CloseFont(f_small);}return 0;}
 int main(void){InkViewMain(handler);return 0;}
