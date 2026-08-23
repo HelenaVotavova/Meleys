@@ -18,12 +18,18 @@ static void collect(void) {
     "mkdir -p '" ROOT "'; { "
     "echo '=== COMMANDS ==='; command -v dbus-send; command -v busctl; command -v strings; "
     "echo '=== AUDIO PROCESSES ==='; ps w | grep -Ei 'audio|music|player|mpd' | grep -v grep; "
+    "echo '=== PLAYLIST STATE ==='; "
+    "ls -la /mnt/ext1/system/state/Playlist.tmp /mnt/ext1/Playlists 2>&1; "
+    "file /mnt/ext1/system/state/Playlist.tmp 2>&1; "
+    "echo '-- playlist strings'; strings /mnt/ext1/system/state/Playlist.tmp 2>&1 | head -80; "
+    "echo '-- playlist hex'; od -An -tx1 -N256 /mnt/ext1/system/state/Playlist.tmp 2>&1; "
+    "echo '-- saved playlists'; find /mnt/ext1/Playlists -maxdepth 2 -type f -print 2>&1; "
     "echo '=== DBUS SYSTEM ==='; dbus-send --system --print-reply=literal --dest=org.freedesktop.DBus / org.freedesktop.DBus.ListNames; "
     "echo '=== DBUS SESSION ==='; dbus-send --session --print-reply=literal --dest=org.freedesktop.DBus / org.freedesktop.DBus.ListNames; "
     "echo '=== UNIX SOCKETS ==='; cat /proc/net/unix | grep -Ei 'dbus|audio|music|player|mpd'; "
     "echo '=== BINARY STRINGS ==='; "
     "for f in /ebrmain/bin/music /ebrmain/cramfs/bin/music /ebrmain/cramfs/bin/music_player.app /ebrmain/cramfs/bin/audio_initializer /ebrmain/cramfs/bin/audio_book.app /ebrmain/cramfs/bin/audio_books.app; do "
-    "[ -r \"$f\" ] || continue; echo \"--- $f\"; strings \"$f\" 2>/dev/null | grep -Ei 'org\\.|dbus|mpris|interface|service|playback|playlist' | head -60; done; "
+    "[ -r \"$f\" ] || continue; echo \"--- $f\"; strings \"$f\" 2>/dev/null | grep -Ei 'org\\.|dbus|mpris|service|playlist|loadfile|addtrack|playtrack|command.?line|arguments' | head -60; done; "
     "} >'" LOG "' 2>&1";
   FILE *f;
   mkdir(ROOT, 0777);
@@ -72,4 +78,3 @@ static int handler(int type, int p1, int p2) {
 }
 
 int main(void) { InkViewMain(handler); return 0; }
-
