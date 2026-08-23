@@ -35,14 +35,18 @@ def download_image(args):
     if not url: return ""
     target = OUT / "images" / f"{key}.jpg"
     try:
-        if target.exists() and target.stat().st_size < 120_000: return f"images/{key}.jpg"
-        if target.exists(): raw=target.read_bytes()
+        if target.exists():
+            with Image.open(target) as cached:
+                if cached.mode == "RGB" and target.stat().st_size < 120_000:
+                    return f"images/{key}.jpg"
+            raw=target.read_bytes()
         else:
             req=urllib.request.Request(url,headers={"User-Agent":"MeleysPocketBook/1.0"})
             raw=urllib.request.urlopen(req,timeout=25).read(8_000_001)
         if len(raw)>8_000_000: raise ValueError("image too large")
         with Image.open(io.BytesIO(raw)) as image:
-            image.thumbnail((220,220)); image.convert("L").save(target,"JPEG",quality=72,optimize=True)
+            image.thumbnail((220,220))
+            image.convert("RGB").save(target,"JPEG",quality=75,progressive=False,optimize=False)
         return f"images/{key}.jpg"
     except Exception as exc:
         print(f"image {url}: {exc}"); target.unlink(missing_ok=True); return ""
