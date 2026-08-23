@@ -1,0 +1,21 @@
+name: Build PocketBook Audio IPC Probe
+on:
+  push:
+    paths:
+      - "pocketbook-audio-ipc-probe-native/**"
+      - ".github/workflows/build-pocketbook-audio-ipc-probe.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build probe
+        run: |
+          docker run --rm -v "$PWD:/project" -w /project/pocketbook-audio-ipc-probe-native \
+            5keeve/pocketbook-sdk:6.3.0-b288-v1 -lc 'set -ex; sh ./build.sh'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PocketBook-Audio-IPC-Probe
+          path: pocketbook-audio-ipc-probe-native/build/AudioIPCProbe.app
