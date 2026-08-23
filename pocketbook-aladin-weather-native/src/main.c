@@ -17,7 +17,7 @@ static int inside(int x,int y,int bx,int by,int bw,int bh){return x>=bx&&x<bx+bw
 static void sun(int x,int y,int r){ int i; DrawCircle(x,y,r,BLACK); for(i=0;i<8;i++){double a=i*3.14159/4;DrawLine(x+cos(a)*(r+5),y+sin(a)*(r+5),x+cos(a)*(r+15),y+sin(a)*(r+15),BLACK);}}
 static void cloud(int x,int y){ DrawCircle(x-12,y,15,BLACK);DrawCircle(x+8,y-7,19,BLACK);DrawRect(x-29,y,59,18,BLACK); }
 static void icon(int x,int y,int kind){if(kind==0)sun(x,y,16);else if(kind==1){sun(x-15,y-12,13);cloud(x+5,y+4);}else{cloud(x,y);if(kind==3){DrawLine(x-18,y+24,x-24,y+37,BLACK);DrawLine(x,y+24,x-6,y+37,BLACK);DrawLine(x+18,y+24,x+12,y+37,BLACK);}}}
-static void button(int x,int y,int w,int h,const char*s){DrawRect(x,y,w,h,BLACK);text(x,y+7,w,h-8,s,body,ALIGN_CENTER);}
+static void button(int x,int y,int w,int h,const char*s){DrawRect(x,y,w,h,BLACK);text(x,y,w,h,s,body,ALIGN_CENTER|VALIGN_MIDDLE);}
 
 static int load(void){
  FILE*f=fopen(DATA,"r");char line[512];count=0;if(!f)return 0;
@@ -32,7 +32,7 @@ static void refresh(void){
  Message(ICON_INFORMATION,"Pocasi","Stahuji predpoved pres WiFi...",2500); if(system(cmd)==0){load();page=0;}else Message(ICON_ERROR,"Pocasi","Stazeni selhalo. Zkontroluj WiFi.",4000);
 }
 static void repaint(void){
- int w=ScreenWidth(),h=ScreenHeight(),left=78,right=w-38,top=300,bottom=565,n=count-page*12,i,x,px,py,minT=99,maxT=-99;
+ int w=ScreenWidth(),h=ScreenHeight(),left=78,right=w-38,top=340,bottom=605,n=count-page*12,i,x,px,py,minT=99,maxT=-99;
  if(n>12)n=12;ClearScreen();text(38,30,w-76,65,"Pocasi Brno",title,ALIGN_LEFT);button(w-270,24,230,65,"OBNOVIT");
  {char s[80];snprintf(s,sizeof s,"Aktualizace: %s   Zdroj: CHMI ALADIN",updated);text(40,105,w-80,45,s,small,ALIGN_LEFT);}
  DrawLine(38,160,w-38,160,BLACK);
@@ -40,10 +40,10 @@ static void repaint(void){
  for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);icon(x,205,hours[page*12+i].icon);text(x-38,245,76,40,hours[page*12+i].hour,small,ALIGN_CENTER);if(hours[page*12+i].temp<minT)minT=hours[page*12+i].temp;if(hours[page*12+i].temp>maxT)maxT=hours[page*12+i].temp;}
  if(maxT-minT<3)maxT=minT+3; text(25,top-45,250,35,"TEPLOTA (C)",small,ALIGN_LEFT);DrawLine(left,top,left,bottom,BLACK);DrawLine(left,bottom,right,bottom,BLACK);
  for(i=0;i<n;i++){Hour*q=&hours[page*12+i];x=left+i*(right-left)/(n-1);py=bottom-(int)((q->temp-minT)/(maxT-minT)*(bottom-top));if(i){Hour*p=&hours[page*12+i-1];px=left+(i-1)*(right-left)/(n-1);int ppy=bottom-(int)((p->temp-minT)/(maxT-minT)*(bottom-top));DrawLine(px,ppy,x,py,BLACK);}FillArea(x-4,py-4,9,9,BLACK);{char s[16];snprintf(s,sizeof s,"%.0f",q->temp);text(x-25,py-43,50,34,s,small,ALIGN_CENTER);}}
- {int ry=620,rh=90;float maxR=1;for(i=0;i<n;i++)if(hours[page*12+i].rain>maxR)maxR=hours[page*12+i].rain;text(25,ry-40,300,35,"SRAZKY (mm/h)",small,ALIGN_LEFT);DrawLine(left,ry+rh,right,ry+rh,BLACK);for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);int bh=(int)(hours[page*12+i].rain/maxR*rh);if(bh)FillArea(x-12,ry+rh-bh,24,bh,BLACK);}}
- {int wy=765;text(25,wy-42,350,35,"VITR / NARAZY (m/s)",small,ALIGN_LEFT);for(i=0;i<n;i++){char s[24];x=left+i*(right-left)/(n-1);snprintf(s,sizeof s,"%.0f/%.0f",hours[page*12+i].wind,hours[page*12+i].gust);text(x-38,wy,76,38,s,tiny,ALIGN_CENTER);}}
- {int by=850;DrawRect(35,by,w-70,245,BLACK);text(55,by+18,w-110,40,"CO SI VZIT NA SEBE",small,ALIGN_LEFT);text(55,by+65,w-110,160,rec,advice,ALIGN_LEFT|VALIGN_MIDDLE);button(35,1125,185,82,"<");{char s[30];snprintf(s,sizeof s,"%d / %d",page+1,(count+11)/12);text(230,1135,w-460,62,s,body,ALIGN_CENTER);}button(w-220,1125,185,82,">");}
+ {int ry=675,rh=140;float maxR=1;for(i=0;i<n;i++)if(hours[page*12+i].rain>maxR)maxR=hours[page*12+i].rain;text(25,ry-40,300,35,"SRAZKY (mm/h)",small,ALIGN_LEFT);DrawLine(left,ry+rh,right,ry+rh,BLACK);for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);int bh=(int)(hours[page*12+i].rain/maxR*rh);if(bh)FillArea(x-12,ry+rh-bh,24,bh,BLACK);}}
+ {int wy=875;text(25,wy-42,350,35,"VITR / NARAZY (m/s)",small,ALIGN_LEFT);for(i=0;i<n;i++){char s[24];x=left+i*(right-left)/(n-1);snprintf(s,sizeof s,"%.0f/%.0f",hours[page*12+i].wind,hours[page*12+i].gust);text(x-38,wy,76,38,s,tiny,ALIGN_CENTER);}}
+ {int by=995,navy=h-192;DrawRect(35,by,w-70,645,BLACK);text(65,by+28,w-130,48,"CO SI VZIT NA SEBE",body,ALIGN_LEFT);text(65,by+105,w-130,500,rec,advice,ALIGN_CENTER|VALIGN_MIDDLE);button(35,navy,240,150,"<");{char s[30];snprintf(s,sizeof s,"%d / %d",page+1,(count+11)/12);text(300,navy,w-600,150,s,body,ALIGN_CENTER|VALIGN_MIDDLE);}button(w-275,navy,240,150,">");}
  FullUpdate();
 }
-static int handler(int type,int p1,int p2){if(type==EVT_INIT){title=OpenFont(DEFAULTFONTB,46,1);body=OpenFont(DEFAULTFONT,32,1);small=OpenFont(DEFAULTFONTB,25,1);tiny=OpenFont(DEFAULTFONT,22,1);advice=OpenFont(DEFAULTFONTB,48,1);load();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP){int w=ScreenWidth();if(inside(p1,p2,w-270,24,230,75)){refresh();repaint();}else if(inside(p1,p2,35,1115,200,110)&&page>0){page--;repaint();}else if(inside(p1,p2,w-235,1115,220,110)&&(page+1)*12<count){page++;repaint();}}else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK)CloseApp();else if(type==EVT_EXIT){CloseFont(title);CloseFont(body);CloseFont(small);CloseFont(tiny);CloseFont(advice);}return 0;}
+static int handler(int type,int p1,int p2){if(type==EVT_INIT){title=OpenFont(DEFAULTFONTB,46,1);body=OpenFont(DEFAULTFONT,32,1);small=OpenFont(DEFAULTFONTB,25,1);tiny=OpenFont(DEFAULTFONT,22,1);advice=OpenFont(DEFAULTFONTB,56,1);load();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP){int w=ScreenWidth(),h=ScreenHeight();if(inside(p1,p2,w-270,24,230,75)){refresh();repaint();}else if(inside(p1,p2,35,h-202,250,170)&&page>0){page--;repaint();}else if(inside(p1,p2,w-285,h-202,250,170)&&(page+1)*12<count){page++;repaint();}}else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK)CloseApp();else if(type==EVT_EXIT){CloseFont(title);CloseFont(body);CloseFont(small);CloseFont(tiny);CloseFont(advice);}return 0;}
 int main(void){InkViewMain(handler);return 0;}
