@@ -29,7 +29,10 @@ static int load(void){
 }
 static void refresh(void){
  char cmd[800];snprintf(cmd,sizeof cmd,"rm -f '%s'; /bin/busybox wget -q -T 25 -O '%s' '%s' || wget -q -T 25 -O '%s' '%s'; test -s '%s' && mv '%s' '%s'",TMP,TMP,URL,TMP,URL,TMP,TMP,DATA);
- Message(ICON_INFORMATION,"Pocasi","Stahuji predpoved pres WiFi...",2500); if(system(cmd)==0){load();page=0;}else Message(ICON_ERROR,"Pocasi","Stazeni selhalo. Zkontroluj WiFi.",4000);
+ FillArea(35,100,ScreenWidth()-70,55,WHITE);
+ text(40,105,ScreenWidth()-80,45,"Obnovuji predpoved pres WiFi...",small,ALIGN_LEFT);
+ PartialUpdate(35,100,ScreenWidth()-70,55);
+ if(system(cmd)==0){load();page=0;}else snprintf(updated,sizeof(updated),"Chyba spojeni - zkontroluj WiFi");
 }
 static void repaint(void){
  int w=ScreenWidth(),h=ScreenHeight(),left=78,right=w-38,top=340,bottom=605,n=count-page*12,i,x,px,py,minT=99,maxT=-99;
