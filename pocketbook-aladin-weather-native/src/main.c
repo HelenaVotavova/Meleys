@@ -9,7 +9,7 @@
 #define URL  "http://38.19.198.69:8093/weather.dat"
 #define MAXH 73
 typedef struct { char date[8], hour[4]; float temp,rain,wind,gust,dir; int icon; } Hour;
-static Hour hours[MAXH]; static int count,page; static char updated[32]="-", rec[240]="Predpoved zatim neni stazena.";
+static Hour hours[MAXH]; static int count; static char updated[32]="-", rec[240]="Predpoved zatim neni stazena.";
 static ifont *title,*body,*small,*tiny,*advice;
 
 static void text(int x,int y,int w,int h,const char *s,ifont *f,int flags){ SetFont(f,BLACK); DrawTextRect(x,y,w,h,s,flags); }
@@ -29,21 +29,21 @@ static int load(void){
 }
 static void refresh(void){
  char cmd[800];snprintf(cmd,sizeof cmd,"rm -f '%s'; /bin/busybox wget -q -T 25 -O '%s' '%s' || wget -q -T 25 -O '%s' '%s'; test -s '%s' && mv '%s' '%s'",TMP,TMP,URL,TMP,URL,TMP,TMP,DATA);
- if(system(cmd)==0){load();page=0;}else snprintf(updated,sizeof(updated),"Chyba spojeni - zkontroluj WiFi");
+ if(system(cmd)==0)load();else snprintf(updated,sizeof(updated),"Chyba spojeni - zkontroluj WiFi");
 }
 static void repaint(void){
- int w=ScreenWidth(),h=ScreenHeight(),left=78,right=w-38,top=340,bottom=605,n=count-page*12,i,x,px,py,minT=99,maxT=-99;
+ int w=ScreenWidth(),left=78,right=w-38,top=340,bottom=605,n=count,i,x,px,py,minT=99,maxT=-99;
  if(n>12)n=12;ClearScreen();text(38,30,w-76,65,"Pocasi Brno",title,ALIGN_LEFT);button(w-270,24,230,65,"OBNOVIT");
  {char s[80];snprintf(s,sizeof s,"Aktualizace: %s   Zdroj: CHMI ALADIN",updated);text(40,105,w-80,45,s,small,ALIGN_LEFT);}
  DrawLine(38,160,w-38,160,BLACK);
  if(!count){text(50,260,w-100,150,"Pripoj WiFi a klepni na OBNOVIT.",body,ALIGN_CENTER|VALIGN_MIDDLE);FullUpdate();return;}
- for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);icon(x,205,hours[page*12+i].icon);text(x-38,245,76,40,hours[page*12+i].hour,small,ALIGN_CENTER);if(hours[page*12+i].temp<minT)minT=hours[page*12+i].temp;if(hours[page*12+i].temp>maxT)maxT=hours[page*12+i].temp;}
+ for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);icon(x,205,hours[i].icon);text(x-38,245,76,40,hours[i].hour,small,ALIGN_CENTER);if(hours[i].temp<minT)minT=hours[i].temp;if(hours[i].temp>maxT)maxT=hours[i].temp;}
  if(maxT-minT<3)maxT=minT+3; text(25,top-45,250,35,"TEPLOTA (C)",small,ALIGN_LEFT);DrawLine(left,top,left,bottom,BLACK);DrawLine(left,bottom,right,bottom,BLACK);
- for(i=0;i<n;i++){Hour*q=&hours[page*12+i];x=left+i*(right-left)/(n-1);py=bottom-(int)((q->temp-minT)/(maxT-minT)*(bottom-top));if(i){Hour*p=&hours[page*12+i-1];px=left+(i-1)*(right-left)/(n-1);int ppy=bottom-(int)((p->temp-minT)/(maxT-minT)*(bottom-top));DrawLine(px,ppy,x,py,BLACK);}FillArea(x-4,py-4,9,9,BLACK);{char s[16];snprintf(s,sizeof s,"%.0f",q->temp);text(x-25,py-43,50,34,s,small,ALIGN_CENTER);}}
- {int ry=675,rh=140;float maxR=1;for(i=0;i<n;i++)if(hours[page*12+i].rain>maxR)maxR=hours[page*12+i].rain;text(25,ry-40,300,35,"SRAZKY (mm/h)",small,ALIGN_LEFT);DrawLine(left,ry+rh,right,ry+rh,BLACK);for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);int bh=(int)(hours[page*12+i].rain/maxR*rh);if(bh)FillArea(x-12,ry+rh-bh,24,bh,BLACK);}}
- {int wy=875;text(25,wy-42,350,35,"VITR / NARAZY (m/s)",small,ALIGN_LEFT);for(i=0;i<n;i++){char s[24];x=left+i*(right-left)/(n-1);snprintf(s,sizeof s,"%.0f/%.0f",hours[page*12+i].wind,hours[page*12+i].gust);text(x-38,wy,76,38,s,tiny,ALIGN_CENTER);}}
- {int by=995,navy=h-192;DrawRect(35,by,w-70,485,BLACK);text(65,by+28,w-130,48,"CO SI VZIT NA SEBE",body,ALIGN_LEFT);text(65,by+90,w-130,355,rec,advice,ALIGN_CENTER|VALIGN_MIDDLE);button(35,navy,240,150,"<");{char s[30];snprintf(s,sizeof s,"%d / %d",page+1,(count+11)/12);text(300,navy,w-600,150,s,body,ALIGN_CENTER|VALIGN_MIDDLE);}button(w-275,navy,240,150,">");}
+ for(i=0;i<n;i++){Hour*q=&hours[i];x=left+i*(right-left)/(n-1);py=bottom-(int)((q->temp-minT)/(maxT-minT)*(bottom-top));if(i){Hour*p=&hours[i-1];px=left+(i-1)*(right-left)/(n-1);int ppy=bottom-(int)((p->temp-minT)/(maxT-minT)*(bottom-top));DrawLine(px,ppy,x,py,BLACK);}FillArea(x-4,py-4,9,9,BLACK);{char s[16];snprintf(s,sizeof s,"%.0f",q->temp);text(x-25,py-43,50,34,s,small,ALIGN_CENTER);}}
+ {int ry=675,rh=140;float maxR=1;for(i=0;i<n;i++)if(hours[i].rain>maxR)maxR=hours[i].rain;text(25,ry-40,300,35,"SRAZKY (mm/h)",small,ALIGN_LEFT);DrawLine(left,ry+rh,right,ry+rh,BLACK);for(i=0;i<n;i++){x=left+i*(right-left)/(n-1);int bh=(int)(hours[i].rain/maxR*rh);if(bh)FillArea(x-12,ry+rh-bh,24,bh,BLACK);}}
+ {int wy=875;text(25,wy-42,350,35,"VITR / NARAZY (m/s)",small,ALIGN_LEFT);for(i=0;i<n;i++){char s[24];x=left+i*(right-left)/(n-1);snprintf(s,sizeof s,"%.0f/%.0f",hours[i].wind,hours[i].gust);text(x-38,wy,76,38,s,tiny,ALIGN_CENTER);}}
+ {int by=995;DrawRect(35,by,w-70,485,BLACK);text(65,by+28,w-130,48,"CO SI VZIT NA SEBE",body,ALIGN_LEFT);text(65,by+90,w-130,355,rec,advice,ALIGN_CENTER|VALIGN_MIDDLE);}
  FullUpdate();
 }
-static int handler(int type,int p1,int p2){if(type==EVT_INIT){title=OpenFont(DEFAULTFONTB,46,1);body=OpenFont(DEFAULTFONT,32,1);small=OpenFont(DEFAULTFONTB,25,1);tiny=OpenFont(DEFAULTFONT,22,1);advice=OpenFont(DEFAULTFONTB,56,1);load();repaint();}else if(type==EVT_REPAINT)repaint();else if(type==EVT_POINTERUP){int w=ScreenWidth(),h=ScreenHeight();if(inside(p1,p2,w-270,24,230,75)){refresh();repaint();}else if(inside(p1,p2,35,h-202,250,170)&&page>0){page--;repaint();}else if(inside(p1,p2,w-285,h-202,250,170)&&(page+1)*12<count){page++;repaint();}}else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK)CloseApp();else if(type==EVT_EXIT){CloseFont(title);CloseFont(body);CloseFont(small);CloseFont(tiny);CloseFont(advice);}return 0;}
+static int handler(int type,int p1,int p2){if(type==EVT_INIT){title=OpenFont(DEFAULTFONTB,46,1);body=OpenFont(DEFAULTFONT,32,1);small=OpenFont(DEFAULTFONTB,25,1);tiny=OpenFont(DEFAULTFONT,22,1);advice=OpenFont(DEFAULTFONTB,56,1);load();}else if(type==EVT_REPAINT){repaint();return 1;}else if(type==EVT_POINTERUP){int w=ScreenWidth();if(inside(p1,p2,w-270,24,230,75)){refresh();FlushEvents();repaint();}return 1;}else if(type==EVT_KEYDOWN&&p1==IV_KEY_BACK)CloseApp();else if(type==EVT_EXIT){CloseFont(title);CloseFont(body);CloseFont(small);CloseFont(tiny);CloseFont(advice);}return 0;}
 int main(void){InkViewMain(handler);return 0;}
