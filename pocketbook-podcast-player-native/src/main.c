@@ -9,11 +9,12 @@
 #include <unistd.h>
 
 #define ROOT "/mnt/ext1/system/config/helciny-podcasty"
+#define AUDIO_DIR "/mnt/ext1/Podcasts"
 #define DATA ROOT "/catalog.dat"
 #define CFG ROOT "/settings"
 #define IMAGE_CACHE_V2 ROOT "/images-v2"
-#define AUDIO_TMP ROOT "/online-episode.mp3"
-#define AUDIO_PART ROOT "/online-episode.part"
+#define AUDIO_TMP AUDIO_DIR "/HelcinyPodcasty.mp3"
+#define AUDIO_PART AUDIO_DIR "/HelcinyPodcasty.part"
 #define DEBUG_LOG ROOT "/playback.log"
 #define BASE "http://38.19.198.69:8093/podcasts/"
 #define MAXE 180
@@ -30,7 +31,7 @@ static void load_last_log(void){FILE*f=fopen(DEBUG_LOG,"r");char line[180],last[
 static void txt(int x,int y,int w,int h,const char*s,ifont*f,int flags){SetFont(f,BLACK);DrawTextRect(x,y,w,h,s,flags|DOTS);}
 static void btn(int x,int y,int w,int h,const char*s,int dark){if(dark){FillArea(x,y,w,h,BLACK);SetFont(f_body,WHITE);}else{DrawRect(x,y,w,h,BLACK);SetFont(f_body,BLACK);}DrawTextRect(x,y+8,w,h-12,s,ALIGN_CENTER|VALIGN_MIDDLE);}
 static int hit(int x,int y,int bx,int by,int bw,int bh){return x>=bx&&x<bx+bw&&y>=by&&y<by+bh;}
-static void mkdirs(void){mkdir(ROOT,0777);mkdir(ROOT "/images",0777);}
+static void mkdirs(void){mkdir(ROOT,0777);mkdir(ROOT "/images",0777);mkdir(AUDIO_DIR,0777);}
 static void migrate_image_cache(void){DIR*d;struct dirent*de;char path[400];FILE*f;if(!access(IMAGE_CACHE_V2,R_OK))return;d=opendir(ROOT "/images");if(d){while((de=readdir(d)))if(strstr(de->d_name,".jpg")){snprintf(path,sizeof path,ROOT "/images/%s",de->d_name);remove(path);}closedir(d);}f=fopen(IMAGE_CACHE_V2,"w");if(f){fputs("2\n",f);fclose(f);}}
 static void save_cfg(void){FILE*f=fopen(CFG,"w");if(f){fprintf(f,"%d\n",autoplay);fclose(f);}}
 static void load_cfg(void){FILE*f=fopen(CFG,"r");if(f){fscanf(f,"%d",&autoplay);fclose(f);}}
