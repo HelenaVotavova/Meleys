@@ -9,6 +9,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+/* Debian armel's mpg123 ABI exports the large-file entry point only. */
+extern int mpg123_open_64(mpg123_handle *mh, const char *path);
+
 static snd_pcm_t *open_pcm(unsigned rate) {
   snd_pcm_t *pcm = NULL;
   int rc = snd_pcm_open(&pcm, "hw:0,0", SND_PCM_STREAM_PLAYBACK, 0);
@@ -61,7 +64,7 @@ static int play_mp3(void) {
   decoder = mpg123_new(NULL, &err);
   if (!decoder) return -1;
   mpg123_param(decoder, MPG123_ADD_FLAGS, MPG123_FORCE_STEREO, 0.0);
-  if (mpg123_open(decoder, MP3) != MPG123_OK ||
+  if (mpg123_open_64(decoder, MP3) != MPG123_OK ||
       mpg123_getformat(decoder, &rate, &channels, &encoding) != MPG123_OK) {
     fprintf(stderr, "mpg123 open/format failed: %s\n", mpg123_strerror(decoder));
     mpg123_delete(decoder); mpg123_exit(); return -1;
