@@ -3,14 +3,27 @@
 #include <mpg123.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
 
-#define MP3 "/mnt/ext1/Podcasts/HelcinyPodcasty.mp3"
+#define DEFAULT_MP3 "/mnt/ext1/Podcasts/HelcinyPodcasty.mp3"
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
 /* Debian armel's mpg123 ABI exports the large-file entry point only. */
 extern int mpg123_open_64(mpg123_handle *mh, const char *path);
+static volatile sig_atomic_t stopped;
+static volatile sig_atomic_t paused;
+static volatile sig_atomic_t volume = 70;
+
+static void handle_signal(int signal) {
+  if (signal == SIGTERM || signal == SIGINT) stopped = 1;
+  else if (signal == SIGUSR1) paused = !paused;
+  else if (signal == SIGUSR2 && volume < 100) volume += 10;
+  else if (signal == SIGHUP && volume > 0) volume -= 10;
+}
 
 static snd_pcm_t *open_pcm(unsigned rate) {
   snd_pcm_t *pcm = NULL;
@@ -54,7 +67,7 @@ static int play_tone(void) {
   return 0;
 }
 
-static int play_mp3(void) {
+static int play_mp3(const char *path) {
   mpg123_handle *decoder;
   unsigned char *buffer;
   size_t buffer_size, done;
@@ -64,7 +77,7 @@ static int play_mp3(void) {
   decoder = mpg123_new(NULL, &err);
   if (!decoder) return -1;
   mpg123_param(decoder, MPG123_ADD_FLAGS, MPG123_FORCE_STEREO, 0.0);
-  if (mpg123_open_64(decoder, MP3) != MPG123_OK ||
+  if (mpg123_open_64(decoder, path) != MPG123_OK ||
       mpg123_getformat(decoder, &rate, &channels, &encoding) != MPG123_OK) {
     fprintf(stderr, "mpg123 open/format failed: %s\n", mpg123_strerror(decoder));
     mpg123_delete(decoder); mpg123_exit(); return -1;
@@ -77,8 +90,14 @@ static int play_mp3(void) {
   buffer_size = mpg123_outblock(decoder);
   buffer = malloc(buffer_size);
   fprintf(stderr, "PLAY MP3\n");
-  while (buffer && (err = mpg123_read(decoder, buffer, buffer_size, &done)) != MPG123_DONE) {
+  while (!stopped && buffer && (err = mpg123_read(decoder, buffer, buffer_size, &done)) != MPG123_DONE) {
+    size_t i;
     if (err != MPG123_OK && err != MPG123_NEW_FORMAT) break;
+    while (paused && !stopped) usleep(100000);
+    for (i = 0; i + 1 < done; i += 2) {
+      short *sample = (short *)(buffer + i);
+      *sample = (short)((long)*sample * volume / 100);
+    }
     if (done && write_frames(pcm, (short *)buffer, done / 4)) break;
   }
   snd_pcm_drain(pcm); snd_pcm_close(pcm); free(buffer);
@@ -87,8 +106,18 @@ static int play_mp3(void) {
   return 0;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+  const char *path = argc > 1 ? argv[1] : DEFAULT_MP3;
+  if (argc > 2) {
+    int requested = atoi(argv[2]);
+    if (requested >= 0 && requested <= 100) volume = requested;
+  }
+  signal(SIGTERM, handle_signal); signal(SIGINT, handle_signal);
+  signal(SIGUSR1, handle_signal); signal(SIGUSR2, handle_signal); signal(SIGHUP, handle_signal);
   fprintf(stderr, "ALSA WORKER START\n");
-  if (play_tone()) return 2;
-  return play_mp3() ? 3 : 0;
+  if (argc > 1 && !strcmp(argv[1], "--test")) {
+    if (play_tone()) return 2;
+    path = DEFAULT_MP3;
+  }
+  return play_mp3(path) ? 3 : (stopped ? 4 : 0);
 }

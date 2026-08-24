@@ -24,7 +24,7 @@ int main() {
   std::snprintf(command, sizeof command,
     "{ echo system_alsa:; find /ebrmain /usr/lib /lib -name 'libasound.so*' 2>/dev/null; "
     "LD_LIBRARY_PATH='/ebrmain/lib:/ebrmain/cramfs/lib:/usr/local/lib:/usr/lib:/lib:%s/HelcinyAlsaWorker-libs' "
-    "'%s/HelcinyAlsaWorker.bin'; } >'%s' 2>&1",
+    "'%s/HelcinyAlsaWorker.bin' --test; } >'%s' 2>&1",
     root, root, log);
   int rc = std::system(command);
   std::snprintf(report, sizeof report, "Kod: %d\n\nZaznel ton a potom podcast?\n\n", rc);

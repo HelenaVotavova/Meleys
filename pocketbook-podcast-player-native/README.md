@@ -6,4 +6,6 @@ Nativni katalog pro poslech tri poradu: Karlikovy minecrafticke pohadky, Minecra
 2. `HelcinyPodcasty.app` zkopirujte do slozky `applications`.
 3. Zapnete WiFi, spustte aplikaci a zvolte `OBNOVIT KATALOG`.
 
-Systemovy prehravac InkPad 4 nepodporuje bezpecne prime HTTP/HTTPS adresy. Docasna lokalni kopie zabranuje padu firmwaru a nezustava v knihovne.
+Aplikace pouziva vlastni ALSA prehravac. Vedle `HelcinyPodcasty.app` proto musi byt take
+`HelcinyAlsaWorker.bin` a slozka `HelcinyAlsaWorker-libs` z Qt6 audio artefaktu.
+Vybrana epizoda se uklada pouze jako jedna docasna lokalni kopie.
