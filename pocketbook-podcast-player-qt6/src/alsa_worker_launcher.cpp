@@ -23,7 +23,9 @@ int main() {
   char command[1200];
   std::snprintf(command, sizeof command,
     "{ /ebrmain/bin/audio_initializer; echo initializer_rc=$?; "
-    "LD_LIBRARY_PATH='%s/HelcinyAlsaWorker-libs' '%s/HelcinyAlsaWorker.bin'; } >'%s' 2>&1",
+    "echo system_alsa:; find /ebrmain /usr/lib /lib -name 'libasound.so*' 2>/dev/null; "
+    "LD_LIBRARY_PATH='/ebrmain/lib:/ebrmain/cramfs/lib:/usr/local/lib:/usr/lib:/lib:%s/HelcinyAlsaWorker-libs' "
+    "'%s/HelcinyAlsaWorker.bin'; } >'%s' 2>&1",
     root, root, log);
   int rc = std::system(command);
   std::snprintf(report, sizeof report, "Kod: %d\n\nZaznel ton a potom podcast?\n\n", rc);
@@ -31,4 +33,3 @@ int main() {
   if (file) { size_t used=std::strlen(report); std::fread(report+used,1,sizeof(report)-used-1,file); report[sizeof(report)-1]=0; std::fclose(file); }
   InkViewMain(handler); return 0;
 }
-
