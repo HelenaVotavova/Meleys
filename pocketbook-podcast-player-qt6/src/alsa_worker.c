@@ -5,6 +5,9 @@
 #include <stdlib.h>
 
 #define MP3 "/mnt/ext1/Podcasts/HelcinyPodcasty.mp3"
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 static snd_pcm_t *open_pcm(unsigned rate) {
   snd_pcm_t *pcm = NULL;
@@ -86,4 +89,3 @@ int main(void) {
   if (play_tone()) return 2;
   return play_mp3() ? 3 : 0;
 }
-

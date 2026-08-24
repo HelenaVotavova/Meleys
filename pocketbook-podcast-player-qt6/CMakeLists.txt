@@ -39,11 +39,19 @@ set_target_properties(AudioWorkerTest PROPERTIES OUTPUT_NAME "AudioWorkerTest.ap
 target_link_libraries(AudioWorkerTest PRIVATE PocketBook::InkView)
 target_include_directories(AudioWorkerTest PRIVATE "${POCKETBOOK_SDK_INCLUDE_DIR}" "/usr/include/freetype2")
 
-find_library(ALSA_LIBRARY asound REQUIRED)
-find_library(MPG123_LIBRARY mpg123 REQUIRED)
+add_library(ALSA::ALSA SHARED IMPORTED)
+set_target_properties(ALSA::ALSA PROPERTIES
+  IMPORTED_LOCATION "/usr/lib/arm-linux-gnueabi/libasound.so"
+  INTERFACE_INCLUDE_DIRECTORIES "/usr/include"
+)
+add_library(MPG123::MPG123 SHARED IMPORTED)
+set_target_properties(MPG123::MPG123 PROPERTIES
+  IMPORTED_LOCATION "/usr/lib/arm-linux-gnueabi/libmpg123.so"
+  INTERFACE_INCLUDE_DIRECTORIES "/usr/include"
+)
 add_executable(HelcinyAlsaWorker src/alsa_worker.c)
 set_target_properties(HelcinyAlsaWorker PROPERTIES OUTPUT_NAME "HelcinyAlsaWorker.bin" SUFFIX "")
-target_link_libraries(HelcinyAlsaWorker PRIVATE "${ALSA_LIBRARY}" "${MPG123_LIBRARY}" m)
+target_link_libraries(HelcinyAlsaWorker PRIVATE ALSA::ALSA MPG123::MPG123 m)
 
 add_executable(AlsaWorkerTest src/alsa_worker_launcher.cpp)
 set_target_properties(AlsaWorkerTest PROPERTIES OUTPUT_NAME "AlsaWorkerTest.app" SUFFIX "")
