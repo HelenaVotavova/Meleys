@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Qt6 audio test
         run: |
+          set -o pipefail
           docker run --rm -v "$PWD:/src" -w /src/pocketbook-podcast-player-qt6 \
             ghcr.io/fstanis/pocketbook-sdk-qt6-builder \
             bash -lc '
@@ -39,7 +40,11 @@ jobs:
               cp -L /usr/lib/arm-linux-gnueabi/libasound.so.2 package/HelcinyAlsaWorker-libs/
               cp -L /usr/lib/arm-linux-gnueabi/libmpg123.so.0 package/HelcinyAlsaWorker-libs/
               sh ./collect-alsa-runtime.sh package
-            '
+            ' 2>&1 | tee /tmp/pocketbook-build.log || {
+              error=$(tail -12 /tmp/pocketbook-build.log | tr '\n' ' ')
+              echo "::error::$error"
+              exit 1
+            }
       - uses: actions/upload-artifact@v4
         with:
           name: HelcinyPodcastyQt-audio-test
