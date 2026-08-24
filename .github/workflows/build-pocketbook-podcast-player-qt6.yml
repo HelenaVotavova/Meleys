@@ -18,7 +18,7 @@ jobs:
             bash -lc '
               set -e
               apt-get update
-              apt-get install -y --no-install-recommends qt6-multimedia-dev:armel
+              apt-get install -y --no-install-recommends qt6-multimedia-dev:armel libasound2-dev:armel libmpg123-dev:armel
               cmake -B build
               cmake --build build -j2
               mkdir -p package/HelcinyPodcastyQt-libs package/HelcinyPodcastyQt-plugins/multimedia
@@ -34,6 +34,11 @@ jobs:
               find /usr/lib/arm-linux-gnueabi/qt6/plugins/multimedia -type f -name "*.so" \
                 -exec cp -L {} package/HelcinyAudioWorker-plugins/multimedia/ \;
               sh ./collect-worker-runtime.sh package
+              mkdir -p package/HelcinyAlsaWorker-libs
+              cp build/AlsaWorkerTest.app build/HelcinyAlsaWorker.bin package/
+              cp -L /usr/lib/arm-linux-gnueabi/libasound.so.2 package/HelcinyAlsaWorker-libs/
+              cp -L /usr/lib/arm-linux-gnueabi/libmpg123.so.0 package/HelcinyAlsaWorker-libs/
+              sh ./collect-alsa-runtime.sh package
             '
       - uses: actions/upload-artifact@v4
         with:

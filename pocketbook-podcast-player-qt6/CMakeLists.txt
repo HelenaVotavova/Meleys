@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(helciny-podcasty-qt6 CXX)
+project(helciny-podcasty-qt6 C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,3 +38,14 @@ add_executable(AudioWorkerTest src/audio_worker_launcher.cpp)
 set_target_properties(AudioWorkerTest PROPERTIES OUTPUT_NAME "AudioWorkerTest.app" SUFFIX "")
 target_link_libraries(AudioWorkerTest PRIVATE PocketBook::InkView)
 target_include_directories(AudioWorkerTest PRIVATE "${POCKETBOOK_SDK_INCLUDE_DIR}" "/usr/include/freetype2")
+
+find_library(ALSA_LIBRARY asound REQUIRED)
+find_library(MPG123_LIBRARY mpg123 REQUIRED)
+add_executable(HelcinyAlsaWorker src/alsa_worker.c)
+set_target_properties(HelcinyAlsaWorker PROPERTIES OUTPUT_NAME "HelcinyAlsaWorker.bin" SUFFIX "")
+target_link_libraries(HelcinyAlsaWorker PRIVATE "${ALSA_LIBRARY}" "${MPG123_LIBRARY}" m)
+
+add_executable(AlsaWorkerTest src/alsa_worker_launcher.cpp)
+set_target_properties(AlsaWorkerTest PROPERTIES OUTPUT_NAME "AlsaWorkerTest.app" SUFFIX "")
+target_link_libraries(AlsaWorkerTest PRIVATE PocketBook::InkView)
+target_include_directories(AlsaWorkerTest PRIVATE "${POCKETBOOK_SDK_INCLUDE_DIR}" "/usr/include/freetype2")
