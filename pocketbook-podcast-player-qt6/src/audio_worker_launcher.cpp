@@ -28,9 +28,14 @@ int main() {
   const char *log = "/mnt/ext1/Podcasts/audio-worker.log";
   char command[1400];
   std::snprintf(command, sizeof command,
+    "{ mkdir -p /mnt/ext1/system/config/helciny-audio-home; "
+    "echo 'INITIALIZER'; /ebrmain/bin/audio_initializer; echo initializer_rc=$?; "
+    "echo 'AUDIO SOCKETS'; cat /proc/net/unix | grep -Ei 'pulse|audio|music' || true; "
+    "echo 'ALSA'; cat /proc/asound/cards 2>&1; ls -la /dev/snd 2>&1; "
+    "HOME=/mnt/ext1/system/config/helciny-audio-home "
     "LD_LIBRARY_PATH='%s/HelcinyAudioWorker-libs' "
     "QT_PLUGIN_PATH='%s/HelcinyAudioWorker-plugins' "
-    "'%s/HelcinyAudioWorker.bin' >'%s' 2>&1", root, root, root, log);
+    "'%s/HelcinyAudioWorker.bin'; } >'%s' 2>&1", root, root, root, log);
   const int rc = std::system(command);
   std::snprintf(report, sizeof report,
                 "Kod: %d\n\nSlyseli jste nejprve ton a potom podcast?\n\n", rc);
@@ -44,4 +49,3 @@ int main() {
   InkViewMain(handler);
   return 0;
 }
-
