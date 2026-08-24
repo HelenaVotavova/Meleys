@@ -22,8 +22,7 @@ int main() {
   const char *log = "/mnt/ext1/Podcasts/alsa-worker.log";
   char command[1200];
   std::snprintf(command, sizeof command,
-    "{ /ebrmain/bin/audio_initializer; echo initializer_rc=$?; "
-    "echo system_alsa:; find /ebrmain /usr/lib /lib -name 'libasound.so*' 2>/dev/null; "
+    "{ echo system_alsa:; find /ebrmain /usr/lib /lib -name 'libasound.so*' 2>/dev/null; "
     "LD_LIBRARY_PATH='/ebrmain/lib:/ebrmain/cramfs/lib:/usr/local/lib:/usr/lib:/lib:%s/HelcinyAlsaWorker-libs' "
     "'%s/HelcinyAlsaWorker.bin'; } >'%s' 2>&1",
     root, root, log);
