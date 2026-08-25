@@ -91,6 +91,8 @@ static int play_mp3(const char *path) {
   }
   mpg123_format_none(decoder);
   mpg123_format(decoder, rate, 2, MPG123_ENC_SIGNED_16);
+  fprintf(stderr, "Indexing MP3 for seeking\n");
+  mpg123_scan(decoder);
   total_samples = mpg123_length_64(decoder);
   fprintf(stderr, "MP3 rate=%ld channels=%d encoding=%d\n", rate, channels, encoding);
   pcm = open_pcm((unsigned)rate);
@@ -107,8 +109,9 @@ static int play_mp3(const char *path) {
     if (control) {
       long seconds;
       if (fscanf(control, "%ld", &seconds) == 1 && seconds >= 0) {
-        mpg123_seek_64(decoder, (int64_t)seconds * rate, SEEK_SET);
-        snd_pcm_drop(pcm); snd_pcm_prepare(pcm);
+        int64_t result = mpg123_seek_64(decoder, (int64_t)seconds * rate, SEEK_SET);
+        fprintf(stderr, "seek seconds=%ld result=%lld\n", seconds, (long long)result);
+        if (result >= 0) { snd_pcm_drop(pcm); snd_pcm_prepare(pcm); }
       }
       fclose(control); unlink(SEEK_FILE);
     }
