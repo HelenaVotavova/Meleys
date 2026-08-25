@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #define DEFAULT_MP3 "/mnt/ext1/Podcasts/HelcinyPodcasty.mp3"
-#define SEEK_FILE "/mnt/ext1/system/config/helciny-podcasty/seek"
+#define CONTROL_FILE "/mnt/ext1/system/config/helciny-podcasty/control"
 #define POSITION_FILE "/mnt/ext1/system/config/helciny-podcasty/position"
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -31,6 +31,23 @@ static void handle_signal(int signal) {
   else if (signal == SIGHUP && volume > 0) volume -= 10;
 }
 
+static void process_control(mpg123_handle *decoder, snd_pcm_t *pcm, long rate) {
+  FILE *control = fopen(CONTROL_FILE, "r");
+  char command = 0; long value = 0;
+  if (!control) return;
+  if (fscanf(control, " %c %ld", &command, &value) >= 1) {
+    if (command == 'P') paused = !paused;
+    else if (command == 'V' && value >= 0 && value <= 100) volume = value;
+    else if (command == 'Q') stopped = 1;
+    else if (command == 'S' && value >= 0) {
+      int64_t result = mpg123_seek_64(decoder, (int64_t)value * rate, SEEK_SET);
+      fprintf(stderr, "seek seconds=%ld result=%lld\n", value, (long long)result);
+      if (result >= 0) { snd_pcm_drop(pcm); snd_pcm_prepare(pcm); }
+    }
+  }
+  fclose(control); unlink(CONTROL_FILE);
+}
+
 static snd_pcm_t *open_pcm(unsigned rate) {
   snd_pcm_t *pcm = NULL;
   int rc = snd_pcm_open(&pcm, "hw:0,0", SND_PCM_STREAM_PLAYBACK, 0);
@@ -47,8 +64,14 @@ static snd_pcm_t *open_pcm(unsigned rate) {
 static int write_frames(snd_pcm_t *pcm, const short *data, size_t frames) {
   while (frames) {
     snd_pcm_sframes_t done = snd_pcm_writei(pcm, data, frames);
-    if (done == -EPIPE) { snd_pcm_prepare(pcm); continue; }
-    if (done < 0) { fprintf(stderr, "snd_pcm_writei=%ld %s\n", (long)done, snd_strerror(done)); return -1; }
+    if (done < 0) {
+      int recovered = snd_pcm_recover(pcm, (int)done, 1);
+      fprintf(stderr, "snd_pcm_writei=%ld recover=%d %s\n", (long)done,
+              recovered, snd_strerror((int)done));
+      if (recovered >= 0) continue;
+      return -1;
+    }
+    if (done == 0) { usleep(10000); continue; }
     data += done * 2;
     frames -= (size_t)done;
   }
@@ -102,19 +125,9 @@ static int play_mp3(const char *path) {
   fprintf(stderr, "PLAY MP3\n");
   while (!stopped && buffer && (err = mpg123_read(decoder, buffer, buffer_size, &done)) != MPG123_DONE) {
     size_t i;
-    FILE *control;
     if (err != MPG123_OK && err != MPG123_NEW_FORMAT) break;
-    while (paused && !stopped) usleep(100000);
-    control = fopen(SEEK_FILE, "r");
-    if (control) {
-      long seconds;
-      if (fscanf(control, "%ld", &seconds) == 1 && seconds >= 0) {
-        int64_t result = mpg123_seek_64(decoder, (int64_t)seconds * rate, SEEK_SET);
-        fprintf(stderr, "seek seconds=%ld result=%lld\n", seconds, (long long)result);
-        if (result >= 0) { snd_pcm_drop(pcm); snd_pcm_prepare(pcm); }
-      }
-      fclose(control); unlink(SEEK_FILE);
-    }
+    process_control(decoder, pcm, rate);
+    while (paused && !stopped) { usleep(100000); process_control(decoder, pcm, rate); }
     for (i = 0; i + 1 < done; i += 2) {
       short *sample = (short *)(buffer + i);
       *sample = (short)((long)*sample * volume / 100);
@@ -132,8 +145,8 @@ static int play_mp3(const char *path) {
   }
   snd_pcm_drain(pcm); snd_pcm_close(pcm); free(buffer);
   mpg123_close(decoder); mpg123_delete(decoder); mpg123_exit();
-  fprintf(stderr, "MP3 finished status=%d\n", err);
-  unlink(POSITION_FILE); unlink(SEEK_FILE);
+  fprintf(stderr, "MP3 finished status=%d %s\n", err, mpg123_plain_strerror(err));
+  unlink(POSITION_FILE); unlink(CONTROL_FILE);
   return 0;
 }
 
