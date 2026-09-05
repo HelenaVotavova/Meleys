@@ -6,6 +6,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define MAX_BOOKS 300
 #define MAX_FILES 180
@@ -69,10 +70,15 @@ static int duplicate_path(const char *path) {
     return 0;
 }
 
-static void save_db_to(const char *path) {
-    FILE *f = fopen(path, "w");
-    int i;
-    if (!f) return;
+static int save_db_to(const char *path) {
+    char tmp[PATH_LEN + 8];
+    snprintf(tmp, sizeof(tmp), "%s.tmp", path);
+    FILE *f = fopen(tmp, "w");
+    int i, failed;
+    if (!f) {
+        Message(ICON_WARNING, "Ulozeni selhalo", "Zkontrolujte volne misto. Puvodni soubor zustava zachovan.", 3000);
+        return 0;
+    }
     fputs("typ;nazev;autor;interpret;stav;hodnoceni;postup;zacatek;dokonceni;poznamka;soubor\n", f);
     for (i = 0; i < book_count; ++i) {
         entry_t *b = &books[i];
@@ -80,7 +86,14 @@ static void save_db_to(const char *path) {
             b->type, b->title, b->author, b->narrator, b->status,
             b->rating, b->progress, b->started, b->finished, b->note, b->path);
     }
-    fclose(f);
+    failed = ferror(f);
+    if (fflush(f)) failed = 1;
+    if (fsync(fileno(f))) failed = 1;
+    if (fclose(f)) failed = 1;
+    if (!failed && rename(tmp, path) == 0) return 1;
+    remove(tmp);
+    Message(ICON_WARNING, "Ulozeni selhalo", "Zkontrolujte volne misto. Puvodni soubor zustava zachovan.", 3000);
+    return 0;
 }
 
 static int parse_line(char *line, entry_t *b) {
@@ -101,6 +114,10 @@ static int parse_line(char *line, entry_t *b) {
     copy_field(b->status, sizeof(b->status), n > 4 ? v[4] : "Chci cist");
     b->rating = n > 5 ? atoi(v[5]) : 0;
     b->progress = n > 6 ? atoi(v[6]) : 0;
+    if (b->rating < 0) b->rating = 0;
+    if (b->rating > 5) b->rating = 5;
+    if (b->progress < 0) b->progress = 0;
+    if (b->progress > 100) b->progress = 100;
     if (n > 7) copy_field(b->started, sizeof(b->started), v[7]);
     if (n > 8) copy_field(b->finished, sizeof(b->finished), v[8]);
     if (n > 9) copy_field(b->note, sizeof(b->note), v[9]);
@@ -129,7 +146,7 @@ static int load_csv(const char *path, int merge) {
 
 static int is_audio(const char *name) {
     const char *e = strrchr(name, '.');
-    return e && (!strcasecmp(e, ".mp3") || !strcasecmp(e, ".m4b") ||
+    return e && (!strcasecmp(e, ".mp3") || !strcasecmp(e, ".m4b") || !strcasecmp(e, ".m4a") ||
         !strcasecmp(e, ".ogg") || !strcasecmp(e, ".flac") ||
         !strcasecmp(e, ".aac") || !strcasecmp(e, ".wav"));
 }
@@ -156,7 +173,7 @@ static void read_folder(void) {
     while ((de = readdir(d)) && file_count < MAX_FILES) {
         char path[PATH_LEN]; struct stat st;
         if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) continue;
-        snprintf(path, sizeof(path), "%s/%s", folder, de->d_name);
+        if (snprintf(path, sizeof(path), "%s/%s", folder, de->d_name) >= (int)sizeof(path)) continue;
         if (stat(path, &st)) continue;
         if (!S_ISDIR(st.st_mode) && !supported(de->d_name)) continue;
         copy_field(files[file_count].name, sizeof(files[file_count].name), de->d_name);
@@ -173,7 +190,7 @@ static void add_selected(void) {
     for (i = 0; i < file_count && book_count < MAX_BOOKS; ++i) {
         char path[PATH_LEN]; entry_t *b; bookinfo *info;
         if (!files[i].selected || files[i].dir) continue;
-        snprintf(path, sizeof(path), "%s/%s", folder, files[i].name);
+        if (snprintf(path, sizeof(path), "%s/%s", folder, files[i].name) >= (int)sizeof(path)) continue;
         if (duplicate_path(path)) continue;
         b = &books[book_count]; memset(b, 0, sizeof(*b));
         info = GetBookInfo(path);
@@ -184,7 +201,7 @@ static void add_selected(void) {
         copy_field(b->path, sizeof(b->path), path);
         book_count++; added++;
     }
-    save_db_to(DB_PATH);
+    if (!save_db_to(DB_PATH)) return;
     view = HOME;
     Message(ICON_INFORMATION, "Import dokoncen", added ? "Vybrane tituly byly pridany." : "Nebyl pridan zadny novy titul.", 2500);
 }
@@ -281,7 +298,7 @@ static void draw_edit(void) {
 static void draw_files(void) {
     int i, start = file_page * 7; char s[PATH_LEN + 40];
     header("Vyber soubory", 1);
-    SetFont(font_small, BLACK); snprintf(s, sizeof(s), "Slozka: %s", folder); DrawString(35, 108, s);
+    SetFont(font_small, BLACK); snprintf(s, sizeof(s), "Slozka: %s", folder); DrawTextRect(35,108,ScreenWidth()-70,36,s,ALIGN_LEFT|DOTS);
     for (i = 0; i < 7 && start + i < file_count; ++i) {
         file_t *f = &files[start + i]; int y = 155 + i * 94;
         DrawRect(38, y + 10, 38, 38, BLACK);
@@ -359,8 +376,8 @@ static void touch(int x, int y) {
         else if (inside(x,y,50,545,w-100,82)) new_book();
         else if (inside(x,y,50,645,w-100,82)) { strcpy(folder,"/mnt/ext1"); read_folder(); view=FILES; }
         else if (inside(x,y,50,745,(w-120)/2,78)) {
-            int n=load_csv(IMPORT_PATH,1); if(n>=0){save_db_to(DB_PATH); Message(ICON_INFORMATION,"Import CSV","Import byl dokoncen.",2000);} else Message(ICON_WARNING,"Import CSV","Soubor HelcinDenik-import.csv nebyl nalezen.",3000);
-        } else if (inside(x,y,20+w/2,745,(w-120)/2,78)) { save_db_to(EXPORT_PATH); Message(ICON_INFORMATION,"Export CSV","Soubor byl ulozen do korenove slozky ctecky.",2500); }
+            int n=load_csv(IMPORT_PATH,1); if(n>=0){if(save_db_to(DB_PATH)) Message(ICON_INFORMATION,"Import CSV","Import byl dokoncen.",2000);} else Message(ICON_WARNING,"Import CSV","Soubor HelcinDenik-import.csv nebyl nalezen.",3000);
+        } else if (inside(x,y,20+w/2,745,(w-120)/2,78)) { if(save_db_to(EXPORT_PATH)) Message(ICON_INFORMATION,"Export CSV","Soubor byl ulozen do korenove slozky ctecky.",2500); }
     } else if (view == BOOK_LIST) {
         if (y >= 120 && y < 904) { int row=(y-120)/112, idx=visible_index(list_page*7+row); if(idx>=0){current=idx;view=DETAIL;} }
         else if (y > h-110 && x < w/2 && list_page) list_page--;
@@ -377,14 +394,16 @@ static void touch(int x, int y) {
         else if (inside(x,y,45,650,w-90,68)) b->progress=(b->progress+10)%110;
         else if (inside(x,y,45,774,w-90,68)) open_keyboard_field(3,b->note,"Poznamka");
         else if (inside(x,y,45,900,(w-110)/2,72)) { if(new_entry){book_count--;current=-1;new_entry=0;view=HOME;}else if(delete_armed)remove_current();else{delete_armed=1;} }
-        else if (inside(x,y,65+(w-110)/2,900,(w-110)/2,72)) { new_entry=delete_armed=0;save_db_to(DB_PATH);view=DETAIL; }
+        else if (inside(x,y,65+(w-110)/2,900,(w-110)/2,72)) { if(save_db_to(DB_PATH)){new_entry=delete_armed=0;view=DETAIL;} }
     } else if (view == FILES) {
         if (y >= 155 && y < 813) {
             int idx=file_page*7+(y-155)/94;
             if(idx<file_count){
                 if(files[idx].dir){
                     char next[PATH_LEN];
-                    snprintf(next,sizeof(next),"%s/%s",folder,files[idx].name);
+                    if(snprintf(next,sizeof(next),"%s/%s",folder,files[idx].name)>=(int)sizeof(next)){
+                        Message(ICON_WARNING,"Slozku nelze otevrit","Cesta je prilis dlouha.",2500);return;
+                    }
                     copy_field(folder,sizeof(folder),next);
                     read_folder();
                 }else{
@@ -409,6 +428,7 @@ static int handler(int type, int par1, int par2) {
     else if (type == EVT_KEYDOWN && par1 == IV_KEY_BACK) {
         if(view==HOME) CloseApp(); else if(view==EDIT&&new_entry){book_count--;current=-1;new_entry=delete_armed=0;view=HOME;repaint();}else{delete_armed=0;view=HOME;repaint();}
     } else if (type == EVT_EXIT) {
+        if(new_entry && current==book_count-1)book_count--;
         save_db_to(DB_PATH); CloseFont(font_title); CloseFont(font_head); CloseFont(font_body); CloseFont(font_small);
     }
     return 0;

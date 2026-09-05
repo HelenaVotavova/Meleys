@@ -376,14 +376,16 @@ static void move_player(int dir)
     int old_px = game.px;
     int old_py = game.py;
     int box_moved = 0;
+    if (x1 < 0 || y1 < 0 || x1 >= MAP_W || y1 >= MAP_H) return;
     char c1 = game.cells[y1][x1];
-    char c2 = game.cells[y2][x2];
 
     if (is_wall(c1)) {
         return;
     }
 
     if (is_box(c1)) {
+        if (x2 < 0 || y2 < 0 || x2 >= MAP_W || y2 >= MAP_H) return;
+        char c2 = game.cells[y2][x2];
         if (is_wall(c2) || is_box(c2)) {
             return;
         }
@@ -599,11 +601,25 @@ static void redraw_after_move(int old_px, int old_py, int new_px, int new_py, in
     redraw_cell(old_px, old_py);
     redraw_cell(new_px, new_py);
     redraw_cell(box_x, box_y);
-    PartialUpdate(0, 90, ScreenWidth(), ScreenHeight() - 90);
+    int tile, bx, by;
+    int minx = old_px < new_px ? old_px : new_px;
+    int maxx = old_px > new_px ? old_px : new_px;
+    int miny = old_py < new_py ? old_py : new_py;
+    int maxy = old_py > new_py ? old_py : new_py;
+    if (box_x >= 0 && box_y >= 0) {
+        if (box_x < minx) minx = box_x;
+        if (box_x > maxx) maxx = box_x;
+        if (box_y < miny) miny = box_y;
+        if (box_y > maxy) maxy = box_y;
+    }
+    board_geometry(&tile, &bx, &by);
+    PartialUpdate(0, 96, ScreenWidth(), 42);
+    PartialUpdate(bx + minx * tile, by + miny * tile,
+                  (maxx - minx + 1) * tile + 1, (maxy - miny + 1) * tile + 1);
 }
 
 static imenu game_menu[] = {
-    {ITEM_ACTIVE, 101, "Undo", NULL},
+    {ITEM_ACTIVE, 101, "Vratit tah", NULL},
     {ITEM_ACTIVE, 102, "Restart levelu", NULL},
     {ITEM_ACTIVE, 103, "Dalsi level", NULL},
     {ITEM_ACTIVE, 104, "Predchozi level", NULL},
@@ -700,20 +716,10 @@ static void handle_touch(int x, int y)
         return;
     }
 
-    int sw = ScreenWidth();
-    int sh = ScreenHeight();
-    int usable_w = sw - 80;
-    int usable_h = sh - 250;
-    int tile = usable_w / MAP_W;
-    if (tile > usable_h / MAP_H) {
-        tile = usable_h / MAP_H;
-    }
-    if (tile > 92) {
-        tile = 92;
-    }
-    int board_w = tile * MAP_W;
-    int bx = (sw - board_w) / 2;
-    int by = 150;
+    int tile, bx, by;
+    board_geometry(&tile, &bx, &by);
+    if (x < bx || x >= bx + MAP_W * tile || y < by || y >= by + MAP_H * tile) return;
+    if ((x - bx) / tile == game.px && (y - by) / tile == game.py) return;
     int cx = bx + game.px * tile + tile / 2;
     int cy = by + game.py * tile + tile / 2;
     int adx = x > cx ? x - cx : cx - x;

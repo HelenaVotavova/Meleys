@@ -341,7 +341,7 @@ static void draw_custom_screen(void)
     if (font_body) {
         SetFont(font_body, BLACK);
     }
-    draw_centered(ScreenHeight() - 70, "Klepnutim mimo tlacitka se vratis.");
+    draw_button(x, y_row3 + 105, w, 72, "ZPET");
     FullUpdate();
 }
 
@@ -370,10 +370,12 @@ static int handle_custom_touch(int px, int py)
     } else if (in_rect(px, py, x, y_row3, w, 82)) {
         start_timer(custom_minutes);
         return 1;
-    } else {
+    } else if (in_rect(px, py, x, y_row3 + 105, w, 72)) {
         custom_mode = 0;
         draw_screen();
         return 1;
+    } else {
+        return 0;
     }
 
     if (custom_minutes < 1) {
@@ -449,7 +451,7 @@ static int main_handler(int type, int par1, int par2)
         }
         break;
 
-    case EVT_POINTERDOWN:
+    case EVT_POINTERUP:
         {
             char msg[128];
             snprintf(msg, sizeof(msg), "touch down: x=%d y=%d timer_active=%d", par1, par2, timer_active);
@@ -489,6 +491,15 @@ static int main_handler(int type, int par1, int par2)
                 draw_custom_screen();
             }
             return 0;
+        }
+        break;
+
+    case EVT_KEYDOWN:
+        if (par1 == IV_KEY_BACK && custom_mode) {
+            custom_mode = 0;
+            draw_screen();
+        } else if (par1 == IV_KEY_BACK && !timer_active) {
+            CloseApp();
         }
         break;
 
