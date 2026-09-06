@@ -9,7 +9,6 @@ from PIL import Image
 FEEDS = [
     ("karlik", "Karlikovy minecrafticke pohadky", "https://anchor.fm/s/10958483c/podcast/rss", True),
     ("minecraft", "Minecraft pribehy na dobrou noc", "https://anchor.fm/s/101a549a0/podcast/rss", False),
-    ("otazky", "Same otazky", "https://anchor.fm/s/ea8661c8/podcast/rss", False),
 ]
 OUT = Path(__file__).parent / "public"
 
@@ -62,7 +61,7 @@ def main():
         items=[]
         for item in channel.findall("item"):
             title=clean(item.findtext("title"),150)
-            if hide_bonus and "BONUS" in title.upper(): continue
+            if hide_bonus and any(marker in title.upper() for marker in ("BONUS", "SOUTEZ")): continue
             enclosure=item.find("enclosure"); audio=enclosure.get("url","") if enclosure is not None else ""
             if not audio.startswith(("http://","https://")): continue
             guid=clean(item.findtext("guid") or audio,200)
