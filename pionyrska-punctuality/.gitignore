@@ -1,0 +1,3 @@
+.venv/
+departures.sqlite3
+gtfs.zip

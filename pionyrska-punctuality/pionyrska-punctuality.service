@@ -1,0 +1,15 @@
+[Unit]
+Description=Pionyrska departure punctuality web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meleys
+WorkingDirectory=/home/meleys/Meleys/pionyrska-punctuality
+ExecStart=/home/meleys/Meleys/pionyrska-punctuality/.venv/bin/python app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
