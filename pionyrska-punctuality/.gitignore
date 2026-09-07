@@ -1,3 +1,6 @@
 .venv/
+__pycache__/
 departures.sqlite3
 gtfs.zip
+service.log
+service.pid
