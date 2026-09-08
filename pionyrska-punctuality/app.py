@@ -2,6 +2,7 @@
 import csv
 import io
 import json
+import re
 import sqlite3
 import threading
 import time
@@ -28,9 +29,12 @@ journey_schedule = {}
 test_schedule = {}
 route_labels = {}
 trip_labels = {}
+vehicle_plans = {}
 active_test_runs = {}
 test_target_seen = {}
 leg_target_seen = {}
+tracked_vehicle_state = {}
+TRACKED_VEHICLE = "31054"
 schedule_day = None
 lock = threading.Lock()
 
@@ -57,6 +61,12 @@ def db():
         origin_actual INTEGER, destination_actual INTEGER,
         scheduled INTEGER NOT NULL DEFAULT 1,
         PRIMARY KEY(service_date, trip_id))""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS vehicle_stops(
+        service_date TEXT NOT NULL, trip_key TEXT NOT NULL, trip_id TEXT,
+        line TEXT NOT NULL, destination TEXT NOT NULL, stop_id TEXT NOT NULL,
+        stop_name TEXT NOT NULL, planned INTEGER, first_seen INTEGER NOT NULL,
+        last_seen INTEGER NOT NULL, passed_at INTEGER, latitude REAL, longitude REAL,
+        PRIMARY KEY(service_date, trip_key, stop_id))""")
     return connection
 
 
@@ -88,13 +98,19 @@ def seconds(value):
     return h * 3600 + m * 60 + s
 
 
+def realtime_stop_id(stop_id):
+    match = re.fullmatch(r"U(\d+)Z(\d+)", stop_id)
+    return f"U{int(match.group(1)):05d}Z{int(match.group(2)):02d}" if match else stop_id
+
+
 def load_schedule(day):
-    global schedule, journey_schedule, test_schedule, route_labels, trip_labels, schedule_day
+    global schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day
     if not GTFS.exists() or time.time() - GTFS.stat().st_mtime > 20 * 3600:
         GTFS.write_bytes(fetch(STATIC_URL))
     with zipfile.ZipFile(GTFS) as archive:
         active = active_services(archive, day)
         route_names = {r["route_id"]: r["route_short_name"] for r in csv_rows(archive, "routes.txt")}
+        stop_names = {r["stop_id"]: r["stop_name"] for r in csv_rows(archive, "stops.txt")}
         trip_rows = list(csv_rows(archive, "trips.txt"))
         all_trip_labels = {r["trip_id"]: (route_names.get(r["route_id"], ""), r["trip_headsign"])
                            for r in trip_rows}
@@ -110,7 +126,10 @@ def load_schedule(day):
                     found[row["trip_id"]] = (*trips[row["trip_id"]], planned)
         legs = {}
         tests = {}
+        plans = {}
         for trip, rows in stop_times.items():
+            for row in rows:
+                plans[(trip, realtime_stop_id(row["stop_id"]))] = (seconds(row["arrival_time"]), stop_names.get(row["stop_id"], row["stop_id"]))
             ids = [r["stop_id"] for r in rows]
             line, destination = trips[trip]
             if line == "1" and "U1272Z2" in ids and "U1483Z2" in ids:
@@ -134,7 +153,7 @@ def load_schedule(day):
                     di, target = targets[0]
                     tests[trip] = (line or "?", destination, target, seconds(rows[oi]["departure_time"]), seconds(rows[di]["arrival_time"]))
     with lock:
-        schedule, journey_schedule, test_schedule, route_labels, trip_labels, schedule_day = found, legs, tests, route_names, all_trip_labels, day
+        schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day = found, legs, tests, route_names, all_trip_labels, plans, day
     connection = db()
     connection.executemany("INSERT OR IGNORE INTO departures(service_date,trip_id,line,destination,planned,actual,observed_at) VALUES(?,?,?,?,?,NULL,NULL)",
         [(day.isoformat(), trip, line, destination, planned) for trip, (line, destination, planned) in found.items()])
@@ -189,6 +208,24 @@ def collect_once():
         local = datetime.fromtimestamp(stamp, TZ)
         if local.date() != now.date():
             continue
+        if TRACKED_VEHICLE in {vehicle.vehicle.id, vehicle.vehicle.label}:
+            state = tracked_vehicle_state.get(TRACKED_VEHICLE)
+            trip_key = trip or (state[0] if state else f"vehicle:{TRACKED_VEHICLE}:{stamp}")
+            if state and (state[0] != trip_key or state[1] != vehicle.stop_id):
+                connection = db()
+                connection.execute("UPDATE vehicle_stops SET passed_at=COALESCE(passed_at,?) WHERE service_date=? AND trip_key=? AND stop_id=?",
+                                   (stamp, now.date().isoformat(), state[0], state[1]))
+                connection.commit(); connection.close()
+            details = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "?"), "bez označení"))
+            plan_info = vehicle_plans.get((trip, vehicle.stop_id), (None, vehicle.stop_id))
+            connection = db()
+            connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
+                last_seen=excluded.last_seen,latitude=excluded.latitude,longitude=excluded.longitude""",
+                (now.date().isoformat(), trip_key, trip, details[0] or "?", details[1], vehicle.stop_id,
+                 plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude))
+            connection.commit(); connection.close()
+            tracked_vehicle_state[TRACKED_VEHICLE] = (trip_key, vehicle.stop_id)
         if trip in current and vehicle.stop_id == NEXT_STOP:
             updates.append((stamp, stamp, now.date().isoformat(), trip))
         for (leg_trip, leg), values in current_legs.items():
@@ -302,6 +339,14 @@ def test_runs():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
+def tracked_vehicle():
+    connection = db(); connection.row_factory = sqlite3.Row
+    rows = connection.execute("SELECT * FROM vehicle_stops ORDER BY service_date DESC, first_seen DESC LIMIT 3000").fetchall()
+    connection.close()
+    return {"generated": int(time.time()), "vehicle": TRACKED_VEHICLE, "name": "Lena",
+            "records": [dict(row) for row in rows]}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs): super().__init__(*args, directory=str(ROOT / "web"), **kwargs)
     def do_GET(self):
@@ -317,6 +362,11 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/test-runs":
             body = json.dumps(test_runs(), ensure_ascii=False).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.split("?", 1)[0] == "/api/vehicle-lena":
+            body = json.dumps(tracked_vehicle(), ensure_ascii=False).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
