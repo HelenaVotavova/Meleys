@@ -206,27 +206,30 @@ def collect_once():
             elif key in leg_target_seen:
                 leg_updates.append(("destination", stamp, now.date().isoformat(), trip, leg))
                 leg_target_seen.pop(key, None)
-        if vehicle.stop_id == "U01166Z01":
+        if vehicle.stop_id == "U01166Z01" and vehicle_id not in active_test_runs:
             record_trip = trip or f"vehicle:{vehicle_id}:{stamp}"
             details = current_tests.get(trip)
-            fallback = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "?"), "mimo jízdní řád"))
+            fallback = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "Služební"), "bez označení"))
             line = details[0] if details else fallback[0]
             destination = details[1] if details else fallback[1]
-            expected_target = details[2] if details else ("Vozovna Medlánky" if "Vozovna Medlánky" in destination else "Kořískova")
+            expected_target = details[2] if details else ("Vozovna Medlánky" if "Vozovna Medlánky" in destination else None)
             if line == "6" and expected_target != "Vozovna Medlánky":
                 continue
             connection = db()
-            connection.execute("""INSERT INTO test_runs(service_date,trip_id,vehicle_id,line,destination,origin_actual,scheduled)
-                VALUES(?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_id) DO UPDATE SET
+            connection.execute("""INSERT INTO test_runs(service_date,trip_id,vehicle_id,line,destination,target,origin_actual,scheduled)
+                VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_id) DO UPDATE SET
                 vehicle_id=excluded.vehicle_id, origin_actual=COALESCE(test_runs.origin_actual,excluded.origin_actual)""",
-                (now.date().isoformat(), record_trip, vehicle_id, line, destination, stamp, 1 if details else 0))
+                (now.date().isoformat(), record_trip, vehicle_id, line, destination, expected_target, stamp, 1 if details else 0))
             connection.commit(); connection.close()
             active_test_runs[vehicle_id] = (record_trip, expected_target)
         target_by_stop = {"U01272Z01": "Kořískova", "U01756Z01": "Vozovna Medlánky", "U01756Z03": "Vozovna Medlánky"}
         if vehicle_id in active_test_runs:
             expected_target = active_test_runs[vehicle_id][1]
             reported_target = target_by_stop.get(vehicle.stop_id)
-            if reported_target == expected_target:
+            if reported_target and (expected_target is None or reported_target == expected_target):
+                if expected_target is None:
+                    expected_target = reported_target
+                    active_test_runs[vehicle_id] = (active_test_runs[vehicle_id][0], expected_target)
                 test_target_seen[vehicle_id] = stamp
                 if vehicle.current_status in {0, 1}:
                     finish_test_run(now.date().isoformat(), vehicle_id, stamp, expected_target)
@@ -235,6 +238,13 @@ def collect_once():
     for vehicle_id, last_stamp in list(test_target_seen.items()):
         if vehicle_id not in live_vehicle_ids and active_test_runs.get(vehicle_id, (None, None))[1] == "Vozovna Medlánky":
             finish_test_run(now.date().isoformat(), vehicle_id, last_stamp, "Vozovna Medlánky")
+    for vehicle_id, (record_trip, target) in list(active_test_runs.items()):
+        if vehicle_id not in live_vehicle_ids and vehicle_id not in test_target_seen and record_trip.startswith("vehicle:"):
+            connection = db()
+            connection.execute("DELETE FROM test_runs WHERE service_date=? AND trip_id=? AND destination_actual IS NULL",
+                               (now.date().isoformat(), record_trip))
+            connection.commit(); connection.close()
+            active_test_runs.pop(vehicle_id, None)
     if updates:
         connection = db()
         connection.executemany("UPDATE departures SET actual=COALESCE(actual,?), observed_at=?, estimated=0 WHERE service_date=? AND trip_id=?", updates)
@@ -285,7 +295,9 @@ def journeys():
 
 def test_runs():
     connection = db(); connection.row_factory = sqlite3.Row
-    rows = connection.execute("SELECT * FROM test_runs ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC LIMIT 3000").fetchall()
+    rows = connection.execute("""SELECT * FROM test_runs
+        WHERE scheduled=1 OR target IS NOT NULL OR destination_actual IS NOT NULL
+        ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC LIMIT 3000""").fetchall()
     connection.close()
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
