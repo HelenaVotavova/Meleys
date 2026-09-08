@@ -33,7 +33,10 @@ def db():
     connection.execute("""CREATE TABLE IF NOT EXISTS departures(
         service_date TEXT NOT NULL, trip_id TEXT NOT NULL, line TEXT NOT NULL,
         destination TEXT NOT NULL, planned INTEGER NOT NULL, actual INTEGER,
-        observed_at INTEGER, PRIMARY KEY(service_date, trip_id))""")
+        observed_at INTEGER, estimated INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY(service_date, trip_id))""")
+    if "estimated" not in {row[1] for row in connection.execute("PRAGMA table_info(departures)")}:
+        connection.execute("ALTER TABLE departures ADD COLUMN estimated INTEGER NOT NULL DEFAULT 0")
     return connection
 
 
@@ -83,7 +86,7 @@ def load_schedule(day):
     with lock:
         schedule, schedule_day = found, day
     connection = db()
-    connection.executemany("INSERT OR IGNORE INTO departures VALUES(?,?,?,?,?,NULL,NULL)",
+    connection.executemany("INSERT OR IGNORE INTO departures(service_date,trip_id,line,destination,planned,actual,observed_at) VALUES(?,?,?,?,?,NULL,NULL)",
         [(day.isoformat(), trip, line, destination, planned) for trip, (line, destination, planned) in found.items()])
     connection.commit(); connection.close()
 
@@ -107,7 +110,7 @@ def collect_once():
         if local.date() == now.date(): updates.append((stamp, stamp, now.date().isoformat(), trip))
     if updates:
         connection = db()
-        connection.executemany("UPDATE departures SET actual=COALESCE(actual,?), observed_at=? WHERE service_date=? AND trip_id=?", updates)
+        connection.executemany("UPDATE departures SET actual=COALESCE(actual,?), observed_at=?, estimated=0 WHERE service_date=? AND trip_id=?", updates)
         connection.commit(); connection.close()
 
 
@@ -126,6 +129,7 @@ def stats():
     for row in rows:
         item = dict(row)
         item["delay"] = item["actual"] - (datetime.fromisoformat(item["service_date"]).replace(tzinfo=TZ).timestamp() + item["planned"]) if item["actual"] else None
+        if item["estimated"]: item["destination"] += " · odhad"
         result.append(item)
     return {"generated": int(time.time()), "records": result}
 
