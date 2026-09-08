@@ -354,6 +354,10 @@ def tracked_vehicle(vehicle_code):
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs): super().__init__(*args, directory=str(ROOT / "web"), **kwargs)
+    def end_headers(self):
+        if self.path.split("?", 1)[0].endswith((".html", "/")):
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        super().end_headers()
     def do_GET(self):
         if self.path.split("?", 1)[0] == "/api/stats":
             body = json.dumps(stats(), ensure_ascii=False).encode()
