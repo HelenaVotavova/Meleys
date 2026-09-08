@@ -34,7 +34,7 @@ active_test_runs = {}
 test_target_seen = {}
 leg_target_seen = {}
 tracked_vehicle_state = {}
-TRACKED_VEHICLE = "31054"
+TRACKED_VEHICLES = {"31054": "Lena", "19080": "Helenka", "30650": "Mario", "30660": "Luigi"}
 schedule_day = None
 lock = threading.Lock()
 
@@ -67,6 +67,10 @@ def db():
         stop_name TEXT NOT NULL, planned INTEGER, first_seen INTEGER NOT NULL,
         last_seen INTEGER NOT NULL, passed_at INTEGER, latitude REAL, longitude REAL,
         PRIMARY KEY(service_date, trip_key, stop_id))""")
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(vehicle_stops)")}
+    if "vehicle_code" not in columns:
+        connection.execute("ALTER TABLE vehicle_stops ADD COLUMN vehicle_code TEXT")
+        connection.execute("UPDATE vehicle_stops SET vehicle_code='31054' WHERE vehicle_code IS NULL")
     return connection
 
 
@@ -208,9 +212,10 @@ def collect_once():
         local = datetime.fromtimestamp(stamp, TZ)
         if local.date() != now.date():
             continue
-        if TRACKED_VEHICLE in {vehicle.vehicle.id, vehicle.vehicle.label}:
-            state = tracked_vehicle_state.get(TRACKED_VEHICLE)
-            trip_key = trip or (state[0] if state else f"vehicle:{TRACKED_VEHICLE}:{stamp}")
+        tracked_code = next((code for code in TRACKED_VEHICLES if code in {vehicle.vehicle.id, vehicle.vehicle.label}), None)
+        if tracked_code:
+            state = tracked_vehicle_state.get(tracked_code)
+            trip_key = trip or (state[0] if state else f"vehicle:{tracked_code}:{stamp}")
             if state and (state[0] != trip_key or state[1] != vehicle.stop_id):
                 connection = db()
                 connection.execute("UPDATE vehicle_stops SET passed_at=COALESCE(passed_at,?) WHERE service_date=? AND trip_key=? AND stop_id=?",
@@ -219,13 +224,13 @@ def collect_once():
             details = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "?"), "bez označení"))
             plan_info = vehicle_plans.get((trip, vehicle.stop_id), (None, vehicle.stop_id))
             connection = db()
-            connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
+            connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude,vehicle_code)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
                 last_seen=excluded.last_seen,latitude=excluded.latitude,longitude=excluded.longitude""",
                 (now.date().isoformat(), trip_key, trip, details[0] or "?", details[1], vehicle.stop_id,
-                 plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude))
+                 plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude, tracked_code))
             connection.commit(); connection.close()
-            tracked_vehicle_state[TRACKED_VEHICLE] = (trip_key, vehicle.stop_id)
+            tracked_vehicle_state[tracked_code] = (trip_key, vehicle.stop_id)
         if trip in current and vehicle.stop_id == NEXT_STOP:
             updates.append((stamp, stamp, now.date().isoformat(), trip))
         for (leg_trip, leg), values in current_legs.items():
@@ -339,11 +344,11 @@ def test_runs():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
-def tracked_vehicle():
+def tracked_vehicle(vehicle_code):
     connection = db(); connection.row_factory = sqlite3.Row
-    rows = connection.execute("SELECT * FROM vehicle_stops ORDER BY service_date DESC, first_seen DESC LIMIT 3000").fetchall()
+    rows = connection.execute("SELECT * FROM vehicle_stops WHERE vehicle_code=? ORDER BY service_date DESC, first_seen DESC LIMIT 3000", (vehicle_code,)).fetchall()
     connection.close()
-    return {"generated": int(time.time()), "vehicle": TRACKED_VEHICLE, "name": "Lena",
+    return {"generated": int(time.time()), "vehicle": vehicle_code, "name": TRACKED_VEHICLES.get(vehicle_code, vehicle_code),
             "records": [dict(row) for row in rows]}
 
 
@@ -366,7 +371,15 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/vehicle-lena":
-            body = json.dumps(tracked_vehicle(), ensure_ascii=False).encode()
+            body = json.dumps(tracked_vehicle("31054"), ensure_ascii=False).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.startswith("/api/vehicle/"):
+            vehicle_code = self.path.split("?", 1)[0].rsplit("/", 1)[-1]
+            if vehicle_code not in TRACKED_VEHICLES:
+                self.send_error(404); return
+            body = json.dumps(tracked_vehicle(vehicle_code), ensure_ascii=False).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
