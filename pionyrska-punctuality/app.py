@@ -29,6 +29,7 @@ test_schedule = {}
 route_labels = {}
 trip_labels = {}
 active_test_runs = {}
+test_target_seen = {}
 schedule_day = None
 lock = threading.Lock()
 
@@ -143,7 +144,23 @@ def load_schedule(day):
         destination=excluded.destination, target=excluded.target, origin_planned=excluded.origin_planned,
         destination_planned=excluded.destination_planned, scheduled=1""",
         [(day.isoformat(), trip, *values) for trip, values in tests.items()])
+    for trip_id, vehicle_id, target in connection.execute("""SELECT trip_id,vehicle_id,target FROM test_runs
+            WHERE service_date=? AND origin_actual IS NOT NULL AND destination_actual IS NULL AND vehicle_id IS NOT NULL""", (day.isoformat(),)):
+        active_test_runs[vehicle_id] = (trip_id, target)
     connection.commit(); connection.close()
+
+
+def finish_test_run(day, vehicle_id, stamp, target):
+    record_trip = active_test_runs.get(vehicle_id, (None, None))[0]
+    if not record_trip:
+        return
+    connection = db()
+    connection.execute("""UPDATE test_runs SET destination_actual=COALESCE(destination_actual,?),
+        target=COALESCE(target,?) WHERE service_date=? AND trip_id=?""",
+        (stamp, target, day, record_trip))
+    connection.commit(); connection.close()
+    active_test_runs.pop(vehicle_id, None)
+    test_target_seen.pop(vehicle_id, None)
 
 
 def collect_once():
@@ -159,12 +176,14 @@ def collect_once():
         current_routes = dict(route_labels)
         current_trip_labels = dict(trip_labels)
     leg_updates = []
+    live_vehicle_ids = set()
     for entity in feed.entity:
         if not entity.HasField("vehicle"):
             continue
         vehicle = entity.vehicle
         trip = vehicle.trip.trip_id
         vehicle_id = vehicle.vehicle.id or vehicle.vehicle.label or entity.id
+        live_vehicle_ids.add(vehicle_id)
         stamp = int(vehicle.timestamp or feed.header.timestamp or time.time())
         local = datetime.fromtimestamp(stamp, TZ)
         if local.date() != now.date():
@@ -196,13 +215,18 @@ def collect_once():
             connection.commit(); connection.close()
             active_test_runs[vehicle_id] = (record_trip, expected_target)
         target_by_stop = {"U01272Z01": "Kořískova", "U01756Z01": "Vozovna Medlánky", "U01756Z03": "Vozovna Medlánky"}
-        if vehicle_id in active_test_runs and vehicle.stop_id in target_by_stop and vehicle.current_status == 1 and target_by_stop[vehicle.stop_id] == active_test_runs[vehicle_id][1]:
-            connection = db()
-            connection.execute("""UPDATE test_runs SET destination_actual=COALESCE(destination_actual,?),
-                target=COALESCE(target,?) WHERE service_date=? AND trip_id=?""",
-                (stamp, target_by_stop[vehicle.stop_id], now.date().isoformat(), active_test_runs[vehicle_id][0]))
-            connection.commit(); connection.close()
-            active_test_runs.pop(vehicle_id, None)
+        if vehicle_id in active_test_runs:
+            expected_target = active_test_runs[vehicle_id][1]
+            reported_target = target_by_stop.get(vehicle.stop_id)
+            if reported_target == expected_target:
+                test_target_seen[vehicle_id] = stamp
+                if vehicle.current_status in {0, 1}:
+                    finish_test_run(now.date().isoformat(), vehicle_id, stamp, expected_target)
+            elif vehicle_id in test_target_seen:
+                finish_test_run(now.date().isoformat(), vehicle_id, stamp, expected_target)
+    for vehicle_id, last_stamp in list(test_target_seen.items()):
+        if vehicle_id not in live_vehicle_ids and active_test_runs.get(vehicle_id, (None, None))[1] == "Vozovna Medlánky":
+            finish_test_run(now.date().isoformat(), vehicle_id, last_stamp, "Vozovna Medlánky")
     if updates:
         connection = db()
         connection.executemany("UPDATE departures SET actual=COALESCE(actual,?), observed_at=?, estimated=0 WHERE service_date=? AND trip_id=?", updates)
