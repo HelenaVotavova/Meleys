@@ -100,7 +100,7 @@ def load_schedule(day):
             if line == "1" and "U1272Z2" in ids and "U1483Z2" in ids:
                 oi, di = ids.index("U1272Z2"), ids.index("U1483Z2")
                 origin = seconds(rows[oi]["departure_time"])
-                if oi < di and 6 * 3600 + 30 * 60 <= origin <= 7 * 3600 + 45 * 60:
+                if oi < di and 6 * 3600 + 45 * 60 <= origin <= 7 * 3600 + 45 * 60:
                     legs[(trip, "tram")] = (line, destination, origin, seconds(rows[di]["arrival_time"]), "U01167Z02", "U01483Z02")
             if line in {"25", "26"} and "U1483Z6" in ids and "U1055Z2" in ids:
                 oi, di = ids.index("U1483Z6"), ids.index("U1055Z2")
@@ -187,7 +187,9 @@ def stats():
 
 def journeys():
     connection = db(); connection.row_factory = sqlite3.Row
-    rows = connection.execute("SELECT * FROM journey_legs ORDER BY service_date DESC, origin_planned").fetchall()
+    rows = connection.execute("""SELECT * FROM journey_legs
+        WHERE leg != 'tram' OR origin_planned >= ?
+        ORDER BY service_date DESC, origin_planned""", (6 * 3600 + 45 * 60,)).fetchall()
     connection.close()
     return {"generated": int(time.time()), "transfer_seconds": 240, "deadline": 7 * 3600 + 50 * 60,
             "records": [dict(row) for row in rows]}
