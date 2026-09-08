@@ -186,6 +186,8 @@ def collect_once():
             line = details[0] if details else fallback[0]
             destination = details[1] if details else fallback[1]
             expected_target = details[2] if details else ("Vozovna Medlánky" if "Vozovna Medlánky" in destination else "Kořískova")
+            if line == "6" and expected_target != "Vozovna Medlánky":
+                continue
             connection = db()
             connection.execute("""INSERT INTO test_runs(service_date,trip_id,vehicle_id,line,destination,origin_actual,scheduled)
                 VALUES(?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_id) DO UPDATE SET
