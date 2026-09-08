@@ -104,9 +104,10 @@ def load_schedule(day):
                     legs[(trip, "tram")] = (line, destination, origin, seconds(rows[di]["arrival_time"]), "U01167Z02", "U01483Z02")
             if line in {"25", "26"} and "U1483Z6" in ids and "U1055Z2" in ids:
                 oi, di = ids.index("U1483Z6"), ids.index("U1055Z2")
+                origin = seconds(rows[oi]["departure_time"])
                 arrival = seconds(rows[di]["arrival_time"])
-                if oi < di and 7 * 3600 <= arrival <= 7 * 3600 + 50 * 60:
-                    legs[(trip, "trolley")] = (line, destination, seconds(rows[oi]["departure_time"]), arrival, NEXT_STOP, "U01055Z02")
+                if oi < di and 7 * 3600 <= origin <= 8 * 3600 + 15 * 60:
+                    legs[(trip, "trolley")] = (line, destination, origin, arrival, NEXT_STOP, "U01055Z02")
     with lock:
         schedule, journey_schedule, schedule_day = found, legs, day
     connection = db()
@@ -167,7 +168,13 @@ def collector():
 
 def stats():
     connection = db(); connection.row_factory = sqlite3.Row
-    rows = connection.execute("SELECT * FROM departures WHERE planned BETWEEN ? AND ? ORDER BY service_date DESC, planned DESC LIMIT 1000", (7 * 3600, 8 * 3600 + 15 * 60)).fetchall()
+    rows = connection.execute("""SELECT d.*, j.destination_planned AS arrival_planned,
+        j.destination_actual AS arrival_actual
+        FROM departures d LEFT JOIN journey_legs j
+        ON j.service_date=d.service_date AND j.trip_id=d.trip_id AND j.leg='trolley'
+        WHERE d.planned BETWEEN ? AND ?
+        ORDER BY d.service_date DESC, d.planned DESC LIMIT 1000""",
+        (7 * 3600, 8 * 3600 + 15 * 60)).fetchall()
     connection.close()
     result = []
     for row in rows:
