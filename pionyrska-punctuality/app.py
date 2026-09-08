@@ -30,6 +30,7 @@ route_labels = {}
 trip_labels = {}
 active_test_runs = {}
 test_target_seen = {}
+leg_target_seen = {}
 schedule_day = None
 lock = threading.Lock()
 
@@ -196,8 +197,15 @@ def collect_once():
             origin_next, destination_stop = values[4], values[5]
             if vehicle.stop_id == origin_next:
                 leg_updates.append(("origin", stamp, now.date().isoformat(), trip, leg))
-            if vehicle.stop_id == destination_stop and vehicle.current_status == 1:
+            key = (trip, leg)
+            if vehicle.stop_id == destination_stop:
+                leg_target_seen[key] = stamp
+                if vehicle.current_status in {0, 1}:
+                    leg_updates.append(("destination", stamp, now.date().isoformat(), trip, leg))
+                    leg_target_seen.pop(key, None)
+            elif key in leg_target_seen:
                 leg_updates.append(("destination", stamp, now.date().isoformat(), trip, leg))
+                leg_target_seen.pop(key, None)
         if vehicle.stop_id == "U01166Z01":
             record_trip = trip or f"vehicle:{vehicle_id}:{stamp}"
             details = current_tests.get(trip)
