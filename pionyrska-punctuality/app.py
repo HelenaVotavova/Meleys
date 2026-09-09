@@ -34,7 +34,14 @@ active_test_runs = {}
 test_target_seen = {}
 leg_target_seen = {}
 tracked_vehicle_state = {}
-TRACKED_VEHICLES = {"31054": "Lena", "19080": "Helenka", "30650": "Mario", "30660": "Luigi"}
+TRACKED_VEHICLES = {
+    "31054": "Lena", "19080": "Helenka", "30650": "Mario", "30660": "Luigi",
+    "16010": "Planeta her (dříve)", "11200": "Hvězdárna Brno",
+    "19130": "Maruška", "19220": "Anička", "19250": "Eliška", "19290": "Karolínka",
+    "19380": "Královo Pole - Karel Höger", "19410": "Medlánky - Vlastimil Bubník",
+    "19420": "Řečkovice - Jan Hruška", "19480": "Žabovřesky - Dušan Samo Jurkovič",
+    "19300": "Bohuslav Fuchs",
+}
 schedule_day = None
 lock = threading.Lock()
 
@@ -235,7 +242,7 @@ def collect_once():
             latitude, longitude = vehicle.position.latitude, vehicle.position.longitude
             if not (48.9 <= latitude <= 49.5 and 16.2 <= longitude <= 17.0):
                 latitude, longitude = plan_info[2], plan_info[3]
-            if not (tracked_code in {"31054", "30650", "30660"} and vehicle.stop_id.startswith("U") and plan_info[0] is None):
+            if not (tracked_code != "19080" and vehicle.stop_id.startswith("U") and plan_info[0] is None):
                 connection = db()
                 connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude,vehicle_code)
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
