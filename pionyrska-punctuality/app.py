@@ -121,7 +121,11 @@ def load_schedule(day):
         trips = {r["trip_id"]: all_trip_labels[r["trip_id"]] for r in trip_rows if r["service_id"] in active}
         found = {}
         stop_times = {}
+        plans = {}
         for row in csv_rows(archive, "stop_times.txt"):
+            if row["trip_id"] in all_trip_labels:
+                plans[(row["trip_id"], realtime_stop_id(row["stop_id"]))] = (
+                    seconds(row["arrival_time"]), stop_names.get(row["stop_id"], row["stop_id"]))
             if row["trip_id"] in trips:
                 stop_times.setdefault(row["trip_id"], []).append(row)
             if row["trip_id"] in trips and trips[row["trip_id"]][0] in {"25", "26"} and row["stop_id"] == STOP:
@@ -130,10 +134,7 @@ def load_schedule(day):
                     found[row["trip_id"]] = (*trips[row["trip_id"]], planned)
         legs = {}
         tests = {}
-        plans = {}
         for trip, rows in stop_times.items():
-            for row in rows:
-                plans[(trip, realtime_stop_id(row["stop_id"]))] = (seconds(row["arrival_time"]), stop_names.get(row["stop_id"], row["stop_id"]))
             ids = [r["stop_id"] for r in rows]
             line, destination = trips[trip]
             if line == "1" and "U1272Z2" in ids and "U1483Z2" in ids:
@@ -159,6 +160,11 @@ def load_schedule(day):
     with lock:
         schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day = found, legs, tests, route_names, all_trip_labels, plans, day
     connection = db()
+    missing_vehicle_stops = connection.execute(
+        "SELECT rowid,trip_id,stop_id FROM vehicle_stops WHERE planned IS NULL AND trip_id IS NOT NULL").fetchall()
+    vehicle_updates = [(plans[(trip_id, stop_id)][0], plans[(trip_id, stop_id)][1], rowid)
+                       for rowid, trip_id, stop_id in missing_vehicle_stops if (trip_id, stop_id) in plans]
+    connection.executemany("UPDATE vehicle_stops SET planned=?,stop_name=? WHERE rowid=?", vehicle_updates)
     connection.executemany("INSERT OR IGNORE INTO departures(service_date,trip_id,line,destination,planned,actual,observed_at) VALUES(?,?,?,?,?,NULL,NULL)",
         [(day.isoformat(), trip, line, destination, planned) for trip, (line, destination, planned) in found.items()])
     connection.executemany("INSERT OR IGNORE INTO journey_legs(service_date,trip_id,leg,line,destination,origin_planned,destination_planned) VALUES(?,?,?,?,?,?,?)",
