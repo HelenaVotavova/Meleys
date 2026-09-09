@@ -12,13 +12,14 @@ Program každých 5 sekund měří:
 - magnetické pole,
 - zrychlení, rotaci a orientaci.
 
-Výsledky ukládá do `space_garden.csv`. Běh trvá 8 minut 30 sekund, takže má
-rezervu před soutěžním limitem 10 minut.
+Výsledky ukládá do `space_garden.csv`. Osm minut sbírá data a celkový běh je
+nastaven na devět minut, takže má rezervu před soutěžním limitem 10 minut.
 
-Každých 30 sekund také vyfotí Zemi. Vysvětlitelná analýza barev odhadne podíl
+Každých 12 sekund také vyfotí Zemi. Vysvětlitelná analýza barev odhadne podíl
 moře, mraků a pevniny a zapíše jej do `earth_analysis.csv`. Program uchová
-nejvýše 18 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších záběrů
-a časový barevný pás `colours_of_earth.png`.
+nejvýše 40 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších záběrů
+a časový barevný pás `colours_of_earth.png`. Celkem tak uchová nejvýše 42
+obrazových souborů, což je maximum povolené pravidly.
 
 Nakonec vytvoří také anglický textový výstup `result.txt`. Ten komentuje
 průměry, rozsahy a stabilitu měření a stručně shrne obsah snímků.

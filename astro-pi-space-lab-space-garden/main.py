@@ -9,7 +9,11 @@ import numpy as np
 from picamzero import Camera
 from sense_hat import SenseHat
 
-RUN_SECONDS, SAMPLE_SECONDS, PHOTO_SECONDS = 510, 5, 30
+COLLECTION_SECONDS = 8 * 60
+TOTAL_SECONDS = 9 * 60
+SAMPLE_SECONDS = 5
+PHOTO_SECONDS = 12
+MAX_PHOTOS = 40
 ROOT = Path(__file__).parent
 
 
@@ -122,7 +126,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
     sensor_data, photo_data = writer(sensors), writer(images)
     sensor_data.writerow(sensor_header)
     photo_data.writerow(photo_header)
-    while monotonic() - start < RUN_SECONDS:
+    while monotonic() - start < COLLECTION_SECONDS:
         sample_start = monotonic()
         elapsed = sample_start - start
         red, green, blue, clear = sense.color.colour
@@ -145,7 +149,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
         ])
         sensors.flush()
 
-        if elapsed >= next_photo and photo_number < 18:
+        if elapsed >= next_photo and photo_number < MAX_PHOTOS:
             photo_number += 1
             path = ROOT / f"earth_{photo_number:02d}.jpg"
             try:
@@ -159,7 +163,9 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
                     round(result["earth"], 2), *result["colour"], round(result["score"], 2),
                 ])
                 images.flush()
-            except (OSError, ValueError, cv2.error):
+            # Replay Online can raise a browser JsException outside Exception
+            # when a historical image download temporarily fails.
+            except BaseException:
                 path.unlink(missing_ok=True)
             next_photo += PHOTO_SECONDS
 
@@ -169,4 +175,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
 
 create_visuals(photos)
 create_report(samples, photos)
+remaining = TOTAL_SECONDS - (monotonic() - start)
+if remaining > 0:
+    sleep(remaining)
 sense.clear()
