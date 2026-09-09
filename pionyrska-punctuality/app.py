@@ -114,7 +114,9 @@ def load_schedule(day):
     with zipfile.ZipFile(GTFS) as archive:
         active = active_services(archive, day)
         route_names = {r["route_id"]: r["route_short_name"] for r in csv_rows(archive, "routes.txt")}
-        stop_names = {r["stop_id"]: r["stop_name"] for r in csv_rows(archive, "stops.txt")}
+        stop_rows = list(csv_rows(archive, "stops.txt"))
+        stop_names = {r["stop_id"]: r["stop_name"] for r in stop_rows}
+        stop_coordinates = {r["stop_id"]: (float(r["stop_lat"]), float(r["stop_lon"])) for r in stop_rows}
         trip_rows = list(csv_rows(archive, "trips.txt"))
         all_trip_labels = {r["trip_id"]: (route_names.get(r["route_id"], ""), r["trip_headsign"])
                            for r in trip_rows}
@@ -125,7 +127,8 @@ def load_schedule(day):
         for row in csv_rows(archive, "stop_times.txt"):
             if row["trip_id"] in all_trip_labels:
                 plans[(row["trip_id"], realtime_stop_id(row["stop_id"]))] = (
-                    seconds(row["arrival_time"]), stop_names.get(row["stop_id"], row["stop_id"]))
+                    seconds(row["arrival_time"]), stop_names.get(row["stop_id"], row["stop_id"]),
+                    *stop_coordinates.get(row["stop_id"], (None, None)))
             if row["trip_id"] in trips:
                 stop_times.setdefault(row["trip_id"], []).append(row)
             if row["trip_id"] in trips and trips[row["trip_id"]][0] in {"25", "26"} and row["stop_id"] == STOP:
@@ -228,16 +231,17 @@ def collect_once():
                                    (stamp, now.date().isoformat(), state[0], state[1]))
                 connection.commit(); connection.close()
             details = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "?"), "bez označení"))
-            plan_info = vehicle_plans.get((trip, vehicle.stop_id), (None, vehicle.stop_id))
-            if tracked_code == "30650" and plan_info[1] == "Soukopova":
-                plan_info = (plan_info[0], "Soukupova")
+            plan_info = vehicle_plans.get((trip, vehicle.stop_id), (None, vehicle.stop_id, None, None))
+            latitude, longitude = vehicle.position.latitude, vehicle.position.longitude
+            if not (48.9 <= latitude <= 49.5 and 16.2 <= longitude <= 17.0):
+                latitude, longitude = plan_info[2], plan_info[3]
             if not (tracked_code in {"31054", "30650", "30660"} and vehicle.stop_id.startswith("U") and plan_info[0] is None):
                 connection = db()
                 connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude,vehicle_code)
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
                     last_seen=excluded.last_seen,latitude=excluded.latitude,longitude=excluded.longitude""",
                     (now.date().isoformat(), trip_key, trip, details[0] or "?", details[1], vehicle.stop_id,
-                     plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude, tracked_code))
+                     plan_info[1], plan_info[0], stamp, stamp, latitude, longitude, tracked_code))
                 connection.commit(); connection.close()
                 tracked_vehicle_state[tracked_code] = (trip_key, vehicle.stop_id)
         if trip in current and vehicle.stop_id == NEXT_STOP:
