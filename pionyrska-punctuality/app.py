@@ -313,7 +313,7 @@ def stats():
         FROM departures d LEFT JOIN journey_legs j
         ON j.service_date=d.service_date AND j.trip_id=d.trip_id AND j.leg='trolley'
         WHERE d.planned BETWEEN ? AND ?
-        ORDER BY d.service_date DESC, d.planned DESC LIMIT 1000""",
+        ORDER BY d.service_date DESC, d.planned DESC""",
         (7 * 3600, 8 * 3600 + 15 * 60)).fetchall()
     connection.close()
     result = []
@@ -339,14 +339,14 @@ def test_runs():
     connection = db(); connection.row_factory = sqlite3.Row
     rows = connection.execute("""SELECT * FROM test_runs
         WHERE scheduled=1 OR target IS NOT NULL OR destination_actual IS NOT NULL
-        ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC LIMIT 3000""").fetchall()
+        ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC""").fetchall()
     connection.close()
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
 def tracked_vehicle(vehicle_code):
     connection = db(); connection.row_factory = sqlite3.Row
-    rows = connection.execute("SELECT * FROM vehicle_stops WHERE vehicle_code=? ORDER BY service_date DESC, first_seen DESC LIMIT 3000", (vehicle_code,)).fetchall()
+    rows = connection.execute("SELECT * FROM vehicle_stops WHERE vehicle_code=? ORDER BY service_date DESC, first_seen DESC", (vehicle_code,)).fetchall()
     connection.close()
     return {"generated": int(time.time()), "vehicle": vehicle_code, "name": TRACKED_VEHICLES.get(vehicle_code, vehicle_code),
             "records": [dict(row) for row in rows]}
