@@ -20,6 +20,9 @@ moře, mraků a pevniny a zapíše jej do `earth_analysis.csv`. Program uchová
 nejvýše 18 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších záběrů
 a časový barevný pás `colours_of_earth.png`.
 
+Nakonec vytvoří také anglický textový výstup `result.txt`. Ten komentuje
+průměry, rozsahy a stabilitu měření a stručně shrne obsah snímků.
+
 Barevné rozpoznání je pracovní hypotéza. Před odesláním je potřeba výsledky
 porovnat s fotografiemi v Replay Toolu a doladit prahové hodnoty.
 

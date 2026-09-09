@@ -1,6 +1,7 @@
 from csv import writer
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import mean, pstdev
 from time import monotonic, sleep
 
 import cv2
@@ -61,6 +62,45 @@ def create_visuals(photos):
     cv2.imwrite(str(ROOT / "earth_panorama.jpg"), cv2.hconcat(tiles))
 
 
+def create_report(samples, photos):
+    def summary(key, unit):
+        numbers = [sample[key] for sample in samples]
+        return (f"{key.replace('_', ' ').title()}: mean {mean(numbers):.2f}{unit}, "
+                f"range {min(numbers):.2f}-{max(numbers):.2f}{unit}, "
+                f"variation {pstdev(numbers):.2f}{unit}.")
+
+    lines = [
+        "SPACE GARDEN AND COLOURS OF EARTH - AUTOMATIC REPORT",
+        "",
+        f"The experiment collected {len(samples)} sensor samples and {len(photos)} Earth images.",
+        summary("temperature", " C"),
+        summary("humidity", " %"),
+        summary("pressure", " hPa"),
+        summary("light", ""),
+        summary("acceleration", " g"),
+        "",
+    ]
+    if samples:
+        stable = pstdev([sample["temperature"] for sample in samples]) < 0.5
+        lines.append("The measured temperature was " + ("stable." if stable else "changing during the experiment."))
+    if photos:
+        lines.extend([
+            f"Estimated mean image coverage: sea {mean(p['sea'] for p in photos):.1f}%, "
+            f"cloud {mean(p['cloud'] for p in photos):.1f}%, land {mean(p['land'] for p in photos):.1f}%.",
+            "These image classes are estimates based on colour and brightness, not confirmed labels.",
+            "The clearest selected views are combined in earth_panorama.jpg.",
+            "The sequence of average Earth colours is saved in colours_of_earth.png.",
+        ])
+    else:
+        lines.append("No Earth image was successfully analysed.")
+    lines.extend([
+        "",
+        "Conclusion: compare the sensor ranges with the images to investigate whether changes in "
+        "light and station movement coincide with the observed colours of Earth.",
+    ])
+    (ROOT / "result.txt").write_text("\n".join(lines), encoding="utf-8")
+
+
 sense, camera = SenseHat(), Camera()
 sense.color.gain, sense.color.integration_cycles = 4, 64
 sense.clear(0, 20, 0)
@@ -75,7 +115,7 @@ photo_header = [
     "land_percent", "earth_in_frame_percent", "average_red", "average_green",
     "average_blue", "quality_score",
 ]
-start, next_photo, photo_number, photos = monotonic(), 0, 0, []
+start, next_photo, photo_number, photos, samples = monotonic(), 0, 0, [], []
 
 with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sensors, \
         (ROOT / "earth_analysis.csv").open("w", newline="", encoding="utf-8") as images:
@@ -88,11 +128,18 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
         red, green, blue, clear = sense.color.colour
         orientation = sense.get_orientation_degrees()
         now = datetime.now(timezone.utc).isoformat()
+        temperature = round(sense.get_temperature(), 2)
+        humidity = round(sense.get_humidity(), 2)
+        pressure = round(sense.get_pressure(), 2)
+        acceleration = xyz(sense.get_accelerometer_raw())
+        light = (red + green + blue) / 3
+        samples.append({"temperature": temperature, "humidity": humidity,
+                        "pressure": pressure, "light": light,
+                        "acceleration": sum(value * value for value in acceleration) ** 0.5})
         sensor_data.writerow([
-            now, round(elapsed, 2), round(sense.get_temperature(), 2),
-            round(sense.get_humidity(), 2), round(sense.get_pressure(), 2),
+            now, round(elapsed, 2), temperature, humidity, pressure,
             red, green, blue, clear, *xyz(sense.get_compass_raw()),
-            *xyz(sense.get_accelerometer_raw()), *xyz(sense.get_gyroscope_raw()),
+            *acceleration, *xyz(sense.get_gyroscope_raw()),
             round(orientation["pitch"], 2), round(orientation["roll"], 2),
             round(orientation["yaw"], 2),
         ])
@@ -121,4 +168,5 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             sleep(remaining)
 
 create_visuals(photos)
+create_report(samples, photos)
 sense.clear()
