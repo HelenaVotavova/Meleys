@@ -24,6 +24,11 @@ obrazových souborů, což je maximum povolené pravidly.
 Nakonec vytvoří také anglický textový výstup `result.txt`. Ten komentuje
 průměry, rozsahy a stabilitu měření a stručně shrne obsah snímků.
 
+Z dvojic po sobě jdoucích fotografií vyhledá společné body metodou ORB a
+odhadne rychlost ISS. Jednotlivé výpočty uloží do `iss_speed.csv`; medián
+věrohodných výsledků zapíše také do `result.txt`. Převod používá orientační
+GSD 126,48 metru na pixel, proto jde o odhad, ne přesnou telemetrii.
+
 Barevné rozpoznání je pracovní hypotéza. Před odesláním je potřeba výsledky
 porovnat s fotografiemi v Replay Toolu a doladit prahové hodnoty.
 

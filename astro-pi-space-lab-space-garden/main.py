@@ -1,7 +1,8 @@
 from csv import writer
 from datetime import datetime, timezone
+from math import hypot
 from pathlib import Path
-from statistics import mean, pstdev
+from statistics import mean, median, pstdev
 from time import monotonic, sleep
 
 import cv2
@@ -14,6 +15,7 @@ TOTAL_SECONDS = 9 * 60
 SAMPLE_SECONDS = 5
 PHOTO_SECONDS = 12
 MAX_PHOTOS = 40
+GSD_METRES_PER_PIXEL = 126.48
 ROOT = Path(__file__).parent
 
 
@@ -47,6 +49,30 @@ def analyse(path):
     return result
 
 
+def estimate_speed(first_path, second_path, seconds):
+    first = cv2.imread(str(first_path), cv2.IMREAD_GRAYSCALE)
+    second = cv2.imread(str(second_path), cv2.IMREAD_GRAYSCALE)
+    if first is None or second is None or seconds <= 0:
+        return None
+    scale = min(1.0, 1024 / first.shape[1])
+    first = cv2.resize(first, None, fx=scale, fy=scale)
+    second = cv2.resize(second, None, fx=scale, fy=scale)
+    detector = cv2.ORB_create(nfeatures=1500)
+    points1, descriptors1 = detector.detectAndCompute(first, None)
+    points2, descriptors2 = detector.detectAndCompute(second, None)
+    if descriptors1 is None or descriptors2 is None:
+        return None
+    pairs = cv2.BFMatcher(cv2.NORM_HAMMING).knnMatch(descriptors1, descriptors2, k=2)
+    good = [best for best, other in pairs if best.distance < 0.7 * other.distance]
+    if len(good) < 12:
+        return None
+    distances = [hypot(points2[m.trainIdx].pt[0] - points1[m.queryIdx].pt[0],
+                       points2[m.trainIdx].pt[1] - points1[m.queryIdx].pt[1]) / scale
+                 for m in good]
+    pixels = median(distances)
+    return pixels, pixels * GSD_METRES_PER_PIXEL / seconds / 1000, len(good)
+
+
 def create_visuals(photos):
     if not photos:
         return
@@ -66,7 +92,7 @@ def create_visuals(photos):
     cv2.imwrite(str(ROOT / "earth_panorama.jpg"), cv2.hconcat(tiles))
 
 
-def create_report(samples, photos):
+def create_report(samples, photos, speeds):
     def summary(key, unit):
         numbers = [sample[key] for sample in samples]
         return (f"{key.replace('_', ' ').title()}: mean {mean(numbers):.2f}{unit}, "
@@ -97,6 +123,18 @@ def create_report(samples, photos):
         ])
     else:
         lines.append("No Earth image was successfully analysed.")
+    valid_speeds = [item["speed"] for item in speeds if item["accepted"]]
+    if valid_speeds:
+        lines.extend([
+            "",
+            f"Estimated ISS speed from {len(valid_speeds)} reliable image pairs: "
+            f"{median(valid_speeds):.2f} km/s (median).",
+            f"Mean accepted estimate: {mean(valid_speeds):.2f} km/s.",
+            "The estimate uses ORB image features and an approximate ground sampling distance "
+            f"of {GSD_METRES_PER_PIXEL:.2f} metres per full-resolution pixel.",
+        ])
+    else:
+        lines.append("No reliable image pair was available for an ISS speed estimate.")
     lines.extend([
         "",
         "Conclusion: compare the sensor ranges with the images to investigate whether changes in "
@@ -119,13 +157,18 @@ photo_header = [
     "land_percent", "earth_in_frame_percent", "average_red", "average_green",
     "average_blue", "quality_score",
 ]
-start, next_photo, photo_number, photos, samples = monotonic(), 0, 0, [], []
+speed_header = ["first_image", "second_image", "interval_s", "matches",
+                "pixel_distance", "speed_km_s", "accepted"]
+start, next_photo, photo_number = monotonic(), 0, 0
+photos, samples, speeds = [], [], []
 
 with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sensors, \
-        (ROOT / "earth_analysis.csv").open("w", newline="", encoding="utf-8") as images:
-    sensor_data, photo_data = writer(sensors), writer(images)
+        (ROOT / "earth_analysis.csv").open("w", newline="", encoding="utf-8") as images, \
+        (ROOT / "iss_speed.csv").open("w", newline="", encoding="utf-8") as speed_file:
+    sensor_data, photo_data, speed_data = writer(sensors), writer(images), writer(speed_file)
     sensor_data.writerow(sensor_header)
     photo_data.writerow(photo_header)
+    speed_data.writerow(speed_header)
     while monotonic() - start < COLLECTION_SECONDS:
         sample_start = monotonic()
         elapsed = sample_start - start
@@ -155,7 +198,18 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             try:
                 camera.take_photo(str(path))
                 result = analyse(path)
-                result.update(number=photo_number, path=path)
+                result.update(number=photo_number, path=path, elapsed=elapsed)
+                if photos:
+                    interval = elapsed - photos[-1]["elapsed"]
+                    estimate = estimate_speed(photos[-1]["path"], path, interval)
+                    if estimate:
+                        pixels, speed, matches = estimate
+                        accepted = 5 <= speed <= 10
+                        speeds.append({"speed": speed, "accepted": accepted})
+                        speed_data.writerow([photos[-1]["path"].name, path.name,
+                                             round(interval, 2), matches, round(pixels, 2),
+                                             round(speed, 3), accepted])
+                        speed_file.flush()
                 photos.append(result)
                 photo_data.writerow([
                     now, round(elapsed, 2), path.name, round(result["sea"], 2),
@@ -174,7 +228,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             sleep(remaining)
 
 create_visuals(photos)
-create_report(samples, photos)
+create_report(samples, photos, speeds)
 remaining = TOTAL_SECONDS - (monotonic() - start)
 if remaining > 0:
     sleep(remaining)

@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 space_garden.csv
 earth_analysis.csv
+iss_speed.csv
 earth_*.jpg
 earth_panorama.jpg
 colours_of_earth.png
