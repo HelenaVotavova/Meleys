@@ -331,7 +331,7 @@ def journeys():
         WHERE leg != 'tram' OR origin_planned >= ?
         ORDER BY service_date DESC, origin_planned""", (6 * 3600 + 45 * 60,)).fetchall()
     connection.close()
-    return {"generated": int(time.time()), "transfer_seconds": 240, "deadline": 7 * 3600 + 50 * 60,
+    return {"generated": int(time.time()), "transfer_seconds": 180, "deadline": 7 * 3600 + 50 * 60,
             "records": [dict(row) for row in rows]}
 
 
