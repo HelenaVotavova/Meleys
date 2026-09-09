@@ -223,14 +223,15 @@ def collect_once():
                 connection.commit(); connection.close()
             details = current_trip_labels.get(trip, (current_routes.get(vehicle.trip.route_id, vehicle.trip.route_id or "?"), "bez označení"))
             plan_info = vehicle_plans.get((trip, vehicle.stop_id), (None, vehicle.stop_id))
-            connection = db()
-            connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude,vehicle_code)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
-                last_seen=excluded.last_seen,latitude=excluded.latitude,longitude=excluded.longitude""",
-                (now.date().isoformat(), trip_key, trip, details[0] or "?", details[1], vehicle.stop_id,
-                 plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude, tracked_code))
-            connection.commit(); connection.close()
-            tracked_vehicle_state[tracked_code] = (trip_key, vehicle.stop_id)
+            if not (tracked_code == "31054" and vehicle.stop_id.startswith("U") and plan_info[0] is None):
+                connection = db()
+                connection.execute("""INSERT INTO vehicle_stops(service_date,trip_key,trip_id,line,destination,stop_id,stop_name,planned,first_seen,last_seen,latitude,longitude,vehicle_code)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(service_date,trip_key,stop_id) DO UPDATE SET
+                    last_seen=excluded.last_seen,latitude=excluded.latitude,longitude=excluded.longitude""",
+                    (now.date().isoformat(), trip_key, trip, details[0] or "?", details[1], vehicle.stop_id,
+                     plan_info[1], plan_info[0], stamp, stamp, vehicle.position.latitude, vehicle.position.longitude, tracked_code))
+                connection.commit(); connection.close()
+                tracked_vehicle_state[tracked_code] = (trip_key, vehicle.stop_id)
         if trip in current and vehicle.stop_id == NEXT_STOP:
             updates.append((stamp, stamp, now.date().isoformat(), trip))
         for (leg_trip, leg), values in current_legs.items():
