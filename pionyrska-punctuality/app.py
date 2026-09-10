@@ -4,16 +4,19 @@ import io
 import json
 import re
 import sqlite3
+from statistics import mean
 import threading
 import time
 import urllib.request
 import zipfile
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from google.transit import gtfs_realtime_pb2
+import numpy as np
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 ROOT = Path(__file__).resolve().parent
 DB = ROOT / "departures.sqlite3"
@@ -44,6 +47,7 @@ TRACKED_VEHICLES = {
 }
 schedule_day = None
 lock = threading.Lock()
+forecast_cache = {}
 
 
 def db():
@@ -168,7 +172,7 @@ def load_schedule(day):
                     di, target = targets[0]
                     tests[trip] = (line or "?", destination, target, seconds(rows[oi]["departure_time"]), seconds(rows[di]["arrival_time"]))
         if day.weekday() >= 5:
-            found, legs, tests = {}, {}, {}
+            found, legs = {}, {}
     with lock:
         schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day = found, legs, tests, route_names, all_trip_labels, plans, day
     connection = db()
@@ -362,10 +366,67 @@ def test_runs():
     connection = db(); connection.row_factory = sqlite3.Row
     rows = connection.execute("""SELECT * FROM test_runs
         WHERE (scheduled=1 OR target IS NOT NULL OR destination_actual IS NOT NULL)
-          AND strftime('%w', service_date) NOT IN ('0', '6')
         ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC""").fetchall()
     connection.close()
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
+
+
+def line1_forecast():
+    today = datetime.now(TZ).date()
+    connection = db()
+    rows = connection.execute("""SELECT service_date,origin_planned,origin_actual FROM test_runs
+        WHERE line='1' AND origin_actual IS NOT NULL AND origin_planned IS NOT NULL
+          AND service_date < ? AND strftime('%w', service_date) NOT IN ('0', '6')
+        ORDER BY service_date,origin_planned""", (today.isoformat(),)).fetchall()
+    connection.close()
+    dates = sorted({date.fromisoformat(row[0]) for row in rows})
+    if len(dates) < 2:
+        return {"generated": int(time.time()), "status": "insufficient_data", "points": []}
+    cache_key = dates[-1].isoformat()
+    if forecast_cache.get("key") == cache_key:
+        return forecast_cache["value"]
+
+    buckets = {}
+    for service_date, planned, actual in rows:
+        slot = (planned % 86400 - 5 * 3600) // 3600
+        if not 0 <= slot < 18:
+            continue
+        actual_time = datetime.fromtimestamp(actual, TZ)
+        actual_seconds = actual_time.hour * 3600 + actual_time.minute * 60 + actual_time.second
+        delay = actual_seconds - planned % 86400
+        if -1800 < delay < 3600:
+            buckets.setdefault((date.fromisoformat(service_date), slot), []).append(delay / 60)
+
+    overall = mean([value for values in buckets.values() for value in values])
+    slot_means = {slot: mean([value for (day, item), values in buckets.items()
+                              if item == slot for value in values])
+                  for slot in range(18) if any(item == slot for day, item in buckets)}
+    observations, weekdays = [], []
+    for day in dates:
+        for slot in range(18):
+            values = buckets.get((day, slot))
+            observations.append(mean(values) if values else slot_means.get(slot, overall))
+            weekdays.append(day.weekday() / 4)
+
+    target = dates[-1] + timedelta(days=1)
+    while target.weekday() >= 5:
+        target += timedelta(days=1)
+    model = SARIMAX(np.asarray(observations), exog=np.asarray(weekdays)[:, None],
+                    order=(1, 0, 1), seasonal_order=(1, 0, 0, 18), trend="c",
+                    enforce_stationarity=False, enforce_invertibility=False)
+    fitted = model.fit(disp=False, maxiter=80)
+    prediction = fitted.get_forecast(18, exog=np.full((18, 1), target.weekday() / 4))
+    predicted = prediction.predicted_mean
+    interval = prediction.conf_int(alpha=0.2)
+    points = [{"time": (5 + slot) * 3600 + 1800,
+               "delay": round(float(np.clip(predicted[slot], -2, 16)), 2),
+               "low": round(float(np.clip(interval[slot, 0], -2, 16)), 2),
+               "high": round(float(np.clip(interval[slot, 1], -2, 16)), 2)}
+              for slot in range(18)]
+    result = {"generated": int(time.time()), "status": "preliminary",
+              "training_days": len(dates), "target_date": target.isoformat(), "points": points}
+    forecast_cache.update(key=cache_key, value=result)
+    return result
 
 
 def tracked_vehicle(vehicle_code):
@@ -395,6 +456,16 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/test-runs":
             body = json.dumps(test_runs(), ensure_ascii=False).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.split("?", 1)[0] == "/api/line1-forecast":
+            try:
+                payload = line1_forecast()
+            except Exception as error:
+                payload = {"generated": int(time.time()), "status": "error",
+                           "message": str(error), "points": []}
+            body = json.dumps(payload, ensure_ascii=False).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
