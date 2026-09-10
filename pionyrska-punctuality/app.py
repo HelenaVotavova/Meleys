@@ -167,6 +167,8 @@ def load_schedule(day):
                 if targets:
                     di, target = targets[0]
                     tests[trip] = (line or "?", destination, target, seconds(rows[oi]["departure_time"]), seconds(rows[di]["arrival_time"]))
+        if day.weekday() >= 5:
+            found, legs, tests = {}, {}, {}
     with lock:
         schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day = found, legs, tests, route_names, all_trip_labels, plans, day
     connection = db()
@@ -332,7 +334,7 @@ def stats():
         j.destination_actual AS arrival_actual
         FROM departures d LEFT JOIN journey_legs j
         ON j.service_date=d.service_date AND j.trip_id=d.trip_id AND j.leg='trolley'
-        WHERE d.planned BETWEEN ? AND ?
+        WHERE d.planned BETWEEN ? AND ? AND strftime('%w', d.service_date) NOT IN ('0', '6')
         ORDER BY d.service_date DESC, d.planned DESC""",
         (7 * 3600, 8 * 3600 + 15 * 60)).fetchall()
     connection.close()
@@ -348,7 +350,8 @@ def stats():
 def journeys():
     connection = db(); connection.row_factory = sqlite3.Row
     rows = connection.execute("""SELECT * FROM journey_legs
-        WHERE leg != 'tram' OR origin_planned >= ?
+        WHERE (leg != 'tram' OR origin_planned >= ?)
+          AND strftime('%w', service_date) NOT IN ('0', '6')
         ORDER BY service_date DESC, origin_planned""", (6 * 3600 + 45 * 60,)).fetchall()
     connection.close()
     return {"generated": int(time.time()), "transfer_seconds": 180, "deadline": 7 * 3600 + 50 * 60,
@@ -358,7 +361,8 @@ def journeys():
 def test_runs():
     connection = db(); connection.row_factory = sqlite3.Row
     rows = connection.execute("""SELECT * FROM test_runs
-        WHERE scheduled=1 OR target IS NOT NULL OR destination_actual IS NOT NULL
+        WHERE (scheduled=1 OR target IS NOT NULL OR destination_actual IS NOT NULL)
+          AND strftime('%w', service_date) NOT IN ('0', '6')
         ORDER BY service_date DESC, COALESCE(origin_actual, origin_planned) DESC""").fetchall()
     connection.close()
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
