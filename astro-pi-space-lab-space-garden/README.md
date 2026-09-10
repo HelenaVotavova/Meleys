@@ -21,6 +21,9 @@ nejvýše 40 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších
 a časový barevný pás `colours_of_earth.png`. Celkem tak uchová nejvýše 42
 obrazových souborů, což je maximum povolené pravidly.
 
+Ke každé fotografii uloží do `earth_analysis.csv` také zeměpisnou šířku a
+délku aktuální polohy ISS. První a poslední souřadnice shrne v `result.txt`.
+
 Nakonec vytvoří také anglický textový výstup `result.txt`. Ten komentuje
 průměry, rozsahy a stabilitu měření a stručně shrne obsah snímků.
 

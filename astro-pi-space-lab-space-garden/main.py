@@ -7,6 +7,7 @@ from time import monotonic, sleep
 
 import cv2
 import numpy as np
+from astro_pi_orbit import ISS
 from picamzero import Camera
 from sense_hat import SenseHat
 
@@ -120,6 +121,8 @@ def create_report(samples, photos, speeds):
             "These image classes are estimates based on colour and brightness, not confirmed labels.",
             "The clearest selected views are combined in earth_panorama.jpg.",
             "The sequence of average Earth colours is saved in colours_of_earth.png.",
+            f"First photo position: {photos[0]['latitude']:.5f}, {photos[0]['longitude']:.5f}.",
+            f"Last photo position: {photos[-1]['latitude']:.5f}, {photos[-1]['longitude']:.5f}.",
         ])
     else:
         lines.append("No Earth image was successfully analysed.")
@@ -143,7 +146,7 @@ def create_report(samples, photos, speeds):
     (ROOT / "result.txt").write_text("\n".join(lines), encoding="utf-8")
 
 
-sense, camera = SenseHat(), Camera()
+sense, camera, iss = SenseHat(), Camera(), ISS()
 sense.color.gain, sense.color.integration_cycles = 4, 64
 sense.clear(0, 20, 0)
 sensor_header = [
@@ -153,7 +156,8 @@ sensor_header = [
     "acceleration_z", "gyroscope_x", "gyroscope_y", "gyroscope_z", "pitch", "roll", "yaw",
 ]
 photo_header = [
-    "time_utc", "elapsed_s", "filename", "sea_percent", "cloud_percent",
+    "time_utc", "elapsed_s", "filename", "latitude", "longitude",
+    "sea_percent", "cloud_percent",
     "land_percent", "earth_in_frame_percent", "average_red", "average_green",
     "average_blue", "quality_score",
 ]
@@ -196,9 +200,12 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             photo_number += 1
             path = ROOT / f"earth_{photo_number:02d}.jpg"
             try:
+                position = iss.coordinates()
                 camera.take_photo(str(path))
                 result = analyse(path)
-                result.update(number=photo_number, path=path, elapsed=elapsed)
+                result.update(number=photo_number, path=path, elapsed=elapsed,
+                              latitude=position.latitude.degrees,
+                              longitude=position.longitude.degrees)
                 if photos:
                     interval = elapsed - photos[-1]["elapsed"]
                     estimate = estimate_speed(photos[-1]["path"], path, interval)
@@ -212,7 +219,8 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
                         speed_file.flush()
                 photos.append(result)
                 photo_data.writerow([
-                    now, round(elapsed, 2), path.name, round(result["sea"], 2),
+                    now, round(elapsed, 2), path.name, round(result["latitude"], 6),
+                    round(result["longitude"], 6), round(result["sea"], 2),
                     round(result["cloud"], 2), round(result["land"], 2),
                     round(result["earth"], 2), *result["colour"], round(result["score"], 2),
                 ])
