@@ -7,3 +7,5 @@ earth_*.jpg
 earth_panorama.jpg
 colours_of_earth.png
 result.txt
+red_channel_*.raw
+red_channels.csv

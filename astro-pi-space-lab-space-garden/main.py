@@ -15,7 +15,8 @@ COLLECTION_SECONDS = 8 * 60
 TOTAL_SECONDS = 9 * 60
 SAMPLE_SECONDS = 5
 PHOTO_SECONDS = 12
-MAX_PHOTOS = 40
+MAX_PHOTOS = 38
+RAW_SELECTIONS = 2
 GSD_METRES_PER_PIXEL = 126.48
 ROOT = Path(__file__).parent
 
@@ -39,12 +40,19 @@ def analyse(path):
     land = earth & ~cloud & ~sea
     count = max(1, np.count_nonzero(earth))
     mean_b, mean_g, mean_r = cv2.mean(small, mask=earth.astype(np.uint8))[:3]
+    earth_pixels = small[earth]
+    channel_range = 0.0
+    if earth_pixels.size:
+        channel_range = float(np.mean(
+            np.percentile(earth_pixels, 98, axis=0) - np.percentile(earth_pixels, 2, axis=0)
+        ))
     result = {
         "sea": 100 * np.count_nonzero(sea) / count,
         "cloud": 100 * np.count_nonzero(cloud) / count,
         "land": 100 * np.count_nonzero(land) / count,
         "earth": 100 * count / earth.size,
         "colour": (round(mean_r), round(mean_g), round(mean_b)),
+        "colour_range": channel_range,
     }
     result["score"] = result["earth"] * (1 - result["cloud"] / 100)
     return result
@@ -93,7 +101,28 @@ def create_visuals(photos):
     cv2.imwrite(str(ROOT / "earth_panorama.jpg"), cv2.hconcat(tiles))
 
 
-def create_report(samples, photos, speeds):
+def save_red_raw(photos):
+    """Save the red channel of the most colour-diverse photos as raw bytes."""
+    selected = sorted(photos, key=lambda item: item["colour_range"], reverse=True)[:RAW_SELECTIONS]
+    rows = []
+    for rank, item in enumerate(selected, 1):
+        image = cv2.imread(str(item["path"]))
+        if image is None:
+            continue
+        red = image[:, :, 2]
+        raw_path = ROOT / f"red_channel_{rank:02d}.raw"
+        raw_path.write_bytes(red.tobytes())
+        rows.append((raw_path.name, item["path"].name, red.shape[1], red.shape[0],
+                     "uint8", "row-major", round(item["colour_range"], 2)))
+    with (ROOT / "red_channels.csv").open("w", newline="", encoding="utf-8") as output:
+        data = writer(output)
+        data.writerow(["raw_filename", "source_image", "width", "height", "data_type",
+                       "layout", "colour_range_score"])
+        data.writerows(rows)
+    return rows
+
+
+def create_report(samples, photos, speeds, raw_rows):
     def summary(key, unit):
         numbers = [sample[key] for sample in samples]
         return (f"{key.replace('_', ' ').title()}: mean {mean(numbers):.2f}{unit}, "
@@ -121,6 +150,8 @@ def create_report(samples, photos, speeds):
             "These image classes are estimates based on colour and brightness, not confirmed labels.",
             "The clearest selected views are combined in earth_panorama.jpg.",
             "The sequence of average Earth colours is saved in colours_of_earth.png.",
+            f"Red-only raw data from {len(raw_rows)} most colour-diverse images is described "
+            "in red_channels.csv.",
             f"First photo position: {photos[0]['latitude']:.5f}, {photos[0]['longitude']:.5f}.",
             f"Last photo position: {photos[-1]['latitude']:.5f}, {photos[-1]['longitude']:.5f}.",
         ])
@@ -160,6 +191,7 @@ photo_header = [
     "sea_percent", "cloud_percent",
     "land_percent", "earth_in_frame_percent", "average_red", "average_green",
     "average_blue", "quality_score",
+    "colour_range_score",
 ]
 speed_header = ["first_image", "second_image", "interval_s", "matches",
                 "pixel_distance", "speed_km_s", "accepted"]
@@ -223,6 +255,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
                     round(result["longitude"], 6), round(result["sea"], 2),
                     round(result["cloud"], 2), round(result["land"], 2),
                     round(result["earth"], 2), *result["colour"], round(result["score"], 2),
+                    round(result["colour_range"], 2),
                 ])
                 images.flush()
             # Replay Online can raise a browser JsException outside Exception
@@ -236,7 +269,8 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             sleep(remaining)
 
 create_visuals(photos)
-create_report(samples, photos, speeds)
+raw_rows = save_red_raw(photos)
+create_report(samples, photos, speeds, raw_rows)
 remaining = TOTAL_SECONDS - (monotonic() - start)
 if remaining > 0:
     sleep(remaining)
