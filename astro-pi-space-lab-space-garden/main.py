@@ -15,8 +15,7 @@ COLLECTION_SECONDS = 8 * 60
 TOTAL_SECONDS = 9 * 60
 SAMPLE_SECONDS = 5
 PHOTO_SECONDS = 12
-MAX_PHOTOS = 38
-RAW_SELECTIONS = 2
+MAX_PHOTOS = 40
 GSD_METRES_PER_PIXEL = 126.48
 ROOT = Path(__file__).parent
 
@@ -89,7 +88,7 @@ def create_visuals(photos):
     for index, item in enumerate(photos):
         red, green, blue = item["colour"]
         strip[:, index * 80:(index + 1) * 80] = (blue, green, red)
-    cv2.imwrite(str(ROOT / "colours_of_earth.png"), strip)
+    cv2.imwrite(str(ROOT / "colours_of_earth.jpg"), strip)
 
     best = sorted(photos, key=lambda item: item["score"], reverse=True)[:6]
     best.sort(key=lambda item: item["number"])
@@ -101,28 +100,7 @@ def create_visuals(photos):
     cv2.imwrite(str(ROOT / "earth_panorama.jpg"), cv2.hconcat(tiles))
 
 
-def save_red_raw(photos):
-    """Save the red channel of the most colour-diverse photos as raw bytes."""
-    selected = sorted(photos, key=lambda item: item["colour_range"], reverse=True)[:RAW_SELECTIONS]
-    rows = []
-    for rank, item in enumerate(selected, 1):
-        image = cv2.imread(str(item["path"]))
-        if image is None:
-            continue
-        red = image[:, :, 2]
-        raw_path = ROOT / f"red_channel_{rank:02d}.raw"
-        raw_path.write_bytes(red.tobytes())
-        rows.append((raw_path.name, item["path"].name, red.shape[1], red.shape[0],
-                     "uint8", "row-major", round(item["colour_range"], 2)))
-    with (ROOT / "red_channels.csv").open("w", newline="", encoding="utf-8") as output:
-        data = writer(output)
-        data.writerow(["raw_filename", "source_image", "width", "height", "data_type",
-                       "layout", "colour_range_score"])
-        data.writerows(rows)
-    return rows
-
-
-def create_report(samples, photos, speeds, raw_rows):
+def create_report(samples, photos, speeds):
     def summary(key, unit):
         numbers = [sample[key] for sample in samples]
         return (f"{key.replace('_', ' ').title()}: mean {mean(numbers):.2f}{unit}, "
@@ -149,9 +127,7 @@ def create_report(samples, photos, speeds, raw_rows):
             f"cloud {mean(p['cloud'] for p in photos):.1f}%, land {mean(p['land'] for p in photos):.1f}%.",
             "These image classes are estimates based on colour and brightness, not confirmed labels.",
             "The clearest selected views are combined in earth_panorama.jpg.",
-            "The sequence of average Earth colours is saved in colours_of_earth.png.",
-            f"Red-only raw data from {len(raw_rows)} most colour-diverse images is described "
-            "in red_channels.csv.",
+            "The sequence of average Earth colours is saved in colours_of_earth.jpg.",
             f"First photo position: {photos[0]['latitude']:.5f}, {photos[0]['longitude']:.5f}.",
             f"Last photo position: {photos[-1]['latitude']:.5f}, {photos[-1]['longitude']:.5f}.",
         ])
@@ -269,8 +245,7 @@ with (ROOT / "space_garden.csv").open("w", newline="", encoding="utf-8") as sens
             sleep(remaining)
 
 create_visuals(photos)
-raw_rows = save_red_raw(photos)
-create_report(samples, photos, speeds, raw_rows)
+create_report(samples, photos, speeds)
 remaining = TOTAL_SECONDS - (monotonic() - start)
 if remaining > 0:
     sleep(remaining)

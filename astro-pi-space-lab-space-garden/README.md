@@ -17,16 +17,14 @@ nastaven na devět minut, takže má rezervu před soutěžním limitem 10 minut
 
 Každých 12 sekund také vyfotí Zemi. Vysvětlitelná analýza barev odhadne podíl
 moře, mraků a pevniny a zapíše jej do `earth_analysis.csv`. Program uchová
-nejvýše 38 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších záběrů
-a časový barevný pás `colours_of_earth.png`.
+nejvýše 40 fotografií a vytvoří `earth_panorama.jpg` ze šesti nejlepších záběrů
+a časový barevný pás `colours_of_earth.jpg`.
 
 U každé fotografie také změří barevný rozsah jako průměr rozdílu mezi 2. a 98.
-percentilem červeného, zeleného a modrého kanálu. Ze dvou snímků s největším
-rozsahem uloží pouze červený kanál do `red_channel_01.raw` a
-`red_channel_02.raw`. Jde o nekomprimované 8bitové hodnoty `uint8` po řádcích,
-nikoli o Bayer RAW přímo ze senzoru. Rozměry a zdrojové fotografie zapisuje do
-`red_channels.csv`. Celkem program uchová nejvýše 42 obrazových souborů, což je
-maximum povolené pravidly.
+percentilem červeného, zeleného a modrého kanálu. Výsledek uloží do CSV, takže
+lze po misi vybrat nejbarevnější původní JPEGy a provést analýzu jednotlivých
+kanálů bez dalšího obrazového výstupu. Celkem program uchová nejvýše 42 obrázků,
+všechny ve formátu JPEG, což je maximum povolené pravidly.
 
 Ke každé fotografii uloží do `earth_analysis.csv` také zeměpisnou šířku a
 délku aktuální polohy ISS. První a poslední souřadnice shrne v `result.txt`.
