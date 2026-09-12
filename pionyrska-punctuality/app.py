@@ -401,21 +401,28 @@ def line1_forecast():
     slot_means = {slot: mean([value for (day, item), values in buckets.items()
                               if item == slot for value in values])
                   for slot in range(18) if any(item == slot for day, item in buckets)}
-    observations, weekdays = [], []
+    observations = []
     for day in dates:
         for slot in range(18):
             values = buckets.get((day, slot))
             observations.append(mean(values) if values else slot_means.get(slot, overall))
-            weekdays.append(day.weekday() / 4)
 
     target = dates[-1] + timedelta(days=1)
     while target.weekday() >= 5:
         target += timedelta(days=1)
-    model = SARIMAX(np.asarray(observations), exog=np.asarray(weekdays)[:, None],
-                    order=(1, 0, 1), seasonal_order=(1, 0, 0, 18), trend="c",
-                    enforce_stationarity=False, enforce_invertibility=False)
-    fitted = model.fit(disp=False, maxiter=80)
-    prediction = fitted.get_forecast(18, exog=np.full((18, 1), target.weekday() / 4))
+    weekday_effect = {day.weekday() for day in dates} == set(range(5))
+    exog = None
+    future_exog = None
+    if weekday_effect:
+        exog = np.asarray([[1 if day.weekday() == weekday else 0 for weekday in range(1, 5)]
+                           for day in dates for slot in range(18)])
+        future_exog = np.asarray([[1 if target.weekday() == weekday else 0
+                                   for weekday in range(1, 5)]] * 18)
+    model = SARIMAX(np.asarray(observations), exog=exog, order=(1, 0, 0),
+                    seasonal_order=(1, 0, 0, 18), trend="c",
+                    enforce_stationarity=True, enforce_invertibility=True)
+    fitted = model.fit(disp=False, maxiter=160)
+    prediction = fitted.get_forecast(18, exog=future_exog)
     predicted = prediction.predicted_mean
     interval = prediction.conf_int(alpha=0.2)
     points = [{"time": (5 + slot) * 3600 + 1800,
@@ -424,7 +431,8 @@ def line1_forecast():
                "high": round(float(np.clip(interval[slot, 1], -2, 16)), 2)}
               for slot in range(18)]
     result = {"generated": int(time.time()), "status": "preliminary",
-              "training_days": len(dates), "target_date": target.isoformat(), "points": points}
+              "training_days": len(dates), "target_date": target.isoformat(),
+              "weekday_effect": weekday_effect, "points": points}
     forecast_cache.update(key=cache_key, value=result)
     return result
 
