@@ -371,18 +371,20 @@ def test_runs():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
-def line1_forecast():
+def line1_forecast(weekend=False):
     today = datetime.now(TZ).date()
     connection = db()
-    rows = connection.execute("""SELECT service_date,origin_planned,origin_actual FROM test_runs
+    day_filter = "IN ('0', '6')" if weekend else "NOT IN ('0', '6')"
+    rows = connection.execute(f"""SELECT service_date,origin_planned,origin_actual FROM test_runs
         WHERE line='1' AND origin_actual IS NOT NULL AND origin_planned IS NOT NULL
-          AND service_date < ? AND strftime('%w', service_date) NOT IN ('0', '6')
+          AND service_date < ? AND strftime('%w', service_date) {day_filter}
         ORDER BY service_date,origin_planned""", (today.isoformat(),)).fetchall()
     connection.close()
     dates = sorted({date.fromisoformat(row[0]) for row in rows})
     if len(dates) < 2:
         return {"generated": int(time.time()), "status": "insufficient_data", "points": []}
-    cache_key = dates[-1].isoformat()
+    model_kind = "weekend" if weekend else "workday"
+    cache_key = f"{model_kind}:{dates[-1].isoformat()}"
     if forecast_cache.get("key") == cache_key:
         return forecast_cache["value"]
 
@@ -408,16 +410,19 @@ def line1_forecast():
             observations.append(mean(values) if values else slot_means.get(slot, overall))
 
     target = dates[-1] + timedelta(days=1)
-    while target.weekday() >= 5:
+    while (target.weekday() >= 5) != weekend:
         target += timedelta(days=1)
-    weekday_effect = {day.weekday() for day in dates} == set(range(5))
+    required_weekdays = {5, 6} if weekend else set(range(5))
+    weekday_effect = {day.weekday() for day in dates}.issuperset(required_weekdays)
     exog = None
     future_exog = None
     if weekday_effect:
-        exog = np.asarray([[1 if day.weekday() == weekday else 0 for weekday in range(1, 5)]
+        compared_weekdays = [6] if weekend else list(range(1, 5))
+        exog = np.asarray([[1 if day.weekday() == weekday else 0
+                            for weekday in compared_weekdays]
                            for day in dates for slot in range(18)])
         future_exog = np.asarray([[1 if target.weekday() == weekday else 0
-                                   for weekday in range(1, 5)]] * 18)
+                                   for weekday in compared_weekdays]] * 18)
     model = SARIMAX(np.asarray(observations), exog=exog, order=(1, 0, 0),
                     seasonal_order=(1, 0, 0, 18), trend="c",
                     enforce_stationarity=True, enforce_invertibility=True)
@@ -431,6 +436,7 @@ def line1_forecast():
                "high": round(float(np.clip(interval[slot, 1], -2, 16)), 2)}
               for slot in range(18)]
     result = {"generated": int(time.time()), "status": "preliminary",
+              "model_kind": model_kind,
               "training_days": len(dates), "target_date": target.isoformat(),
               "weekday_effect": weekday_effect, "points": points}
     forecast_cache.update(key=cache_key, value=result)
@@ -470,6 +476,16 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.split("?", 1)[0] == "/api/line1-forecast":
             try:
                 payload = line1_forecast()
+            except Exception as error:
+                payload = {"generated": int(time.time()), "status": "error",
+                           "message": str(error), "points": []}
+            body = json.dumps(payload, ensure_ascii=False).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.split("?", 1)[0] == "/api/line1-weekend-forecast":
+            try:
+                payload = line1_forecast(weekend=True)
             except Exception as error:
                 payload = {"generated": int(time.time()), "status": "error",
                            "message": str(error), "points": []}
