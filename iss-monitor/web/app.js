@@ -242,6 +242,32 @@ async function updatePastTrack() {
 }
 updatePastTrack();
 setInterval(updatePastTrack, 3600000);
+async function updateOrbitEvents() {
+  try {
+    const response = await fetch("/api/orbit-events");
+    const data = await response.json();
+    if (!response.ok) throw Error(data.error);
+    document.querySelector("#ascending-nodes").innerHTML = data.ascending_nodes
+      .map((node) => {
+        const time = new Date(node.timestamp * 1000).toLocaleString("cs-CZ", {
+          day: "numeric",
+          month: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        return `<span><b>${time}</b>${Math.abs(node.longitude).toFixed(1)}° ${node.longitude >= 0 ? "v. d." : "z. d."}</span>`;
+      })
+      .join("");
+    document.querySelector("#nodes-updated").textContent =
+      `výpočet ${new Date(data.generated * 1000).toLocaleTimeString("cs-CZ")}`;
+  } catch (error) {
+    document.querySelector("#ascending-nodes").textContent =
+      "Predikci se nepodařilo načíst.";
+  }
+}
+updateOrbitEvents();
+setInterval(updateOrbitEvents, 1800000);
 
 const chartOptions = (label, unit) => ({
   responsive: true,

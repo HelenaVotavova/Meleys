@@ -104,6 +104,70 @@
 .space-weather-charts {
   margin-top: 18px;
 }
+.operations-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+.operations-grid article {
+  padding: 15px;
+  background: #f3f6f6;
+  border-left: 4px solid #08736a;
+}
+.operations-grid b {
+  display: block;
+  margin: 7px 0;
+}
+.operations-grid p {
+  margin: 0;
+}
+.node-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+}
+.node-list span {
+  padding: 10px;
+  background: #eaf0f4;
+  font-size: 12px;
+}
+.node-list b {
+  display: block;
+  font-size: 15px;
+}
+.visit-history {
+  grid-column: 1 / -1;
+}
+.visit-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+  margin-top: 14px;
+}
+.visit-list article {
+  padding: 11px;
+  background: #f3f6f6;
+  border-top: 4px solid #68777d;
+}
+.visit-list article.arrival {
+  border-color: #08736a;
+}
+.visit-list article.departure {
+  border-color: #d44835;
+}
+.visit-list time,
+.visit-list b,
+.visit-list span {
+  display: block;
+}
+.visit-list b {
+  margin: 5px 0;
+}
+.visit-list span {
+  color: #536168;
+  font-size: 12px;
+}
 @media (max-width: 700px) {
   .camera-layout {
     grid-template-columns: 1fr;
@@ -123,5 +187,14 @@
   }
   .space-weather-now {
     grid-template-columns: 1fr;
+  }
+  .operations-grid {
+    grid-template-columns: 1fr;
+  }
+  .node-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .visit-list {
+    grid-template-columns: 1fr 1fr;
   }
 }

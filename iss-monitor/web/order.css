@@ -36,5 +36,8 @@ main {
   order: 11;
 }
 .schedule-section {
+  order: 13;
+}
+.operations-section {
   order: 12;
 }

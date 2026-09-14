@@ -16,6 +16,7 @@ ROOT = Path(__file__).parent
 CACHE = {"at": 0, "data": None}
 TRACK_CACHE = {"at": 0, "data": None}
 CAMERA_CACHE = {}
+ORBIT_EVENTS_CACHE = {"at": 0, "data": None}
 DB = ROOT / "iss_history.db"
 
 
@@ -117,6 +118,33 @@ def get_forecast():
         with urllib.request.urlopen(req, timeout=8) as response:
             result.extend(json.load(response))
     return [{"latitude": p["latitude"], "longitude": p["longitude"], "timestamp": p["timestamp"]} for p in result]
+
+
+def get_orbit_events():
+    now = time.time()
+    if ORBIT_EVENTS_CACHE["data"] and now - ORBIT_EVENTS_CACHE["at"] < 1800:
+        return ORBIT_EVENTS_CACHE["data"]
+    start = int(now) // 300 * 300
+    stamps = [start + step * 300 for step in range(98)]
+    positions = []
+    for offset in range(0, len(stamps), 10):
+        query = ",".join(map(str, stamps[offset:offset + 10]))
+        url = f"https://api.wheretheiss.at/v1/satellites/25544/positions?timestamps={query}&units=kilometers"
+        req = urllib.request.Request(url, headers={"User-Agent": "Meleys-ISS-Monitor/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            positions.extend(json.load(response))
+    nodes = []
+    for previous, current in zip(positions, positions[1:]):
+        if previous["latitude"] < 0 <= current["latitude"]:
+            fraction = -previous["latitude"] / (current["latitude"] - previous["latitude"])
+            timestamp = round(previous["timestamp"] + fraction * (current["timestamp"] - previous["timestamp"]))
+            longitude = previous["longitude"] + fraction * (current["longitude"] - previous["longitude"])
+            if abs(current["longitude"] - previous["longitude"]) > 180:
+                longitude = previous["longitude"] + fraction * (current["longitude"] + 360 - previous["longitude"])
+            nodes.append({"timestamp": timestamp, "longitude": round(((longitude + 180) % 360) - 180, 2)})
+    data = {"ascending_nodes": nodes[:5], "generated": int(now)}
+    ORBIT_EVENTS_CACHE.update(at=now, data=data)
+    return data
 
 
 def get_past_track():
@@ -223,6 +251,14 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 body, status = json.dumps({"error": str(exc)}).encode(), 503
             self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body); return
+        if parsed.path == "/api/orbit-events":
+            try:
+                body, status = json.dumps(get_orbit_events()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body); return
         super().do_GET()
 
