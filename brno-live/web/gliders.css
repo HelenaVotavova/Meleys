@@ -1,0 +1,6 @@
+.glider-map { display: block; width: 100%; height: 560px; margin-top: 14px; border: 1px solid #c7d1d2; background: #dce7e7; }
+.glider-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.glider-links a { padding: 9px 12px; color: #fff; background: #08736a; font-size: 13px; font-weight: 700; }
+.glider-links a:hover { background: #065c55; }
+.glider-note { margin: 10px 0 0; color: #607076; font-size: 12px; }
+@media (max-width: 700px) { .glider-map { height: 430px; } .glider-links a { flex: 1 1 45%; text-align: center; } }

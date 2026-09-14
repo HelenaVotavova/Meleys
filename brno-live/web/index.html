@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="aviation.css">
   <link rel="stylesheet" href="weather-advice.css">
   <link rel="stylesheet" href="transit.css">
+  <link rel="stylesheet" href="gliders.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -45,6 +46,17 @@
       <div class="head"><div><span>OPEN SKY · ŽIVÁ POLOHA</span><h2>Letadla nad Brnem</h2></div><strong id="aircraft-count">načítám…</strong></div>
       <div id="aircraft-map" aria-label="Mapa letadel nad Brnem"></div>
     </section>
+    <section class="section gliders-section">
+      <div class="head"><div><span>OGN / FLARM · LETIŠTĚ MEDLÁNKY</span><h2>Kluzáky nad Medlánkami</h2></div><strong>živý tracking</strong></div>
+      <iframe class="glider-map" src="https://glideandseek.com/?viewport=49.2367,16.5556,12&amp;embed=5.10.251.95&amp;showAllAircraft=true" title="Živá mapa kluzáků nad letištěm Medlánky" loading="lazy" allow="geolocation" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <nav class="glider-links" aria-label="Další služby pro sledování kluzáků">
+        <a href="https://www.glidertracker.org/" target="_blank" rel="noopener">GliderTracker</a>
+        <a href="https://www.weglide.org/live" target="_blank" rel="noopener">WeGlide Live</a>
+        <a href="https://glideandseek.com/?viewport=49.2367,16.5556,12&amp;showAllAircraft=true" target="_blank" rel="noopener">Glide &amp; Seek</a>
+        <a href="https://live.glidernet.org/#c=49.2367,16.5556&amp;z=12&amp;l=ar" target="_blank" rel="noopener">OGN Live</a>
+      </nav>
+      <p class="glider-note">Zobrazí se pouze kluzáky a další letadla vybavená FLARM/OGN, která zachytí pozemní přijímače.</p>
+    </section>
     <section class="section radiation-section">
       <div class="head"><div><span>SÚJB MONRAS · HODINOVÉ MĚŘENÍ</span><h2>Aktuální radiace v Brně</h2></div><strong id="radiation-status">načítám…</strong></div>
       <div id="radiation" class="radiation"><p>Načítám měření…</p></div>
@@ -62,7 +74,7 @@
       <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
     </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
