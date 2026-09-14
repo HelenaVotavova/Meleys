@@ -1,1 +1,1 @@
-.sketchfab-section iframe{background:#000}
+.sketchfab-section iframe{background:#000}.dock-nav{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px 16px;background:#18232a;color:#fff}.dock-nav b{margin-right:4px}.dock-nav button{border:1px solid #ff7467;background:#a92722;color:#fff;padding:8px 10px;font-weight:700;cursor:pointer}.dock-nav button:hover,.dock-nav button:focus{background:#dc3f35;outline:2px solid #fff;outline-offset:1px}@media(max-width:700px){.dock-nav{padding:9px 10px}.dock-nav b{width:100%}.dock-nav button{flex:1 1 44%}}

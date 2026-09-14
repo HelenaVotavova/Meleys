@@ -1,5 +1,15 @@
 const modelFrame = document.querySelector('#iss-model');
 const modelClient = new Sketchfab('1.12.1', modelFrame);
+const dockButtons = document.querySelectorAll('[data-dock]');
+let dockApi;
+let dockAnnotations = [];
+
+dockButtons.forEach(button => button.addEventListener('click', () => {
+  const annotation = dockAnnotations[Number(button.dataset.dock)];
+  if (dockApi && annotation !== undefined) {
+    dockApi.gotoAnnotation(annotation, { preventCameraAnimation: false, preventCameraMove: false });
+  }
+}));
 
 modelClient.init('b7d40d89fcbd4c998462380545f391b6', {
   autostart: 1,
@@ -9,6 +19,7 @@ modelClient.init('b7d40d89fcbd4c998462380545f391b6', {
   ui_hint: 0,
   ui_watermark_link: 0,
   success(api) {
+    dockApi = api;
     api.start();
     api.addEventListener('viewerready', () => {
       api.getCameraLookAt((cameraError, camera) => {
@@ -19,13 +30,18 @@ modelClient.init('b7d40d89fcbd4c998462380545f391b6', {
           { position: [0, 2.2, -1.5], title: 'Dragon Crew-12', text: 'Horní port modulu Harmony' },
           { position: [0, -2.2, 1.3], title: 'Cygnus XL', text: 'Spodní port modulu Unity' }
         ];
-        docks.forEach(dock => api.createAnnotationFromScenePosition(
+        docks.forEach((dock, dockIndex) => api.createAnnotationFromScenePosition(
           dock.position,
           camera.position,
           camera.target,
           dock.title,
           dock.text,
-          () => {}
+          (error, annotationIndex) => {
+            if (!error) {
+              dockAnnotations[dockIndex] = annotationIndex;
+              api.showAnnotation(annotationIndex);
+            }
+          }
         ));
       });
     });
