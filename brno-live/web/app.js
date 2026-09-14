@@ -191,6 +191,26 @@ async function loadTransitIncidents() {
     })
     .join("");
 }
+async function loadAurora() {
+  const response = await fetch("/api/aurora");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  $("#aurora-status").textContent = `šance ${data.level}`;
+  $("#aurora-kp").textContent = data.current_kp?.toFixed(1) ?? "–";
+  $("#aurora-peak").textContent = data.peak_kp_48h?.toFixed(1) ?? "–";
+  $("#aurora-probability").textContent = data.brno_probability;
+  $("#aurora-message").textContent = data.message;
+  const forecast = new Date(data.forecast_time).toLocaleString("cs-CZ", {
+    day: "numeric",
+    month: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const peak = data.peak_time
+    ? new Date(data.peak_time).toLocaleString("cs-CZ", { weekday: "short", hour: "2-digit", minute: "2-digit" })
+    : "neuvedeno";
+  $("#aurora-time").textContent = `Model pro ${forecast} · očekávané maximum Kp: ${peak}`;
+}
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
   const rows = await response.json();
@@ -308,6 +328,9 @@ loadRadiation().catch(() => {
 });
 loadTransitIncidents().catch(() => {
   $("#transit-status").textContent = "data dočasně nedostupná";
+});
+loadAurora().catch(() => {
+  $("#aurora-status").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";

@@ -18,6 +18,7 @@ CACHE = {}
 AVIATION_CACHE = {}
 RADIATION_CACHE = {}
 TRANSIT_CACHE = {}
+AURORA_CACHE = {}
 
 
 def fetch_json(url):
@@ -149,6 +150,38 @@ def transit_incidents():
     return data
 
 
+def aurora_data():
+    if AURORA_CACHE.get("data") and time.time() - AURORA_CACHE["at"] < 300:
+        return AURORA_CACHE["data"]
+    ovation = fetch_json("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
+    kp_rows = fetch_json("https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json")
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    observed = [row for row in kp_rows if row.get("observed") == "observed"]
+    predicted = []
+    for row in kp_rows:
+        stamp = datetime.fromisoformat(row["time_tag"].replace("Z", ""))
+        if row.get("observed") == "predicted" and now <= stamp <= now + timedelta(hours=48):
+            predicted.append(row)
+    current_kp = float(observed[-1]["kp"]) if observed else None
+    peak = max(predicted, key=lambda row: float(row["kp"])) if predicted else None
+    local = min(ovation["coordinates"], key=lambda point: abs(point[0] - BRNO[1]) + abs(point[1] - BRNO[0]))
+    peak_kp = float(peak["kp"]) if peak else current_kp
+    if peak_kp is None or peak_kp < 6:
+        level, message = "velmi malá", "Z Brna nyní polární záře pravděpodobně vidět nebude."
+    elif peak_kp < 7:
+        level, message = "malá", "Fotograficky může být slabě zachytitelná nízko nad severním obzorem."
+    elif peak_kp < 8:
+        level, message = "zvýšená", "Vyplatí se sledovat jasný severní obzor mimo městské osvětlení."
+    else:
+        level, message = "vysoká", "Polární záře může být z jižní Moravy viditelná i pouhým okem."
+    data = {"current_kp": current_kp, "peak_kp_48h": peak_kp,
+            "peak_time": peak["time_tag"] + "Z" if peak else None,
+            "brno_probability": local[2], "forecast_time": ovation["Forecast Time"],
+            "level": level, "message": message}
+    AURORA_CACHE.update(data=data, at=time.time())
+    return data
+
+
 def daylight_series():
     today = datetime.now(ZoneInfo("Europe/Prague")).date()
     rows = []
@@ -234,6 +267,14 @@ def night_infrared_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/aurora":
+            try:
+                body, status = json.dumps(aurora_data()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/night-viirs":
             try:
                 body, date = night_viirs_image()

@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="transit.css">
   <link rel="stylesheet" href="gliders.css">
   <link rel="stylesheet" href="night-satellite.css">
+  <link rel="stylesheet" href="aurora.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -26,6 +27,13 @@
       <div class="night-satellite-grid">
         <figure><div class="night-image"><img src="/api/night-viirs" alt="Noční družicový snímek světel Brna z VIIRS"><span class="night-marker">BRNO</span></div><figcaption><b>Světla města · VIIRS</b><small>Nejnovější denní produkt, rozlišení přibližně 750 m. Mraky mohou světla zakrýt nebo rozptýlit.</small></figcaption></figure>
         <figure><div class="night-image infrared"><img src="/api/night-infrared" alt="Aktuální infračervený družicový snímek oblačnosti nad Brnem"><span class="night-marker">BRNO</span></div><figcaption><b>Oblačnost · Meteosat IR 10,8 µm</b><small>Nejnovější dostupné měření, obvykle aktualizované každých 15 minut.</small></figcaption></figure>
+      </div>
+    </section>
+    <section class="section aurora-section">
+      <div class="head"><div><span>NOAA SWPC · OVATION</span><h2>Možnost polární záře</h2></div><strong id="aurora-status">načítám…</strong></div>
+      <div class="aurora-layout">
+        <img src="https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg" alt="Aktuální model polární záře nad severní polokoulí" loading="lazy">
+        <div class="aurora-data"><div><span>Aktuální Kp</span><b id="aurora-kp">–</b></div><div><span>Maximum příštích 48 h</span><b id="aurora-peak">–</b></div><div><span>Model pro Brno</span><b id="aurora-probability">–</b><small>%</small></div><p id="aurora-message">Vyhodnocuji podmínky…</p><small id="aurora-time">–</small></div>
       </div>
     </section>
     <section class="current band">
@@ -82,7 +90,7 @@
       <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
     </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> / <a href="https://view.eumetsat.int/">EUMETSAT</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> / <a href="https://view.eumetsat.int/">EUMETSAT</a> · polární záře: <a href="https://www.spaceweather.gov/products/aurora-30-minute-forecast">NOAA SWPC</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
