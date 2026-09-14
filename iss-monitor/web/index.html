@@ -6,10 +6,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="extra.css">
-  <link rel="stylesheet" href="model.css">
   <link rel="stylesheet" href="crew.css">
   <link rel="stylesheet" href="map.css">
   <link rel="stylesheet" href="flags.css">
+  <link rel="stylesheet" href="sketchfab.css">
 </head>
 <body>
   <header><div><span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span><h1>ISS živě</h1></div><div id="state" class="state">Připojuji…</div></header>
@@ -28,7 +28,7 @@
       <p class="source-note">Ověřeno 14. 9. 2026 · <a href="https://acr.mo.gov.cz/informacni-servis/zpravodajstvi/ales-svoboda-zahajuje-specificky-vycvik-pro-misi-na-mezinarodni-kosmickou-stanici-265853/">Armáda ČR</a> · <a href="https://www.esa.int/Newsroom/Press_Releases/ESA_podepsala_jmenem_Ceske_republiky_dohodu_se_spolecnosti_Vast">ESA</a></p>
     </div></section>
     <section class="section"><h2>Rychlost a výška</h2><p>Průměrná minutová měření se uchovávají 30 dní.</p><div class="charts"><div><canvas id="altitudeChart"></canvas></div><div><canvas id="speedChart"></canvas></div></div></section>
-    <section class="model-section"><div class="model-title"><span class="eyebrow">ORIENTAČNÍ 3D SCHÉMA</span><h2>Hlavní části ISS a dokovací místa</h2><p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p></div><div class="model-legend"><b>Hlavní části</b><span>Zvezda · servisní modul</span><span>Zarja · první modul</span><span>Unity a Harmony · uzly</span><span>Destiny · laboratoř USA</span><span>Columbus · laboratoř ESA</span><span>Kibo · laboratoř JAXA</span><span>Nauka · ruská laboratoř</span><span>Tranquility + Cupola</span><span>8 solárních křídel</span><span>radiátory a Canadarm2</span><strong>Červeně: Sojuz a Dragon</strong></div><div id="iss3d" style="position:absolute;inset:0"></div></section>
+    <section class="sketchfab-section"><div class="model-title"><span class="eyebrow">DETAILNÍ 3D MODEL</span><h2>Mezinárodní vesmírná stanice</h2><p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p></div><iframe title="Detailní 3D model Mezinárodní vesmírné stanice" loading="lazy" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen src="https://sketchfab.com/models/f6e4f7ba571f4b33948ba1da23280ee0/embed?autostart=1&ui_infos=0&ui_watermark_link=0&ui_hint=0"></iframe><div class="dock-info"><b>Aktuálně připojené pilotované lodě</b><span><strong>Dragon Crew-12</strong> · horní port Harmony</span><span><strong>Sojuz MS-29</strong> · modul Pričal</span></div><p class="model-credit">Model: <a href="https://sketchfab.com/3d-models/international-space-station-f6e4f7ba571f4b33948ba1da23280ee0">International Space Station</a>, Paul (Sketchfab), původ NASA Johnson Space Center · CC Attribution</p></section>
     <section class="two-col">
       <div class="section"><h2>Uvnitř ISS</h2><p class="notice">Nejde o živou palubní telemetrii, ale o běžné provozní hodnoty.</p><div class="inside">
         <div><b>18–27 °C</b><span>teplota kabiny</span></div><div><b>≈ 101 kPa</b><span>tlak podobný Zemi</span></div><div><b>≈ 21 %</b><span>podíl kyslíku</span></div><div><b>7 osob</b><span>současná posádka</span></div>
@@ -41,6 +41,5 @@
     </section>
   </main>
   <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
-  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.169.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.169.0/examples/jsm/"}}</script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="app.js"></script><script type="module" src="iss3d.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="app.js"></script>
 </body></html>
