@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="night-satellite.css">
   <link rel="stylesheet" href="aurora.css">
   <link rel="stylesheet" href="medlanky-events.css">
+  <link rel="stylesheet" href="medlanky-sports.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -22,20 +23,6 @@
       <img src="/api/satellite" alt="Nejnovější satelitní snímek Brna a okolí">
       <div class="satellite-title"><span>NASA MODIS · POSLEDNÍ DOKONČENÁ MOZAIKA</span><h2>Brno ze satelitu</h2><p>Brno je označeno křížem uprostřed snímku. Oblačnost je součástí skutečného družicového obrazu.</p></div>
       <div class="brno-marker" aria-label="Poloha Brna"><i></i><b>BRNO</b></div>
-    </section>
-    <section class="section night-satellite-section">
-      <div class="head"><div><span>VIIRS A METEOSAT</span><h2>Brno v noci</h2></div><strong>dva družicové pohledy</strong></div>
-      <div class="night-satellite-grid">
-        <figure><div class="night-image"><img src="/api/night-viirs" alt="Noční družicový snímek světel Brna z VIIRS"><span class="night-marker">BRNO</span></div><figcaption><b>Světla města · VIIRS</b><small>Nejnovější denní produkt, rozlišení přibližně 750 m. Mraky mohou světla zakrýt nebo rozptýlit.</small></figcaption></figure>
-        <figure><div class="night-image infrared"><img src="/api/night-infrared" alt="Aktuální infračervený družicový snímek oblačnosti nad Brnem"><span class="night-marker">BRNO</span></div><figcaption><b>Oblačnost · Meteosat IR 10,8 µm</b><small>Nejnovější dostupné měření, obvykle aktualizované každých 15 minut.</small></figcaption></figure>
-      </div>
-    </section>
-    <section class="section aurora-section">
-      <div class="head"><div><span>NOAA SWPC · OVATION</span><h2>Možnost polární záře</h2></div><strong id="aurora-status">načítám…</strong></div>
-      <div class="aurora-layout">
-        <img src="https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg" alt="Aktuální model polární záře nad severní polokoulí" loading="lazy">
-        <div class="aurora-data"><div><span>Aktuální Kp</span><b id="aurora-kp">–</b></div><div><span>Maximum příštích 48 h</span><b id="aurora-peak">–</b></div><div><span>Model pro Brno</span><b id="aurora-probability">–</b><small>%</small></div><p id="aurora-message">Vyhodnocuji podmínky…</p><small id="aurora-time">–</small></div>
-      </div>
     </section>
     <section class="current band">
       <div><span>Teplota</span><b id="temp">–</b><small>°C</small></div>
@@ -49,6 +36,10 @@
     <section class="section">
       <div class="head"><div><span>PODLE POCITOVÉ TEPLOTY, DEŠTĚ A VĚTRU</span><h2>Co si obléct</h2></div><strong id="advice-day">–</strong></div>
       <div class="weather-advice"><article><span id="morning-label">RÁNO · 7:30</span><b id="morning-weather">–</b><p id="morning-advice">Načítám doporučení…</p></article><article><span id="afternoon-label">ODPOLEDNE · 12:00–15:00</span><b id="afternoon-weather">–</b><p id="afternoon-advice">Načítám doporučení…</p></article></div>
+    </section>
+    <section class="section transit-section">
+      <div class="head"><div><span>DPMB · LINKY 1, 6, 25, 26 A 32</span><h2>Mimořádné události v MHD</h2></div><strong id="transit-status">kontroluji…</strong></div>
+      <div id="transit-incidents" class="transit-incidents"><p>Načítám aktuální provoz…</p></div>
     </section>
     <section class="split">
       <div class="section"><span>KVALITA OVZDUŠÍ</span><h2 id="aqi-title">Načítám…</h2><div class="air"><div><b id="aqi">–</b><small>evropský AQI</small></div><dl><dt>PM₂.₅</dt><dd id="pm25">–</dd><dt>PM₁₀</dt><dd id="pm10">–</dd><dt>NO₂</dt><dd id="no2">–</dd><dt>O₃</dt><dd id="o3">–</dd></dl></div></div>
@@ -79,13 +70,30 @@
       <div id="medlanky-events" class="medlanky-events"><p>Načítám nejbližší akce…</p></div>
       <a class="events-all" href="https://medlanky.brno.cz/kalendar-akci" target="_blank" rel="noopener">Celý kalendář městské části</a>
     </section>
+    <section class="section medlanky-sports-section">
+      <div class="head"><div><span>GIS BRNO · MĚSTSKÝ PASPORT</span><h2>Hřiště a sportoviště v Medlánkách</h2></div><strong id="medlanky-sports-status">načítám…</strong></div>
+      <div class="sports-filters" role="group" aria-label="Filtr míst"><button class="active" data-sports-filter="all">Všechna</button><button data-sports-filter="playground">Dětská hřiště</button><button data-sports-filter="sport">Sportoviště</button></div>
+      <div id="medlanky-sports-map" aria-label="Mapa hřišť a sportovišť v Medlánkách"></div>
+      <div id="medlanky-sports-list" class="medlanky-sports-list"></div>
+      <a class="events-all" href="https://gis.brno.cz/ost/edas/public/889fcc3c-6af1-4264-9dc3-480e65e0efa3" target="_blank" rel="noopener">Zdroj: otevřená data města Brna</a>
+    </section>
     <section class="section radiation-section">
       <div class="head"><div><span>SÚJB MONRAS · HODINOVÉ MĚŘENÍ</span><h2>Aktuální radiace v Brně</h2></div><strong id="radiation-status">načítám…</strong></div>
       <div id="radiation" class="radiation"><p>Načítám měření…</p></div>
     </section>
-    <section class="section transit-section">
-      <div class="head"><div><span>DPMB · LINKY 1, 6, 25, 26 A 32</span><h2>Mimořádné události v MHD</h2></div><strong id="transit-status">kontroluji…</strong></div>
-      <div id="transit-incidents" class="transit-incidents"><p>Načítám aktuální provoz…</p></div>
+    <section class="section night-satellite-section">
+      <div class="head"><div><span>VIIRS A METEOSAT</span><h2>Brno v noci</h2></div><strong>dva družicové pohledy</strong></div>
+      <div class="night-satellite-grid">
+        <figure><div class="night-image"><img src="/api/night-viirs" alt="Noční družicový snímek světel Brna z VIIRS"><span class="night-marker">BRNO</span></div><figcaption><b>Světla města · VIIRS</b><small>Nejnovější denní produkt, rozlišení přibližně 750 m. Mraky mohou světla zakrýt nebo rozptýlit.</small></figcaption></figure>
+        <figure><div class="night-image infrared"><img src="/api/night-infrared" alt="Aktuální infračervený družicový snímek oblačnosti nad Brnem"><span class="night-marker">BRNO</span></div><figcaption><b>Oblačnost · Meteosat IR 10,8 µm</b><small>Nejnovější dostupné měření, obvykle aktualizované každých 15 minut.</small></figcaption></figure>
+      </div>
+    </section>
+    <section class="section aurora-section">
+      <div class="head"><div><span>NOAA SWPC · OVATION</span><h2>Možnost polární záře</h2></div><strong id="aurora-status">načítám…</strong></div>
+      <div class="aurora-layout">
+        <img src="https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg" alt="Aktuální model polární záře nad severní polokoulí" loading="lazy">
+        <div class="aurora-data"><div><span>Aktuální Kp</span><b id="aurora-kp">–</b></div><div><span>Maximum příštích 48 h</span><b id="aurora-peak">–</b></div><div><span>Model pro Brno</span><b id="aurora-probability">–</b><small>%</small></div><p id="aurora-message">Vyhodnocuji podmínky…</p><small id="aurora-time">–</small></div>
+      </div>
     </section>
     <section class="section">
       <div class="head"><div><span>LETIŠTĚ BRNO-TUŘANY</span><h2>Přílety a odlety · 48 hodin</h2></div><strong>BRQ</strong></div>

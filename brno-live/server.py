@@ -20,6 +20,7 @@ RADIATION_CACHE = {}
 TRANSIT_CACHE = {}
 AURORA_CACHE = {}
 MEDLANKY_CACHE = {}
+MEDLANKY_SPORTS_CACHE = {}
 
 
 def fetch_json(url):
@@ -202,6 +203,36 @@ def medlanky_events():
     return data
 
 
+def medlanky_sports():
+    if MEDLANKY_SPORTS_CACHE.get("data") and time.time() - MEDLANKY_SPORTS_CACHE["at"] < 21600:
+        return MEDLANKY_SPORTS_CACHE["data"]
+    query = urllib.parse.urlencode({
+        "where": "adresa_cast_obce='Medlánky'", "outFields": "*",
+        "returnGeometry": "true", "outSR": 4326, "f": "geojson",
+    })
+    url = "https://gis.brno.cz/ags1/rest/services/OMI/OMI_pasport_hrist_a_sportovist/FeatureServer/1/query?" + query
+    data = fetch_json(url)
+    enrichments = {
+        "Jabloňová": {
+            "equipment": "Hrazdy, bradla a prvky pro cvičení vlastní vahou.",
+            "access": "Veřejnost: Po, St, Pá 17–20 h; So, Ne 8–20 h.",
+        },
+        "V Újezdech": {
+            "equipment": "Fitness a workout; v areálu jsou také víceúčelové sportovní plochy.",
+            "access": "Veřejně přístupný venkovní areál.",
+        },
+    }
+    for feature in data.get("features", []):
+        props = feature.setdefault("properties", {})
+        street = props.get("adresa_ulice") or props.get("nazev") or "Místo bez názvu"
+        extra = enrichments.get(street, {})
+        props["display_name"] = props.get("nazev") or f"{street} – {props.get('typ_hriste_nazev', 'hřiště')}"
+        props["equipment_display"] = props.get("popis") or props.get("sportoviste_nazev") or extra.get("equipment") or "Vybavení není v městském pasportu popsáno."
+        props["access_display"] = props.get("dostupnost") or extra.get("access") or "Vedeno v městském pasportu; režim přístupu není uveden."
+    MEDLANKY_SPORTS_CACHE.update(data=data, at=time.time())
+    return data
+
+
 def daylight_series():
     today = datetime.now(ZoneInfo("Europe/Prague")).date()
     rows = []
@@ -287,6 +318,14 @@ def night_infrared_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/medlanky-sports":
+            try:
+                body, status = json.dumps(medlanky_sports()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/geo+json")
+            self.send_header("Cache-Control", "public, max-age=3600"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/medlanky-events":
             try:
                 body, status = json.dumps(medlanky_events()).encode(), 200

@@ -233,6 +233,34 @@ async function loadMedlankyEvents() {
     })
     .join("");
 }
+async function loadMedlankySports() {
+  const response = await fetch("/api/medlanky-sports");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  const map = L.map("medlanky-sports-map", { scrollWheelZoom: false }).setView([49.238, 16.575], 14);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  let layer;
+  const kind = (feature) => (feature.properties.typ_hriste_nazev || "").toLowerCase().includes("dětsk") ? "playground" : "sport";
+  const render = (filter = "all") => {
+    if (layer) layer.remove();
+    const features = data.features.filter((feature) => filter === "all" || kind(feature) === filter);
+    layer = L.geoJSON({ type: "FeatureCollection", features }, {
+      style: (feature) => ({ color: kind(feature) === "playground" ? "#d84b2a" : "#18756b", weight: 3, fillOpacity: 0.25 }),
+      onEachFeature: (feature, item) => item.bindPopup(`<b>${escapeHtml(feature.properties.display_name)}</b><br>${escapeHtml(feature.properties.equipment_display)}<br><small>${escapeHtml(feature.properties.access_display)}</small>`),
+    }).addTo(map);
+    if (features.length && layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [16, 16], maxZoom: 15 });
+    $("#medlanky-sports-list").innerHTML = features.map((feature) => {
+      const p = feature.properties;
+      return `<article><span>${kind(feature) === "playground" ? "DĚTSKÉ HŘIŠTĚ" : "SPORTOVIŠTĚ"}</span><h3>${escapeHtml(p.display_name)}</h3><p><b>Vybavení:</b> ${escapeHtml(p.equipment_display)}</p><p><b>Přístup:</b> ${escapeHtml(p.access_display)}</p></article>`;
+    }).join("");
+    $("#medlanky-sports-status").textContent = `${features.length} míst`;
+  };
+  document.querySelectorAll("[data-sports-filter]").forEach((button) => button.addEventListener("click", () => {
+    document.querySelectorAll("[data-sports-filter]").forEach((item) => item.classList.toggle("active", item === button));
+    render(button.dataset.sportsFilter);
+  }));
+  render();
+}
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
   const rows = await response.json();
@@ -356,6 +384,9 @@ loadAurora().catch(() => {
 });
 loadMedlankyEvents().catch(() => {
   $("#medlanky-events-status").textContent = "data dočasně nedostupná";
+});
+loadMedlankySports().catch(() => {
+  $("#medlanky-sports-status").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";
