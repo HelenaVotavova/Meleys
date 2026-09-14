@@ -1,0 +1,31 @@
+.person-info strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 13px;
+  color: #123f77;
+}
+.crew-tasks {
+  line-height: 1.35;
+}
+.crew-state {
+  display: block;
+  margin-top: 9px;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  background: #e6ecee;
+  color: #435158;
+}
+.crew-state.active {
+  background: #dcefe9;
+  color: #08736a;
+}
+.crew-state.sleep {
+  background: #e5e8f2;
+  color: #384b78;
+}
+.crew-state.personal {
+  background: #f3ead7;
+  color: #805b18;
+}

@@ -61,6 +61,44 @@ const people = [
     "Roskosmos",
   ],
 ];
+const crewDetails = {
+  "Jessica Meir": [
+    "velitelka Expedice 75",
+    "řízení stanice a posádky, vědecký program, výstupy do kosmu a údržba systémů",
+  ],
+  "Jack Hathaway": [
+    "letový inženýr · pilot Crew-12",
+    "fyzikální experimenty, údržba amerického segmentu a operace lodi Dragon",
+  ],
+  "Sophie Adenot": [
+    "letová inženýrka ESA",
+    "evropské experimenty, výzkum lidského těla, technologie a výstupy do kosmu",
+  ],
+  "Andrey Fedyaev": [
+    "letový inženýr Roskosmosu",
+    "údržba ruského segmentu, životní podpora, experimenty a provoz lodí Sojuz a Progress",
+  ],
+  "Anil Menon": [
+    "letový inženýr NASA · lékař",
+    "biomedicínský výzkum, zdravotní sledování posádky, technologické demonstrace a výstupy do kosmu",
+  ],
+  "Pyotr Dubrov": [
+    "letový inženýr Roskosmosu",
+    "experimenty, údržba ruského segmentu, systémy stanice a pozorování Země",
+  ],
+  "Anna Kikina": [
+    "letová inženýrka Roskosmosu",
+    "výzkum adaptace člověka, údržba ruského segmentu a vědecké experimenty",
+  ],
+};
+function crewStatus() {
+  const now = new Date(),
+    hour = now.getUTCHours() + now.getUTCMinutes() / 60;
+  if (hour >= 21.5 || hour < 6) return ["pravděpodobně spí", "sleep"];
+  if (hour < 7.5) return ["ranní příprava", "personal"];
+  if (hour < 17) return ["pravděpodobně pracuje", "active"];
+  return ["osobní čas, jídlo nebo cvičení", "personal"];
+}
 const crew = document.querySelector("#crew");
 for (const [
   name,
@@ -75,11 +113,21 @@ for (const [
   const days = Math.floor(
     (Date.now() - new Date(arrival + "T00:00:00Z")) / 864e5,
   );
+  const [role, tasks] = crewDetails[name];
+  const [status, statusClass] = crewStatus();
   crew.insertAdjacentHTML(
     "beforeend",
-    `<article class="person"><div class="portrait"><img src="assets/crew/${photo}.webp" alt="${name}" loading="lazy"><span class="flag"><img src="assets/flags/${flag}.svg" alt="Vlajka: ${country}" title="${country}"></span><span class="agency"><img src="assets/logos/${agency}.svg" alt="${agencyName}" title="Vysílající organizace: ${agencyName}"></span></div><div class="person-info"><b>${name}</b><span>${country} · ${age}</span><span>na ISS ${days} dní</span></div></article>`,
+    `<article class="person"><div class="portrait"><img src="assets/crew/${photo}.webp" alt="${name}" loading="lazy"><span class="flag"><img src="assets/flags/${flag}.svg" alt="Vlajka: ${country}" title="${country}"></span><span class="agency"><img src="assets/logos/${agency}.svg" alt="${agencyName}" title="Vysílající organizace: ${agencyName}"></span></div><div class="person-info"><b>${name}</b><span>${country} · ${age} · na ISS ${days} dní</span><strong>${role}</strong><span class="crew-tasks">${tasks}</span><em class="crew-state ${statusClass}">${status}</em></div></article>`,
   );
 }
+function refreshCrewStatus() {
+  const [status, statusClass] = crewStatus();
+  document.querySelectorAll(".crew-state").forEach((element) => {
+    element.className = `crew-state ${statusClass}`;
+    element.textContent = status;
+  });
+}
+setInterval(refreshCrewStatus, 60000);
 const map = L.map("map", { worldCopyJump: true, zoomControl: true }).setView(
   [20, 0],
   2,
