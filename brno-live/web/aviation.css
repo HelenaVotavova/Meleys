@@ -7,4 +7,11 @@
 .flight-schedule th { font-size: 11px; color: #607076; text-transform: uppercase; }
 .flight-direction { font-weight: 700; color: #08736a; }
 .daylight-chart { height: 300px; }
+.radiation { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.radiation article { padding: 16px; background: #f1f5f5; border-left: 4px solid #d49b24; }
+.radiation h3 { margin: 0 0 8px; font-size: 16px; }
+.radiation b { font-size: 30px; }
+.radiation small { margin-left: 4px; color: #607076; }
+.radiation p { margin: 7px 0 0; color: #536168; font-size: 12px; }
 @media (max-width: 700px) { #aircraft-map { height: 360px; } .flight-schedule { font-size: 13px; } }
+@media (max-width: 700px) { .radiation { grid-template-columns: 1fr; } }

@@ -6,6 +6,7 @@ import re
 import time
 import urllib.parse
 import urllib.request
+from http.cookiejar import CookieJar
 from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -15,6 +16,7 @@ ROOT = Path(__file__).parent
 BRNO = (49.1951, 16.6068)
 CACHE = {}
 AVIATION_CACHE = {}
+RADIATION_CACHE = {}
 
 
 def fetch_json(url):
@@ -53,7 +55,7 @@ def sports_occupancy():
 def aircraft_and_flights():
     if AVIATION_CACHE.get("data") and time.time() - AVIATION_CACHE["at"] < 300:
         return AVIATION_CACHE["data"]
-    states = fetch_json("https://opensky-network.org/api/states/all?lamin=48.7&lomin=15.5&lamax=49.8&lomax=17.7&extended=1")
+    states = fetch_json("https://opensky-network.org/api/states/all?lamin=48.975&lomin=16.05&lamax=49.525&lomax=17.15&extended=1")
     aircraft = []
     for state in states.get("states") or []:
         if state[5] is None or state[6] is None:
@@ -87,6 +89,33 @@ def aircraft_and_flights():
     data = {"aircraft": aircraft, "flights": sorted(flights, key=lambda item: item["scheduled"]),
             "schedule_available": schedule_available, "updated": int(time.time())}
     AVIATION_CACHE.update(data=data, at=time.time())
+    return data
+
+
+def radiation_data():
+    if RADIATION_CACHE.get("data") and time.time() - RADIATION_CACHE["at"] < 900:
+        return RADIATION_CACHE["data"]
+    url = "https://sujb.gov.cz/aplikace/monras/tabulky/svz"
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
+    request = urllib.request.Request(url, headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    page = opener.open(request, timeout=15).read().decode("utf-8", "replace")
+    token_match = re.search(r'name="_csrf" content="([^"]+)"', page)
+    if not token_match:
+        raise ValueError("SÚJB neposkytl bezpečnostní token")
+    request = urllib.request.Request(url + ".json?zhp=false", data=b"draw=1", method="POST",
+                                     headers={"User-Agent": "Meleys-Brno-Live/1.0",
+                                              "X-CSRF-TOKEN": token_match.group(1),
+                                              "X-Requested-With": "XMLHttpRequest",
+                                              "Content-Type": "application/x-www-form-urlencoded"})
+    payload = json.load(opener.open(request, timeout=15))
+    stations = [{"station": row["mermisto"], "measured": row["datum"],
+                 "average": row["hodnotaPrumer"], "maximum": row["hodnotaMax"],
+                 "status": row["typMonitorovani"]}
+                for row in payload.get("data", []) if row.get("mermisto") in ("Brno - Ponava", "Brno - Tuřany")]
+    if not stations:
+        raise ValueError("Aktuální radiační data pro Brno nejsou dostupná")
+    data = {"stations": stations, "unit": "nSv/h", "source": "SÚJB MonRaS"}
+    RADIATION_CACHE.update(data=data, at=time.time())
     return data
 
 
@@ -148,6 +177,14 @@ def satellite_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/radiation":
+            try:
+                body, status = json.dumps(radiation_data()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/aviation":
             try:
                 body, status = json.dumps(aircraft_and_flights()).encode(), 200

@@ -59,7 +59,7 @@ async function loadAviation() {
   if (!response.ok) throw Error(data.error);
   const map = L.map("aircraft-map", { scrollWheelZoom: false }).setView(
     [49.1951, 16.6068],
-    8,
+    9,
   );
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -105,6 +105,27 @@ async function loadAviation() {
     : data.flights.length
     ? `<table><thead><tr><th>Čas</th><th>Směr</th><th>Let</th><th>Odkud / kam</th><th>Dopravce</th><th>Stav</th></tr></thead><tbody>${rows}</tbody></table>`
     : "<p>V následujících 48 hodinách nejsou zveřejněné žádné lety.</p>";
+}
+async function loadRadiation() {
+  const response = await fetch("/api/radiation");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  $("#radiation").innerHTML = data.stations
+    .map((row) => {
+      const measured = new Date(row.measured).toLocaleString("cs-CZ", {
+        day: "numeric",
+        month: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `<article><h3>${escapeHtml(row.station)}</h3><b>${Math.round(row.average)}</b><small>${data.unit}</small><p>hodinový průměr · maximum ${Math.round(row.maximum)} ${data.unit}<br>měřeno ${measured}</p></article>`;
+    })
+    .join("");
+  $("#radiation-status").textContent = data.stations.every((row) =>
+    row.status.includes("Normální"),
+  )
+    ? "normální situace"
+    : "zkontrolujte stav měření";
 }
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
@@ -216,6 +237,9 @@ load().catch(() => {
 loadAviation().catch(() => {
   $("#aircraft-count").textContent = "letecká data dočasně nedostupná";
   $("#flight-schedule").innerHTML = "<p>Letový plán se nepodařilo načíst.</p>";
+});
+loadRadiation().catch(() => {
+  $("#radiation-status").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";
