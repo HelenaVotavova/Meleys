@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Brno živě</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><div><span>BRNO · AKTUÁLNÍ DATA</span><h1>Brno živě</h1></div><b id="updated">načítám…</b></header>
+  <main>
+    <section class="satellite">
+      <img src="/api/satellite" alt="Nejnovější satelitní snímek Brna a okolí">
+      <div class="satellite-title"><span>NASA MODIS · POSLEDNÍ DOKONČENÁ MOZAIKA</span><h2>Brno ze satelitu</h2><p>Brno je označeno křížem uprostřed snímku. Oblačnost je součástí skutečného družicového obrazu.</p></div>
+      <div class="brno-marker" aria-label="Poloha Brna"><i></i><b>BRNO</b></div>
+    </section>
+    <section class="current band">
+      <div><span>Teplota</span><b id="temp">–</b><small>°C</small></div>
+      <div><span>Pocitově</span><b id="feels">–</b><small>°C</small></div>
+      <div><span>Oblačnost</span><b id="cloud">–</b><small>%</small></div>
+      <div><span>Vítr</span><b id="wind">–</b><small>km/h</small></div>
+      <div><span>Nárazy</span><b id="gust">–</b><small>km/h</small></div>
+      <div><span>Srážky</span><b id="rain">–</b><small>mm</small></div>
+    </section>
+    <section class="section"><div class="head"><div><span>DALŠÍCH 24 HODIN</span><h2>Teplota, déšť a vítr</h2></div><strong id="condition">–</strong></div><div class="chart"><canvas id="forecastChart"></canvas></div></section>
+    <section class="split">
+      <div class="section"><span>KVALITA OVZDUŠÍ</span><h2 id="aqi-title">Načítám…</h2><div class="air"><div><b id="aqi">–</b><small>evropský AQI</small></div><dl><dt>PM₂.₅</dt><dd id="pm25">–</dd><dt>PM₁₀</dt><dd id="pm10">–</dd><dt>NO₂</dt><dd id="no2">–</dd><dt>O₃</dt><dd id="o3">–</dd></dl></div></div>
+      <div class="section"><span>SLUNCE A DEN</span><h2>Dnešní světlo</h2><div class="sun"><div><small>Východ</small><b id="sunrise">–</b></div><div><small>Západ</small><b id="sunset">–</b></div><div><small>Délka dne</small><b id="daylight">–</b></div></div></div>
+    </section>
+  </main>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a></footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
