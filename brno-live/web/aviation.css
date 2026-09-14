@@ -1,0 +1,10 @@
+#aircraft-map { height: 460px; margin-top: 14px; background: #dce7e7; }
+.aircraft-icon { background: transparent; border: 0; }
+.aircraft-icon i { display: block; color: #17252a; font-size: 25px; line-height: 28px; text-align: center; text-shadow: 0 1px 2px white; }
+.flight-schedule { margin-top: 14px; overflow-x: auto; }
+.flight-schedule table { width: 100%; border-collapse: collapse; }
+.flight-schedule th, .flight-schedule td { padding: 10px 8px; border-bottom: 1px solid #d5ddde; text-align: left; }
+.flight-schedule th { font-size: 11px; color: #607076; text-transform: uppercase; }
+.flight-direction { font-weight: 700; color: #08736a; }
+.daylight-chart { height: 300px; }
+@media (max-width: 700px) { #aircraft-map { height: 360px; } .flight-schedule { font-size: 13px; } }

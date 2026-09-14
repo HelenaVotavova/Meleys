@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import html
+import math
 import re
 import time
 import urllib.parse
@@ -8,10 +9,12 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).parent
 BRNO = (49.1951, 16.6068)
 CACHE = {}
+AVIATION_CACHE = {}
 
 
 def fetch_json(url):
@@ -45,6 +48,63 @@ def sports_occupancy():
     if len(result) != 4:
         raise ValueError("Obsazenost STAREZ není kompletní")
     return result
+
+
+def aircraft_and_flights():
+    if AVIATION_CACHE.get("data") and time.time() - AVIATION_CACHE["at"] < 300:
+        return AVIATION_CACHE["data"]
+    states = fetch_json("https://opensky-network.org/api/states/all?lamin=48.7&lomin=15.5&lamax=49.8&lomax=17.7&extended=1")
+    aircraft = []
+    for state in states.get("states") or []:
+        if state[5] is None or state[6] is None:
+            continue
+        aircraft.append({"icao": state[0], "callsign": (state[1] or "").strip() or state[0].upper(),
+                         "country": state[2], "lon": state[5], "lat": state[6],
+                         "altitude": state[7], "ground": state[8], "speed": state[9],
+                         "heading": state[10], "vertical_rate": state[11],
+                         "category": state[17] if len(state) > 17 else None})
+    now = datetime.now(ZoneInfo("Europe/Prague"))
+    flights = []
+    schedule_available = True
+    for direction in ("arrivals", "departures"):
+        request = urllib.request.Request(f"https://www.brno-airport.cz/en/{direction}", headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+        with urllib.request.urlopen(request, timeout=15) as response:
+            page = response.read().decode("utf-8", "replace")
+        if "flight-table__table" not in page:
+            schedule_available = False
+            continue
+        for row in re.findall(r"<tr>(.*?)</tr>", page, re.S):
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+            values = [" ".join(html.unescape(re.sub(r"<[^>]+>", " ", cell)).split()) for cell in cells]
+            if len(values) < 5 or not re.fullmatch(r"\d{2}:\d{2}", values[0]):
+                continue
+            day = now.date() + timedelta(days=1 if values[1] == "Tomorrow" else 0)
+            scheduled = datetime.combine(day, datetime.strptime(values[0], "%H:%M").time(), now.tzinfo)
+            if now <= scheduled <= now + timedelta(hours=48):
+                flights.append({"direction": direction, "scheduled": scheduled.isoformat(),
+                                "airline": values[2], "place": values[3], "flight": values[4],
+                                "note": values[5] if len(values) > 5 else ""})
+    data = {"aircraft": aircraft, "flights": sorted(flights, key=lambda item: item["scheduled"]),
+            "schedule_available": schedule_available, "updated": int(time.time())}
+    AVIATION_CACHE.update(data=data, at=time.time())
+    return data
+
+
+def daylight_series():
+    today = datetime.now(ZoneInfo("Europe/Prague")).date()
+    rows = []
+    latitude = math.radians(BRNO[0])
+    for offset in range(-61, 62):
+        day = today + timedelta(days=offset)
+        gamma = 2 * math.pi / 365 * (day.timetuple().tm_yday - 1)
+        declination = (0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma)
+                       - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma)
+                       - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma))
+        zenith = math.radians(90.833)
+        hour_angle = math.acos((math.cos(zenith) / (math.cos(latitude) * math.cos(declination)))
+                               - math.tan(latitude) * math.tan(declination))
+        rows.append({"date": day.isoformat(), "hours": 24 * hour_angle / math.pi})
+    return rows
 
 
 def dashboard_data():
@@ -88,6 +148,19 @@ def satellite_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/aviation":
+            try:
+                body, status = json.dumps(aircraft_and_flights()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path == "/api/daylight":
+            body = json.dumps(daylight_series()).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "public, max-age=21600"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/data":
             try:
                 body, status = json.dumps(dashboard_data()).encode(), 200

@@ -48,6 +48,87 @@ function renderOccupancy(rows) {
     })
     .join("");
 }
+function escapeHtml(value) {
+  const node = document.createElement("span");
+  node.textContent = value ?? "";
+  return node.innerHTML;
+}
+async function loadAviation() {
+  const response = await fetch("/api/aviation");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  const map = L.map("aircraft-map", { scrollWheelZoom: false }).setView(
+    [49.1951, 16.6068],
+    8,
+  );
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: "© OpenStreetMap",
+  }).addTo(map);
+  L.circleMarker([49.1513, 16.6944], {
+    radius: 6,
+    color: "#d44835",
+    fillOpacity: 1,
+  })
+    .bindPopup("Letiště Brno-Tuřany (BRQ)")
+    .addTo(map);
+  data.aircraft.forEach((plane) => {
+    const heading = plane.heading ?? 0;
+    const icon = L.divIcon({
+      className: "aircraft-icon",
+      html: `<i style="transform:rotate(${heading}deg)">▲</i>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+    const altitude = plane.altitude == null ? "neznámá" : `${Math.round(plane.altitude)} m`;
+    const speed = plane.speed == null ? "neznámá" : `${Math.round(plane.speed * 3.6)} km/h`;
+    L.marker([plane.lat, plane.lon], { icon })
+      .bindPopup(`<b>${escapeHtml(plane.callsign)}</b><br>${escapeHtml(plane.country)}<br>výška ${altitude}<br>rychlost ${speed}`)
+      .addTo(map);
+  });
+  $("#aircraft-count").textContent = `${data.aircraft.length} letadel v oblasti`;
+  const rows = data.flights
+    .map((flight) => {
+      const date = new Date(flight.scheduled).toLocaleString("cs-CZ", {
+        weekday: "short",
+        day: "numeric",
+        month: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const direction = flight.direction === "arrivals" ? "Přílet" : "Odlet";
+      return `<tr><td>${date}</td><td class="flight-direction">${direction}</td><td><b>${escapeHtml(flight.flight)}</b></td><td>${escapeHtml(flight.place)}</td><td>${escapeHtml(flight.airline)}</td><td>${escapeHtml(flight.note)}</td></tr>`;
+    })
+    .join("");
+  $("#flight-schedule").innerHTML = !data.schedule_available
+    ? '<p>Letiště Brno nyní dočasně blokuje automatické načtení letového plánu. Živé polohy letadel fungují dál.</p>'
+    : data.flights.length
+    ? `<table><thead><tr><th>Čas</th><th>Směr</th><th>Let</th><th>Odkud / kam</th><th>Dopravce</th><th>Stav</th></tr></thead><tbody>${rows}</tbody></table>`
+    : "<p>V následujících 48 hodinách nejsou zveřejněné žádné lety.</p>";
+}
+async function loadDaylight() {
+  const response = await fetch("/api/daylight");
+  const rows = await response.json();
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(new Date());
+  const current = rows.find((row) => row.date === today);
+  if (current) {
+    const hours = Math.floor(current.hours);
+    $("#daylight-now").textContent = `dnes ${hours} h ${Math.round((current.hours - hours) * 60)} min`;
+  }
+  new Chart($("#daylightChart"), {
+    type: "line",
+    data: {
+      labels: rows.map((row) => row.date),
+      datasets: [{ label: "Délka dne", data: rows.map((row) => row.hours), borderColor: "#d49b24", backgroundColor: "#d49b2433", fill: true, pointRadius: 0, tension: 0.25 }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { tooltip: { callbacks: { label: (item) => `${Math.floor(item.raw)} h ${Math.round((item.raw % 1) * 60)} min` } } },
+      scales: { x: { ticks: { maxTicksLimit: 9, callback: (_, index) => new Date(rows[index].date).toLocaleDateString("cs-CZ", { day: "numeric", month: "short" }) } }, y: { title: { display: true, text: "hodin" } } },
+    },
+  });
+}
 async function load() {
   const response = await fetch("/api/data");
   const data = await response.json();
@@ -132,3 +213,11 @@ async function load() {
 load().catch(() => {
   $("#updated").textContent = "data dočasně nedostupná";
 });
+loadAviation().catch(() => {
+  $("#aircraft-count").textContent = "letecká data dočasně nedostupná";
+  $("#flight-schedule").innerHTML = "<p>Letový plán se nepodařilo načíst.</p>";
+});
+loadDaylight().catch(() => {
+  $("#daylight-now").textContent = "data dočasně nedostupná";
+});
+setTimeout(() => window.location.reload(), 300000);

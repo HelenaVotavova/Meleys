@@ -6,6 +6,8 @@
   <title>Brno živě</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="occupancy.css">
+  <link rel="stylesheet" href="aviation.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header><div><span>BRNO · AKTUÁLNÍ DATA</span><h1>Brno živě</h1></div><b id="updated">načítám…</b></header>
@@ -33,9 +35,22 @@
       <div id="occupancy" class="occupancy"><p>Načítám aktuální obsazenost…</p></div>
       <p class="occupancy-note">Wellness zahrnuje saunovou a relaxační část podle členění provozovatele.</p>
     </section>
+    <section class="section aviation-section">
+      <div class="head"><div><span>OPEN SKY · ŽIVÁ POLOHA</span><h2>Letadla nad Brnem</h2></div><strong id="aircraft-count">načítám…</strong></div>
+      <div id="aircraft-map" aria-label="Mapa letadel nad Brnem"></div>
+    </section>
+    <section class="section">
+      <div class="head"><div><span>LETIŠTĚ BRNO-TUŘANY</span><h2>Přílety a odlety · 48 hodin</h2></div><strong>BRQ</strong></div>
+      <div id="flight-schedule" class="flight-schedule"><p>Načítám letový plán…</p></div>
+    </section>
+    <section class="section">
+      <div class="head"><div><span>2 MĚSÍCE ZPĚT · 2 MĚSÍCE VPŘED</span><h2>Délka dne v Brně</h2></div><strong id="daylight-now">–</strong></div>
+      <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
+    </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
