@@ -245,7 +245,8 @@ async function loadMedlankySports() {
     if (layer) layer.remove();
     const features = data.features.filter((feature) => filter === "all" || kind(feature) === filter);
     layer = L.geoJSON({ type: "FeatureCollection", features }, {
-      style: (feature) => ({ color: kind(feature) === "playground" ? "#d84b2a" : "#18756b", weight: 3, fillOpacity: 0.25 }),
+      pointToLayer: (feature, latlng) => L.circleMarker(latlng, { radius: 8 }),
+      style: (feature) => ({ color: kind(feature) === "playground" ? "#d84b2a" : "#2166b1", weight: 3, fillOpacity: 0.25 }),
       onEachFeature: (feature, item) => item.bindPopup(`<b>${escapeHtml(feature.properties.display_name)}</b><br>${escapeHtml(feature.properties.equipment_display)}<br><small>${escapeHtml(feature.properties.access_display)}</small>`),
     }).addTo(map);
     if (features.length && layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [16, 16], maxZoom: 15 });
@@ -260,6 +261,13 @@ async function loadMedlankySports() {
     render(button.dataset.sportsFilter);
   }));
   render();
+}
+async function loadSchoolMenus() {
+  const response = await fetch("/api/school-menus");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  $("#school-menus-date").textContent = new Date(`${data.date}T12:00:00`).toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
+  $("#school-menus").innerHTML = data.menus.map((menu) => `<article><h3>${escapeHtml(menu.school)}</h3>${menu.meals.length ? `<dl>${menu.meals.map((meal) => `<dt>${escapeHtml(meal.type || "Jídlo")}</dt><dd>${escapeHtml(meal.name)}</dd>`).join("")}</dl>` : `<p>${escapeHtml(menu.message)}</p>`}<a href="${menu.source}" target="_blank" rel="noopener">Otevřít zdroj</a></article>`).join("");
 }
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
@@ -387,6 +395,9 @@ loadMedlankyEvents().catch(() => {
 });
 loadMedlankySports().catch(() => {
   $("#medlanky-sports-status").textContent = "data dočasně nedostupná";
+});
+loadSchoolMenus().catch(() => {
+  $("#school-menus-date").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";

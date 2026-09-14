@@ -1,0 +1,8 @@
+.school-menus { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+.school-menus article { border-top: 3px solid #d49b24; padding: 12px 4px; }
+.school-menus h3 { font-size: 18px; margin: 0 0 10px; }
+.school-menus dl { margin: 0; }
+.school-menus dt { color: #69736f; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.school-menus dd { line-height: 1.4; margin: 2px 0 9px; }
+.school-menus a { color: #185a80; font-size: 13px; font-weight: 700; }
+@media (max-width: 760px) { .school-menus { grid-template-columns: 1fr; } }

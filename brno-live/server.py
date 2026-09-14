@@ -21,6 +21,7 @@ TRANSIT_CACHE = {}
 AURORA_CACHE = {}
 MEDLANKY_CACHE = {}
 MEDLANKY_SPORTS_CACHE = {}
+MENUS_CACHE = {}
 
 
 def fetch_json(url):
@@ -214,7 +215,7 @@ def medlanky_sports():
     data = fetch_json(url)
     enrichments = {
         "Jabloňová": {
-            "equipment": "Hrazdy, bradla a prvky pro cvičení vlastní vahou.",
+            "equipment": "Hrazdy, bradla, prvky pro cvičení vlastní vahou a tenisová stěna.",
             "access": "Veřejnost: Po, St, Pá 17–20 h; So, Ne 8–20 h.",
         },
         "V Újezdech": {
@@ -229,7 +230,84 @@ def medlanky_sports():
         props["display_name"] = props.get("nazev") or f"{street} – {props.get('typ_hriste_nazev', 'hřiště')}"
         props["equipment_display"] = props.get("popis") or props.get("sportoviste_nazev") or extra.get("equipment") or "Vybavení není v městském pasportu popsáno."
         props["access_display"] = props.get("dostupnost") or extra.get("access") or "Vedeno v městském pasportu; režim přístupu není uveden."
+        if street == "Jabloňová" and props.get("typ_hriste_nazev") == "sportoviště":
+            props["display_name"] = "Workout u ZŠ Hudcova"
+    data.setdefault("features", []).append({
+        "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.57574, 49.24071]},
+        "properties": {"display_name": "Multifunkční hřiště Matalova", "typ_hriste_nazev": "sportoviště",
+                       "equipment_display": "Multifunkční plocha pro míčové hry.",
+                       "access_display": "Veřejně přístupné venkovní hřiště."},
+    })
     MEDLANKY_SPORTS_CACHE.update(data=data, at=time.time())
+    return data
+
+
+def _strava_menu(canteen, target):
+    info = fetch_json_with_body("https://app.strava.cz/api/s4Polozky", {
+        "cislo": canteen, "lang": "CZ", "polozky": "V_NAZEV,URLWSDL_S-URL",
+    })
+    s5url = (info.get("urlwsdl_s") or [""])[0]
+    payload = fetch_json_with_body("https://app.strava.cz/api/jidelnicky", {
+        "cislo": canteen, "s5url": s5url, "lang": "CZ", "ignoreCert": False,
+    })
+    target_text = target.strftime("%d.%m.%Y")
+    rows = []
+    for block in payload if isinstance(payload, list) else []:
+        if not isinstance(block, dict):
+            continue
+        rows.extend(row for row in block.get("table0", []) if row.get("datum") == target_text)
+    return [{"type": row.get("druh_popis") or row.get("druh_chod"), "name": row.get("nazev")} for row in rows]
+
+
+def fetch_json_with_body(url, payload):
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(), method="GET",
+                                     headers={"User-Agent": "Meleys-Brno-Live/1.0",
+                                              "Content-Type": "text/plain;charset=UTF-8",
+                                              "Referer": "https://app.strava.cz/"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        return json.load(response)
+
+
+def _uvoz_menu(target):
+    request = urllib.request.Request("https://www.sjuvoz.cz/jidelnicky/", headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        page = response.read().decode("utf-8", "replace")
+    target_text = target.strftime("%d.%m.%Y")
+    start = page.find(f"({target_text})")
+    if start < 0:
+        return []
+    end = page.find("<table style='border: solid black", start)
+    block = page[start:end if end >= 0 else len(page)]
+    rows = []
+    for label, meal in re.findall(r"<td[^>]*align='right'[^>]*>(.*?)</td><td[^>]*>(.*?)(?:<div class='alergeny'>|</td>)", block, re.S):
+        clean = lambda value: html.unescape(re.sub(r"<[^>]+>", " ", value)).strip()
+        rows.append({"type": clean(label), "name": clean(meal)})
+    return rows
+
+
+def school_menus():
+    now = datetime.now(ZoneInfo("Europe/Prague"))
+    target = now.date() + timedelta(days=1)
+    while target.weekday() >= 5:
+        target += timedelta(days=1)
+    key = target.isoformat()
+    if MENUS_CACHE.get("key") == key and time.time() - MENUS_CACHE["at"] < 1800:
+        return MENUS_CACHE["data"]
+    sources = [
+        ("ZŠ Úvoz", lambda: _uvoz_menu(target), "https://www.sjuvoz.cz/jidelnicky/"),
+        ("Vitalité Brno · MŠ", lambda: [x for x in _strava_menu("10190", target) if any(k in (x["type"] or "").lower() for k in ("přesníd", "mš", "svačin"))], "https://app.strava.cz/jidelnicky?jidelna=10190"),
+        ("Gymnázium Brno-Řečkovice", lambda: _strava_menu("4658", target), "https://app.strava.cz/jidelnicky?jidelna=4658"),
+    ]
+    menus = []
+    for name, loader, source in sources:
+        try:
+            meals = loader()
+            error = None if meals else "Jídelníček na tento den zatím není ve veřejném zdroji."
+        except Exception:
+            meals, error = [], "Jídelníček se nyní nepodařilo načíst."
+        menus.append({"school": name, "meals": meals, "message": error, "source": source})
+    data = {"date": key, "menus": menus}
+    MENUS_CACHE.update(key=key, data=data, at=time.time())
     return data
 
 
@@ -318,6 +396,14 @@ def night_infrared_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/school-menus":
+            try:
+                body, status = json.dumps(school_menus()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/medlanky-sports":
             try:
                 body, status = json.dumps(medlanky_sports()).encode(), 200

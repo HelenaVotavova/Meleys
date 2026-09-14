@@ -3,7 +3,7 @@
 .sports-filters button.active { background: #163f39; border-color: #163f39; color: #fff; }
 #medlanky-sports-map { height: 390px; border: 1px solid #c9cfcc; }
 .medlanky-sports-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
-.medlanky-sports-list article { border-top: 3px solid #18756b; padding: 11px 4px 8px; }
+.medlanky-sports-list article { border-top: 3px solid #2166b1; padding: 11px 4px 8px; }
 .medlanky-sports-list article span { color: #69736f; font-size: 11px; font-weight: 800; }
 .medlanky-sports-list h3 { font-size: 17px; margin: 4px 0 8px; }
 .medlanky-sports-list p { font-size: 13px; line-height: 1.45; margin: 4px 0; }
