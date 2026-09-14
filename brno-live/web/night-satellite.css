@@ -1,0 +1,13 @@
+.night-satellite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.night-satellite-grid figure { margin: 0; background: #101719; color: white; }
+.night-image { position: relative; aspect-ratio: 7 / 4; overflow: hidden; }
+.night-image img { width: 100%; height: 100%; object-fit: cover; }
+.night-image.infrared img { filter: invert(1) contrast(1.35); }
+.night-marker { position: absolute; left: 50%; top: 50%; width: 0; height: 0; display: flex; justify-content: center; padding-top: 20px; color: #ff4b3e; font-size: 11px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+.night-marker::before, .night-marker::after { content: ""; position: absolute; left: 0; top: 0; background: #ff4b3e; transform: translate(-50%, -50%); }
+.night-marker::before { width: 25px; height: 1px; }
+.night-marker::after { width: 1px; height: 25px; }
+.night-satellite-grid figcaption { padding: 13px 15px 15px; }
+.night-satellite-grid figcaption b, .night-satellite-grid figcaption small { display: block; }
+.night-satellite-grid figcaption small { margin-top: 5px; color: #b9c6c8; line-height: 1.4; }
+@media (max-width: 700px) { .night-satellite-grid { grid-template-columns: 1fr; } }

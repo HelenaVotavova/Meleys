@@ -205,8 +205,53 @@ def satellite_image():
         return response.read(), date
 
 
+def night_viirs_image():
+    date = datetime.now(timezone.utc).date().isoformat()
+    params = {
+        "SERVICE": "WMS", "VERSION": "1.1.1", "REQUEST": "GetMap",
+        "LAYERS": "VIIRS_NOAA20_DayNightBand_At_Sensor_Radiance", "STYLES": "",
+        "SRS": "EPSG:4326", "BBOX": "13.8,47.6,19.4,50.8",
+        "WIDTH": 1400, "HEIGHT": 800, "FORMAT": "image/png", "TIME": date,
+    }
+    url = "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?" + urllib.parse.urlencode(params)
+    request = urllib.request.Request(url, headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    with urllib.request.urlopen(request, timeout=25) as response:
+        return response.read(), date
+
+
+def night_infrared_image():
+    params = {
+        "service": "WMS", "request": "GetMap", "version": "1.3.0",
+        "layers": "msg_fes:ir108", "styles": "", "format": "image/png",
+        "crs": "EPSG:4326", "bbox": "47.6,13.8,50.8,19.4",
+        "width": 1400, "height": 800,
+    }
+    url = "https://view.eumetsat.int/geoserver/wms?" + urllib.parse.urlencode(params)
+    request = urllib.request.Request(url, headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    with urllib.request.urlopen(request, timeout=25) as response:
+        return response.read()
+
+
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/night-viirs":
+            try:
+                body, date = night_viirs_image()
+                self.send_response(200); self.send_header("Content-Type", "image/png")
+                self.send_header("X-Imagery-Date", date); self.send_header("Cache-Control", "public, max-age=1800")
+                self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+            except Exception as exc:
+                self.send_error(503, str(exc))
+            return
+        if self.path == "/api/night-infrared":
+            try:
+                body = night_infrared_image()
+                self.send_response(200); self.send_header("Content-Type", "image/png")
+                self.send_header("Cache-Control", "public, max-age=600"); self.send_header("Content-Length", str(len(body)))
+                self.end_headers(); self.wfile.write(body)
+            except Exception as exc:
+                self.send_error(503, str(exc))
+            return
         if self.path == "/api/transit-incidents":
             try:
                 body, status = json.dumps(transit_incidents()).encode(), 200

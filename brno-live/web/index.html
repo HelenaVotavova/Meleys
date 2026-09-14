@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="weather-advice.css">
   <link rel="stylesheet" href="transit.css">
   <link rel="stylesheet" href="gliders.css">
+  <link rel="stylesheet" href="night-satellite.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -19,6 +20,13 @@
       <img src="/api/satellite" alt="Nejnovější satelitní snímek Brna a okolí">
       <div class="satellite-title"><span>NASA MODIS · POSLEDNÍ DOKONČENÁ MOZAIKA</span><h2>Brno ze satelitu</h2><p>Brno je označeno křížem uprostřed snímku. Oblačnost je součástí skutečného družicového obrazu.</p></div>
       <div class="brno-marker" aria-label="Poloha Brna"><i></i><b>BRNO</b></div>
+    </section>
+    <section class="section night-satellite-section">
+      <div class="head"><div><span>VIIRS A METEOSAT</span><h2>Brno v noci</h2></div><strong>dva družicové pohledy</strong></div>
+      <div class="night-satellite-grid">
+        <figure><div class="night-image"><img src="/api/night-viirs" alt="Noční družicový snímek světel Brna z VIIRS"><span class="night-marker">BRNO</span></div><figcaption><b>Světla města · VIIRS</b><small>Nejnovější denní produkt, rozlišení přibližně 750 m. Mraky mohou světla zakrýt nebo rozptýlit.</small></figcaption></figure>
+        <figure><div class="night-image infrared"><img src="/api/night-infrared" alt="Aktuální infračervený družicový snímek oblačnosti nad Brnem"><span class="night-marker">BRNO</span></div><figcaption><b>Oblačnost · Meteosat IR 10,8 µm</b><small>Nejnovější dostupné měření, obvykle aktualizované každých 15 minut.</small></figcaption></figure>
+      </div>
     </section>
     <section class="current band">
       <div><span>Teplota</span><b id="temp">–</b><small>°C</small></div>
@@ -74,7 +82,7 @@
       <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
     </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> / <a href="https://view.eumetsat.int/">EUMETSAT</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
