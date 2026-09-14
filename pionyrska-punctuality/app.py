@@ -186,7 +186,8 @@ def load_schedule(day):
             if corridor_origin and corridor_origin in names and "Úvoz" in names:
                 oi, di = names.index(corridor_origin), names.index("Úvoz")
                 origin_time = seconds(rows[oi]["departure_time"])
-                if oi < di and 7 * 3600 + 15 * 60 <= origin_time <= 8 * 3600 + 15 * 60:
+                start_time = 7 * 3600 if line == "25" else 7 * 3600 + 15 * 60
+                if oi < di and start_time <= origin_time <= 8 * 3600 + 15 * 60:
                     corridors[trip] = [
                         (index - oi + 1, realtime_stop_id(row["stop_id"]), names[index],
                          seconds(row["departure_time"]))
