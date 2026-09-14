@@ -5,16 +5,27 @@
   <title>ISS živě</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="extra.css">
+  <link rel="stylesheet" href="model.css">
 </head>
 <body>
   <header><div><span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span><h1>ISS živě</h1></div><div id="state" class="state">Připojuji…</div></header>
   <main>
-    <section class="map-wrap"><div id="map"></div><div class="telemetry">
+    <section class="map-wrap"><div id="map"></div><div class="map-key"><span class="past-key">stopa</span><span class="future-key">další hodina</span></div><div class="telemetry">
       <div><b id="speed">–</b><span>km/h</span></div><div><b id="altitude">–</b><span>výška km</span></div>
       <div><b id="coords">–</b><span>souřadnice</span></div><div><b id="light">–</b><span>osvětlení</span></div>
     </div></section>
     <section class="orientation section"><div><h2>Natočení stanice</h2><p>Odhad podle směru pohybu. ISS běžně letí v režimu, kdy je její spodní strana orientována k Zemi.</p></div><div class="compass"><span>N</span><div id="station">ISS➤</div><small id="heading">směr se počítá</small></div></section>
     <section class="section"><div class="section-head"><div><h2>Posádka Expedice 75</h2><p>Délka pobytu se dopočítává od příletu.</p></div><span>ověřeno 14. 9. 2026</span></div><div id="crew" class="crew"></div></section>
+    <section class="svoboda section"><div class="mission-mark">CZ</div><div>
+      <span class="eyebrow">ČESKÁ MISE K ISS · PLÁN 2027</span><h2>Aleš Svoboda: výcvik pro Vast PAM-1</h2>
+      <p><b>Současná fáze:</b> specifický výcvik pro konkrétní misi. Tříblokový základní program astronautské rezervy ESA dokončil na jaře 2026.</p>
+      <div class="training"><span>pilotování lodi Dragon</span><span>start na Falconu 9</span><span>přiblížení a spojení s ISS</span><span>návrat na Zemi</span></div>
+      <p>Výcvik probíhá v blocích v Evropě a USA. Aleš má být pilotem mise vedené Thomasem Pesquetem; nominaci ještě musí schválit panel MCOP partnerů ISS.</p>
+      <p class="source-note">Ověřeno 14. 9. 2026 · <a href="https://acr.mo.gov.cz/informacni-servis/zpravodajstvi/ales-svoboda-zahajuje-specificky-vycvik-pro-misi-na-mezinarodni-kosmickou-stanici-265853/">Armáda ČR</a> · <a href="https://www.esa.int/Newsroom/Press_Releases/ESA_podepsala_jmenem_Ceske_republiky_dohodu_se_spolecnosti_Vast">ESA</a></p>
+    </div></section>
+    <section class="section"><h2>Rychlost a výška</h2><p>Průměrná minutová měření se uchovávají 30 dní.</p><div class="charts"><div><canvas id="altitudeChart"></canvas></div><div><canvas id="speedChart"></canvas></div></div></section>
+    <section class="model-section"><div class="model-title"><span class="eyebrow">ORIENTAČNÍ 3D SCHÉMA</span><h2>Hlavní části ISS a dokovací místa</h2><p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p></div><div class="model-legend"><b>Hlavní části</b><span>Zvezda · servisní modul</span><span>Zarja · první modul</span><span>Unity a Harmony · uzly</span><span>Destiny · laboratoř USA</span><span>Columbus · laboratoř ESA</span><span>Kibo · laboratoř JAXA</span><span>Nauka · ruská laboratoř</span><span>Tranquility + Cupola</span><strong>Červeně: připojené lodě</strong></div><div id="iss3d" style="position:absolute;inset:0"></div></section>
     <section class="two-col">
       <div class="section"><h2>Uvnitř ISS</h2><p class="notice">Nejde o živou palubní telemetrii, ale o běžné provozní hodnoty.</p><div class="inside">
         <div><b>18–27 °C</b><span>teplota kabiny</span></div><div><b>≈ 101 kPa</b><span>tlak podobný Zemi</span></div><div><b>≈ 21 %</b><span>podíl kyslíku</span></div><div><b>7 osob</b><span>současná posádka</span></div>
@@ -27,5 +38,6 @@
     </section>
   </main>
   <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js"></script>
+  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.169.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.169.0/examples/jsm/"}}</script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="app.js"></script><script type="module" src="iss3d.js"></script>
 </body></html>
