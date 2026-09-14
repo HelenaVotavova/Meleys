@@ -40,8 +40,8 @@
       <article><span class="channel archive">archiv NASA EDA</span><b>CO₂</b><strong>Oxid uhličitý</strong><p>Dostupnost závisí na zvolené misi a použitém čidle.</p></article>
       <article><span class="channel system">systémový údaj</span><b>≈ 101 kPa</b><strong>Tlak kabiny</strong><p>Orientační hodnota blízká tlaku na hladině moře.</p></article>
       <article><span class="channel system">systém ECLSS</span><b>≈ 21 %</b><strong>Kyslík</strong><p>Výrobu kyslíku a složení atmosféry sleduje životní podpora.</p></article>
-      <article><span class="channel system">systém ECLSS</span><b>oběh vody</b><strong>Recyklace vody</strong><p>Zpracovává vlhkost, odpadní vodu a zásoby dopravované loděmi.</p></article>
-    </div><p class="environment-note">Tyto údaje nejsou živou kompletní telemetrií stanice. NASA zveřejňuje část dat podle konkrétní mise a zařízení.</p></section>
+      <article><span class="channel live" id="water-signal">připojuji živá data</span><b id="clean-water">– %</b><strong>Zásoba čisté vody</strong><p>Veřejná telemetrie systému WPA v modulu Node 3.</p></article>
+    </div><div class="water-live"><div><span>Nádrž moči</span><b id="urine-water">– %</b></div><div><span>Odpadní voda</span><b id="waste-water">– %</b></div><div><span>Procesor moči UPA</span><b id="upa-state">–</b></div><div><span>Procesor vody WPA</span><b id="wpa-state">–</b><small id="wpa-step"></small></div></div><p class="environment-note">Vodní hodnoty jsou živá veřejná telemetrie NASA ISSLive. Ostatní údaje nejsou kompletní živou telemetrií stanice. Poslední vodní data: <span id="water-time">čekám na signál</span>.</p></section>
     <section class="two-col">
       <div class="section"><h2>Připojené lodě</h2><p>Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně Progress 96 po příletu 11. září.</p></div>
       <div class="section"><h2>Co přiletí dál</h2><div class="events">
@@ -52,5 +52,5 @@
     </section>
   </main>
   <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://visualization.osdr.nasa.gov/eda/">NASA Environmental Data App</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script><script src="model.js"></script><script src="app.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script><script src="https://demos.lightstreamer.com/commons/require.js"></script><script src="https://demos.lightstreamer.com/commons/lightstreamer.min.js"></script><script src="model.js"></script><script src="water.js"></script><script src="app.js"></script>
 </body></html>
