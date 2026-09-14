@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="diagram.css">
   <link rel="stylesheet" href="legend.css">
   <link rel="stylesheet" href="docking.css">
+  <link rel="stylesheet" href="environment.css">
 </head>
 <body>
   <header><div><span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span><h1>ISS živě</h1></div><div id="state" class="state">Připojuji…</div></header>
@@ -33,10 +34,16 @@
     <section class="section"><h2>Rychlost a výška</h2><p>Průměrná minutová měření se uchovávají 30 dní.</p><div class="charts"><div><canvas id="altitudeChart"></canvas></div><div><canvas id="speedChart"></canvas></div></div></section>
     <section class="sketchfab-section"><div class="model-title"><span class="eyebrow">DETAILNÍ 3D MODEL</span><h2>Mezinárodní vesmírná stanice</h2><p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p></div><iframe id="iss-model" title="Detailní 3D model Mezinárodní vesmírné stanice" loading="lazy" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe><div class="dock-info"><b>Aktuálně připojené lodě</b><span><strong>Dragon Crew-12</strong> · horní port Harmony</span><span><strong>Sojuz MS-29</strong> · modul Pričal</span><span><strong>Cygnus XL</strong> · spodní port Unity</span><span><strong>Progress 95</strong> · zadní port Zvezdy</span><small>Stav ověřen 14. 9. 2026</small></div><nav class="dock-nav" aria-label="Zobrazit připojenou loď"><b>Zobrazit místo připojení:</b><button data-dock="0">Progress 95</button><button data-dock="1">Sojuz MS-29</button><button data-dock="2">Dragon Crew-12</button><button data-dock="3">Cygnus XL</button></nav><p class="model-credit">Model: <a href="https://sketchfab.com/3d-models/international-space-station-iss-b7d40d89fcbd4c998462380545f391b6">International Space Station: ISS</a>, Studio Lab, Sketchfab</p></section>
     <figure class="module-diagram section"><h2>Moduly a vnější části ISS</h2><p>Technické schéma NASA ve vysokém rozlišení. Kliknutím otevřete plnou velikost.</p><a href="assets/iss/iss-expanded-view-hd.webp" target="_blank"><img src="assets/iss/iss-expanded-view-hd.webp" alt="Rozložené technické schéma Mezinárodní vesmírné stanice" loading="lazy"></a><div class="cz-legend"><div><h3>Americká a mezinárodní část</h3><dl><dt>Unity (Node 1)</dt><dd>první spojovací uzel</dd><dt>Destiny</dt><dd>americká laboratoř</dd><dt>Quest</dt><dd>přechodová komora pro výstupy</dd><dt>Harmony (Node 2)</dt><dd>uzel laboratoří a Dragonu</dd><dt>Columbus</dt><dd>evropská laboratoř ESA</dd><dt>Kibó</dt><dd>japonská laboratoř JAXA</dd><dt>Tranquility (Node 3)</dt><dd>životní podpora a cvičení</dd><dt>Cupola</dt><dd>pozorovací modul se sedmi okny</dd><dt>Leonardo (PMM)</dt><dd>skladovací modul</dd><dt>BEAM</dt><dd>experimentální nafukovací modul</dd></dl></div><div><h3>Ruská část</h3><dl><dt>Zarja</dt><dd>funkční a nákladový blok</dd><dt>Zvezda</dt><dd>servisní a obytný modul</dd><dt>Poisk</dt><dd>výzkumný a dokovací modul</dd><dt>Rassvet</dt><dd>výzkumný a skladovací modul</dd><dt>Nauka</dt><dd>víceúčelová laboratoř</dd><dt>Pričal</dt><dd>uzlový dokovací modul</dd></dl><h3>Vnější konstrukce</h3><p>Nosníky S0–S6 a P1–P6, fotovoltaické panely, radiátory, Canadarm2, Dextre, mobilní základna a venkovní experimentální plošiny.</p></div></div><figcaption>Český klíč odpovídá současným modulům. Podklad NASA „ISS Expanded View“ je z roku 2015, proto v něm ještě nejsou zakresleny později připojené moduly Nauka a Pričal.</figcaption></figure>
+    <section class="section environment"><div class="section-head"><div><h2>Prostředí a životní podpora</h2><p>Veřejné kanály NASA a orientační provozní hodnoty uvnitř ISS.</p></div><a href="https://visualization.osdr.nasa.gov/eda/" target="_blank">Otevřít NASA EDA</a></div><div class="environment-grid">
+      <article><span class="channel archive">archiv NASA EDA</span><b>18–27 °C</b><strong>Teplota kabiny</strong><p>Měření lze porovnávat podle jednotlivých výzkumných misí.</p></article>
+      <article><span class="channel archive">archiv NASA EDA</span><b>RH</b><strong>Relativní vlhkost</strong><p>Časové řady z letového a pozemního kontrolního vybavení.</p></article>
+      <article><span class="channel archive">archiv NASA EDA</span><b>CO₂</b><strong>Oxid uhličitý</strong><p>Dostupnost závisí na zvolené misi a použitém čidle.</p></article>
+      <article><span class="channel system">systémový údaj</span><b>≈ 101 kPa</b><strong>Tlak kabiny</strong><p>Orientační hodnota blízká tlaku na hladině moře.</p></article>
+      <article><span class="channel system">systém ECLSS</span><b>≈ 21 %</b><strong>Kyslík</strong><p>Výrobu kyslíku a složení atmosféry sleduje životní podpora.</p></article>
+      <article><span class="channel system">systém ECLSS</span><b>oběh vody</b><strong>Recyklace vody</strong><p>Zpracovává vlhkost, odpadní vodu a zásoby dopravované loděmi.</p></article>
+    </div><p class="environment-note">Tyto údaje nejsou živou kompletní telemetrií stanice. NASA zveřejňuje část dat podle konkrétní mise a zařízení.</p></section>
     <section class="two-col">
-      <div class="section"><h2>Uvnitř ISS</h2><p class="notice">Nejde o živou palubní telemetrii, ale o běžné provozní hodnoty.</p><div class="inside">
-        <div><b>18–27 °C</b><span>teplota kabiny</span></div><div><b>≈ 101 kPa</b><span>tlak podobný Zemi</span></div><div><b>≈ 21 %</b><span>podíl kyslíku</span></div><div><b>7 osob</b><span>současná posádka</span></div>
-      </div><h3>Připojené lodě</h3><p>Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně Progress 96 po příletu 11. září.</p></div>
+      <div class="section"><h2>Připojené lodě</h2><p>Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně Progress 96 po příletu 11. září.</p></div>
       <div class="section"><h2>Co přiletí dál</h2><div class="events">
         <article><time>nejdříve konec září 2026</time><b>SpaceX Crew-13</b><p>Jessica Watkins, Luke Delaney, Joshua Kutryk a Sergey Teteryatnikov.</p></article>
         <article><time>podzim 2026</time><b>SpaceX CRS-35</b><p>Náklad a nové sluneční panely iROSA.</p></article>
@@ -44,6 +51,6 @@
       </div></div>
     </section>
   </main>
-  <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
+  <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://visualization.osdr.nasa.gov/eda/">NASA Environmental Data App</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script><script src="model.js"></script><script src="app.js"></script>
 </body></html>
