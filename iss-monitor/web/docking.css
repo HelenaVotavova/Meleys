@@ -1,1 +1,49 @@
-.sketchfab-section model-viewer{background:#000}
+.docking-diagram > p {
+  margin: 0 0 14px;
+}
+.docking-image {
+  position: relative;
+  background: #fff;
+  border: 1px solid #d4dcde;
+}
+.docking-image > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dock-point {
+  position: absolute;
+  z-index: 2;
+  min-width: 112px;
+  background: #a8201bdc;
+  color: #fff;
+  border-left: 5px solid #ff3b30;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px #0006;
+  transform: translate(-10px, -50%);
+}
+.dock-point::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff2117;
+  border: 3px solid #fff;
+  transform: translate(-50%, -50%);
+}
+.dock-point b { display: block; font-size: 13px; }
+.dock-point.zvezda { left: 19%; top: 25%; }
+.dock-point.prichal { left: 28%; top: 45%; }
+.dock-point.unity { left: 57%; top: 69%; }
+.dock-point.harmony { left: 72%; top: 84%; }
+.docking-diagram figcaption { font-size: 12px; color: #647177; margin-top: 9px; }
+@media (max-width: 700px) {
+  .dock-point { min-width: 76px; padding: 3px 5px; font-size: 8px; transform: translate(-5px, -50%); }
+  .dock-point b { font-size: 9px; }
+  .dock-point::before { left: -7px; width: 8px; height: 8px; border-width: 2px; }
+}

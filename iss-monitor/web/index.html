@@ -1,56 +1,329 @@
 <!doctype html>
 <html lang="cs">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ISS živě</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="extra.css">
-  <link rel="stylesheet" href="crew.css">
-  <link rel="stylesheet" href="map.css">
-  <link rel="stylesheet" href="flags.css">
-  <link rel="stylesheet" href="sketchfab.css">
-  <link rel="stylesheet" href="diagram.css">
-  <link rel="stylesheet" href="legend.css">
-  <link rel="stylesheet" href="docking.css">
-  <link rel="stylesheet" href="environment.css">
-</head>
-<body>
-  <header><div><span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span><h1>ISS živě</h1></div><div id="state" class="state">Připojuji…</div></header>
-  <main>
-    <section class="map-wrap"><div id="map"></div><div class="map-key"><span class="day-key">posledních 24 hodin</span><span class="past-key">od otevření</span><span class="future-key">další hodina</span></div><div class="telemetry">
-      <div><b id="speed">–</b><span>km/h</span></div><div><b id="altitude">–</b><span>výška km</span></div>
-      <div><b id="coords">–</b><span>souřadnice</span></div><div><b id="light">–</b><span>osvětlení</span></div>
-    </div></section>
-    <section class="orientation section"><div><h2>Natočení stanice</h2><p>Odhad podle směru pohybu. ISS běžně letí v režimu, kdy je její spodní strana orientována k Zemi.</p></div><div class="compass"><span>N</span><div id="station">ISS➤</div><small id="heading">směr se počítá</small></div></section>
-    <section class="section"><div class="section-head"><div><h2>Posádka Expedice 75</h2><p>Délka pobytu se dopočítává od příletu.</p></div><span>ověřeno 14. 9. 2026</span></div><div id="crew" class="crew"></div></section>
-    <section class="svoboda section"><div class="mission-mark">CZ</div><div>
-      <span class="eyebrow">ČESKÁ MISE K ISS · PLÁN 2027</span><h2>Aleš Svoboda: výcvik pro Vast PAM-1</h2>
-      <p><b>Současná fáze:</b> specifický výcvik pro konkrétní misi. Tříblokový základní program astronautské rezervy ESA dokončil na jaře 2026.</p>
-      <div class="training"><span>pilotování lodi Dragon</span><span>start na Falconu 9</span><span>přiblížení a spojení s ISS</span><span>návrat na Zemi</span></div>
-      <p>Výcvik probíhá v blocích v Evropě a USA. Aleš má být pilotem mise vedené Thomasem Pesquetem; nominaci ještě musí schválit panel MCOP partnerů ISS.</p>
-      <p class="source-note">Ověřeno 14. 9. 2026 · <a href="https://acr.mo.gov.cz/informacni-servis/zpravodajstvi/ales-svoboda-zahajuje-specificky-vycvik-pro-misi-na-mezinarodni-kosmickou-stanici-265853/">Armáda ČR</a> · <a href="https://www.esa.int/Newsroom/Press_Releases/ESA_podepsala_jmenem_Ceske_republiky_dohodu_se_spolecnosti_Vast">ESA</a></p>
-    </div></section>
-    <section class="section"><h2>Rychlost a výška</h2><p>Průměrná minutová měření se uchovávají 30 dní.</p><div class="charts"><div><canvas id="altitudeChart"></canvas></div><div><canvas id="speedChart"></canvas></div></div></section>
-    <section class="sketchfab-section"><div class="model-title"><span class="eyebrow">INTERAKTIVNÍ 3D MODEL</span><h2>Mezinárodní vesmírná stanice</h2><p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p></div><iframe id="iss-model" title="3D model Mezinárodní vesmírné stanice" loading="lazy" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen src="https://sketchfab.com/models/b7d40d89fcbd4c998462380545f391b6/embed?autostart=1&transparent=1&ui_theme=dark&ui_infos=0&ui_watermark_link=0&ui_hint=0"></iframe><div class="dock-info"><b>Aktuálně připojené lodě</b><span><strong>Dragon Crew-12</strong> · Harmony</span><span><strong>Sojuz MS-29</strong> · Pričal</span><span><strong>Cygnus XL</strong> · Unity</span><span><strong>Progress 95</strong> · Zvezda</span><small>3D model pochází z roku 2017 a neobsahuje Nauku ani Pričal.</small></div><p class="model-credit">Model: <a href="https://sketchfab.com/3d-models/international-space-station-iss-b7d40d89fcbd4c998462380545f391b6">International Space Station: ISS</a>, Studio Lab, Sketchfab</p></section>
-    <figure class="module-diagram section"><h2>Moduly a vnější části ISS</h2><p>Aktualizované schéma NASA ve vysokém rozlišení. Kliknutím otevřete plnou velikost.</p><a href="assets/iss/iss-expanded-view-2023.webp" target="_blank"><img src="assets/iss/iss-expanded-view-2023.webp" alt="Aktualizované rozložené schéma modulů, nosníků, radiátorů a solárních panelů ISS" loading="lazy"></a><div class="cz-legend"><div><h3>Americká a mezinárodní část</h3><dl><dt>Unity (Node 1)</dt><dd>první spojovací uzel</dd><dt>Destiny</dt><dd>americká laboratoř</dd><dt>Quest</dt><dd>přechodová komora pro výstupy</dd><dt>Harmony (Node 2)</dt><dd>uzel laboratoří a Dragonu</dd><dt>Columbus</dt><dd>evropská laboratoř ESA</dd><dt>Kibó</dt><dd>japonská laboratoř JAXA</dd><dt>Tranquility (Node 3)</dt><dd>životní podpora a cvičení</dd><dt>Cupola</dt><dd>pozorovací modul se sedmi okny</dd><dt>Leonardo (PMM)</dt><dd>skladovací modul</dd><dt>BEAM</dt><dd>experimentální nafukovací modul</dd></dl></div><div><h3>Ruská část</h3><dl><dt>Zarja</dt><dd>funkční a nákladový blok</dd><dt>Zvezda</dt><dd>servisní a obytný modul</dd><dt>Poisk</dt><dd>výzkumný a dokovací modul</dd><dt>Rassvet</dt><dd>výzkumný a skladovací modul</dd><dt>Nauka</dt><dd>víceúčelová laboratoř</dd><dt>Pričal</dt><dd>uzlový dokovací modul</dd></dl><h3>Vnější konstrukce</h3><p>Nosníky S0–S6 a P1–P6, panely iROSA, radiátory, Canadarm2, Dextre, mobilní základna a venkovní experimentální plošiny.</p></div></div><figcaption>Aktualizovaný podklad NASA z roku 2023 zahrnuje moduly Nauka a Pričal, Bishop Airlock, Bartolomeo a nové solární panely iROSA. Anglické popisky doplňuje český klíč.</figcaption></figure>
-    <section class="section environment"><div class="section-head"><div><h2>Prostředí a životní podpora</h2><p>Veřejné kanály NASA a orientační provozní hodnoty uvnitř ISS.</p></div><a href="https://visualization.osdr.nasa.gov/eda/" target="_blank">Otevřít NASA EDA</a></div><div class="environment-grid">
-      <article><span class="channel live">živá telemetrie</span><b id="cabin-temp">– °C</b><strong>Teplota kabiny</strong><p>Čidlo v americkém laboratorním modulu Destiny.</p></article>
-      <article><span class="channel archive">typická hodnota</span><b>40–45 %</b><strong>Relativní vlhkost</strong><p>Povolené rozmezí je 25–75 %. Historická měření jsou dostupná v NASA EDA.</p></article>
-      <article><span class="channel live">živá telemetrie</span><b id="cabin-co2">– ppm</b><strong>Oxid uhličitý</strong><p>Vypočteno z parciálního tlaku CO₂ v laboratoři.</p></article>
-      <article><span class="channel live">živá telemetrie</span><b id="cabin-pressure">– kPa</b><strong>Tlak kabiny</strong><p>Měřeno v americkém laboratorním modulu Destiny.</p></article>
-      <article><span class="channel live">živá telemetrie</span><b id="cabin-oxygen">– %</b><strong>Kyslík</strong><p>Podíl vypočtený z parciálního O₂ a tlaku kabiny.</p></article>
-      <article><span class="channel live" id="water-signal">připojuji živá data</span><b id="clean-water">– %</b><strong>Zásoba čisté vody</strong><p>Veřejná telemetrie systému WPA v modulu Node 3.</p></article>
-    </div><div class="water-live"><div><span>Nádrž moči</span><b id="urine-water">– %</b></div><div><span>Odpadní voda</span><b id="waste-water">– %</b></div><div><span>Procesor moči UPA</span><b id="upa-state">–</b></div><div><span>Procesor vody WPA</span><b id="wpa-state">–</b><small id="wpa-step"></small></div></div><p class="environment-note">Hodnoty kromě relativní vlhkosti pocházejí z veřejné telemetrie NASA ISSLive. Poslední data: <span id="water-time">čekám na signál</span>.</p></section>
-    <section class="two-col">
-      <div class="section"><h2>Připojené lodě</h2><p>Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně Progress 96 po příletu 11. září.</p></div>
-      <div class="section"><h2>Co přiletí dál</h2><div class="events">
-        <article><time>nejdříve konec září 2026</time><b>SpaceX Crew-13</b><p>Jessica Watkins, Luke Delaney, Joshua Kutryk a Sergey Teteryatnikov.</p></article>
-        <article><time>podzim 2026</time><b>SpaceX CRS-35</b><p>Náklad a nové sluneční panely iROSA.</p></article>
-        <article><time>podzim / zima 2026</time><b>Northrop Grumman CRS-25</b><p>Přibližně 5 tun zásob a experimentů.</p></article>
-      </div></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ISS živě</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="extra.css" />
+    <link rel="stylesheet" href="crew.css" />
+    <link rel="stylesheet" href="map.css" />
+    <link rel="stylesheet" href="flags.css" />
+    <link rel="stylesheet" href="sketchfab.css" />
+    <link rel="stylesheet" href="diagram.css" />
+    <link rel="stylesheet" href="legend.css" />
+    <link rel="stylesheet" href="docking.css" />
+    <link rel="stylesheet" href="environment.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span>
+        <h1>ISS živě</h1>
+      </div>
+      <div id="state" class="state">Připojuji…</div>
+    </header>
+    <main>
+      <section class="map-wrap">
+        <div id="map"></div>
+        <div class="map-key">
+          <span class="day-key">posledních 24 hodin</span
+          ><span class="past-key">od otevření</span
+          ><span class="future-key">další hodina</span>
+        </div>
+        <div class="telemetry">
+          <div><b id="speed">–</b><span>km/h</span></div>
+          <div><b id="altitude">–</b><span>výška km</span></div>
+          <div><b id="coords">–</b><span>souřadnice</span></div>
+          <div><b id="light">–</b><span>osvětlení</span></div>
+        </div>
+      </section>
+      <section class="orientation section">
+        <div>
+          <h2>Natočení stanice</h2>
+          <p>
+            Odhad podle směru pohybu. ISS běžně letí v režimu, kdy je její
+            spodní strana orientována k Zemi.
+          </p>
+        </div>
+        <div class="compass">
+          <span>N</span>
+          <div id="station">ISS➤</div>
+          <small id="heading">směr se počítá</small>
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Posádka Expedice 75</h2>
+            <p>Délka pobytu se dopočítává od příletu.</p>
+          </div>
+          <span>ověřeno 14. 9. 2026</span>
+        </div>
+        <div id="crew" class="crew"></div>
+      </section>
+      <section class="svoboda section">
+        <div class="mission-mark">CZ</div>
+        <div>
+          <span class="eyebrow">ČESKÁ MISE K ISS · PLÁN 2027</span>
+          <h2>Aleš Svoboda: výcvik pro Vast PAM-1</h2>
+          <p>
+            <b>Současná fáze:</b> specifický výcvik pro konkrétní misi.
+            Tříblokový základní program astronautské rezervy ESA dokončil na
+            jaře 2026.
+          </p>
+          <div class="training">
+            <span>pilotování lodi Dragon</span><span>start na Falconu 9</span
+            ><span>přiblížení a spojení s ISS</span><span>návrat na Zemi</span>
+          </div>
+          <p>
+            Výcvik probíhá v blocích v Evropě a USA. Aleš má být pilotem mise
+            vedené Thomasem Pesquetem; nominaci ještě musí schválit panel MCOP
+            partnerů ISS.
+          </p>
+          <p class="source-note">
+            Ověřeno 14. 9. 2026 ·
+            <a
+              href="https://acr.mo.gov.cz/informacni-servis/zpravodajstvi/ales-svoboda-zahajuje-specificky-vycvik-pro-misi-na-mezinarodni-kosmickou-stanici-265853/"
+              >Armáda ČR</a
+            >
+            ·
+            <a
+              href="https://www.esa.int/Newsroom/Press_Releases/ESA_podepsala_jmenem_Ceske_republiky_dohodu_se_spolecnosti_Vast"
+              >ESA</a
+            >
+          </p>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Rychlost a výška</h2>
+        <p>Průměrná minutová měření se uchovávají 30 dní.</p>
+        <div class="charts">
+          <div><canvas id="altitudeChart"></canvas></div>
+          <div><canvas id="speedChart"></canvas></div>
+        </div>
+      </section>
+    <section class="sketchfab-section">
+        <div class="model-title">
+          <span class="eyebrow">INTERAKTIVNÍ 3D MODEL</span>
+          <h2>Mezinárodní vesmírná stanice</h2>
+          <p>Tažením model otočíte, kolečkem nebo gestem přiblížíte.</p>
+        </div>
+        <iframe
+          id="iss-model"
+          title="3D model Mezinárodní vesmírné stanice"
+          loading="lazy"
+          allow="autoplay; fullscreen; xr-spatial-tracking"
+          allowfullscreen
+          src="https://sketchfab.com/models/b7d40d89fcbd4c998462380545f391b6/embed?autostart=1&transparent=1&ui_theme=dark&ui_infos=0&ui_watermark_link=0&ui_hint=0"
+        ></iframe>
+        <div class="dock-info">
+          <b>Aktuálně připojené lodě</b
+          ><span><strong>Dragon Crew-12</strong> · Harmony</span
+          ><span><strong>Sojuz MS-29</strong> · Pričal</span
+          ><span><strong>Cygnus XL</strong> · Unity</span
+          ><span><strong>Progress 95</strong> · Zvezda</span
+          ><small
+            >3D model pochází z roku 2017 a neobsahuje Nauku ani Pričal.</small
+          >
+        </div>
+        <p class="model-credit">
+          Model:
+          <a
+            href="https://sketchfab.com/3d-models/international-space-station-iss-b7d40d89fcbd4c998462380545f391b6"
+            >International Space Station: ISS</a
+          >, Studio Lab, Sketchfab
+      </p>
     </section>
-  </main>
-  <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://visualization.osdr.nasa.gov/eda/">NASA Environmental Data App</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="https://demos.lightstreamer.com/commons/require.js"></script><script src="https://demos.lightstreamer.com/commons/lightstreamer.min.js"></script><script src="water.js"></script><script src="app.js"></script>
-</body></html>
+    <figure class="docking-diagram section">
+      <h2>Kde jsou připojené lodě</h2>
+      <p>Červené značky ukazují příslušné moduly na aktuální konfiguraci ISS.</p>
+      <div class="docking-image">
+        <img src="assets/iss/iss-expanded-view-2023.webp" alt="Schéma ISS s vyznačenými místy připojení lodí" />
+        <span class="dock-point zvezda"><b>Zvezda</b>Progress 95</span>
+        <span class="dock-point prichal"><b>Pričal</b>Sojuz MS-29</span>
+        <span class="dock-point unity"><b>Unity</b>Cygnus XL</span>
+        <span class="dock-point harmony"><b>Harmony</b>Dragon Crew-12</span>
+      </div>
+      <figcaption>Pozice označují modul, ke kterému je loď připojena; konkrétní port může směřovat nad nebo pod rovinu schématu.</figcaption>
+    </figure>
+    <figure class="module-diagram section">
+        <h2>Moduly a vnější části ISS</h2>
+        <p>
+          Aktualizované schéma NASA ve vysokém rozlišení. Kliknutím otevřete
+          plnou velikost.
+        </p>
+        <a href="assets/iss/iss-expanded-view-2023.webp" target="_blank"
+          ><img
+            src="assets/iss/iss-expanded-view-2023.webp"
+            alt="Aktualizované rozložené schéma modulů, nosníků, radiátorů a solárních panelů ISS"
+            loading="lazy"
+        /></a>
+        <div class="cz-legend">
+          <div>
+            <h3>Americká a mezinárodní část</h3>
+            <dl>
+              <dt>Unity (Node 1)</dt>
+              <dd>první spojovací uzel</dd>
+              <dt>Destiny</dt>
+              <dd>americká laboratoř</dd>
+              <dt>Quest</dt>
+              <dd>přechodová komora pro výstupy</dd>
+              <dt>Harmony (Node 2)</dt>
+              <dd>uzel laboratoří a Dragonu</dd>
+              <dt>Columbus</dt>
+              <dd>evropská laboratoř ESA</dd>
+              <dt>Kibó</dt>
+              <dd>japonská laboratoř JAXA</dd>
+              <dt>Tranquility (Node 3)</dt>
+              <dd>životní podpora a cvičení</dd>
+              <dt>Cupola</dt>
+              <dd>pozorovací modul se sedmi okny</dd>
+              <dt>Leonardo (PMM)</dt>
+              <dd>skladovací modul</dd>
+              <dt>BEAM</dt>
+              <dd>experimentální nafukovací modul</dd>
+            </dl>
+          </div>
+          <div>
+            <h3>Ruská část</h3>
+            <dl>
+              <dt>Zarja</dt>
+              <dd>funkční a nákladový blok</dd>
+              <dt>Zvezda</dt>
+              <dd>servisní a obytný modul</dd>
+              <dt>Poisk</dt>
+              <dd>výzkumný a dokovací modul</dd>
+              <dt>Rassvet</dt>
+              <dd>výzkumný a skladovací modul</dd>
+              <dt>Nauka</dt>
+              <dd>víceúčelová laboratoř</dd>
+              <dt>Pričal</dt>
+              <dd>uzlový dokovací modul</dd>
+            </dl>
+            <h3>Vnější konstrukce</h3>
+            <p>
+              Nosníky S0–S6 a P1–P6, panely iROSA, radiátory, Canadarm2, Dextre,
+              mobilní základna a venkovní experimentální plošiny.
+            </p>
+          </div>
+        </div>
+        <figcaption>
+          Aktualizovaný podklad NASA z roku 2023 zahrnuje moduly Nauka a Pričal,
+          Bishop Airlock, Bartolomeo a nové solární panely iROSA. Anglické
+          popisky doplňuje český klíč.
+        </figcaption>
+      </figure>
+      <section class="section environment">
+        <div class="section-head">
+          <div>
+            <h2>Prostředí a životní podpora</h2>
+            <p>Veřejné kanály NASA a orientační provozní hodnoty uvnitř ISS.</p>
+          </div>
+          <a href="https://visualization.osdr.nasa.gov/eda/" target="_blank"
+            >Otevřít NASA EDA</a
+          >
+        </div>
+        <div class="environment-grid">
+          <article>
+            <span class="channel live">živá telemetrie</span
+            ><b id="cabin-temp">– °C</b><strong>Teplota kabiny</strong>
+            <p>Čidlo v americkém laboratorním modulu Destiny.</p>
+          </article>
+          <article>
+            <span class="channel archive">typická hodnota</span><b>40–45 %</b
+            ><strong>Relativní vlhkost</strong>
+            <p>
+              Povolené rozmezí je 25–75 %. Historická měření jsou dostupná v
+              NASA EDA.
+            </p>
+          </article>
+          <article>
+            <span class="channel live">živá telemetrie</span
+            ><b id="cabin-co2">– ppm</b><strong>Oxid uhličitý</strong>
+            <p>Vypočteno z parciálního tlaku CO₂ v laboratoři.</p>
+          </article>
+          <article>
+            <span class="channel live">živá telemetrie</span
+            ><b id="cabin-pressure">– kPa</b><strong>Tlak kabiny</strong>
+            <p>Měřeno v americkém laboratorním modulu Destiny.</p>
+          </article>
+          <article>
+            <span class="channel live">živá telemetrie</span
+            ><b id="cabin-oxygen">– %</b><strong>Kyslík</strong>
+            <p>Podíl vypočtený z parciálního O₂ a tlaku kabiny.</p>
+          </article>
+          <article>
+            <span class="channel live" id="water-signal"
+              >připojuji živá data</span
+            ><b id="clean-water">– %</b><strong>Zásoba čisté vody</strong>
+            <p>Veřejná telemetrie systému WPA v modulu Node 3.</p>
+          </article>
+        </div>
+        <div class="water-live">
+          <div><span>Nádrž moči</span><b id="urine-water">– %</b></div>
+          <div><span>Odpadní voda</span><b id="waste-water">– %</b></div>
+          <div><span>Procesor moči UPA</span><b id="upa-state">–</b></div>
+          <div>
+            <span>Procesor vody WPA</span><b id="wpa-state">–</b
+            ><small id="wpa-step"></small>
+          </div>
+        </div>
+        <p class="environment-note">
+          Hodnoty kromě relativní vlhkosti pocházejí z veřejné telemetrie NASA
+          ISSLive. Poslední data: <span id="water-time">čekám na signál</span>.
+        </p>
+      </section>
+      <section class="two-col">
+        <div class="section">
+          <h2>Připojené lodě</h2>
+          <p>
+            Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně
+            Progress 96 po příletu 11. září.
+          </p>
+        </div>
+        <div class="section">
+          <h2>Co přiletí dál</h2>
+          <div class="events">
+            <article>
+              <time>nejdříve konec září 2026</time><b>SpaceX Crew-13</b>
+              <p>
+                Jessica Watkins, Luke Delaney, Joshua Kutryk a Sergey
+                Teteryatnikov.
+              </p>
+            </article>
+            <article>
+              <time>podzim 2026</time><b>SpaceX CRS-35</b>
+              <p>Náklad a nové sluneční panely iROSA.</p>
+            </article>
+            <article>
+              <time>podzim / zima 2026</time><b>Northrop Grumman CRS-25</b>
+              <p>Přibližně 5 tun zásob a experimentů.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Zdroje:
+      <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a>
+      ·
+      <a href="https://visualization.osdr.nasa.gov/eda/"
+        >NASA Environmental Data App</a
+      >
+      ·
+      <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> ·
+      poloha <a href="https://wheretheiss.at/">Where the ISS at?</a>
+    </footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://demos.lightstreamer.com/commons/require.js"></script>
+    <script src="https://demos.lightstreamer.com/commons/lightstreamer.min.js"></script>
+    <script src="water.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
