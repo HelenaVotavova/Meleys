@@ -9,13 +9,23 @@ require(['LightstreamerClient', 'Subscription'], (LightstreamerClient, Subscript
     NODE3000008: ['waste-water', value => `${Number(value).toFixed(1)} %`],
     NODE3000009: ['clean-water', value => `${Number(value).toFixed(1)} %`]
   };
+  const updateAtmosphere = () => {
+    const pressureTorr = Number(values.USLAB000058);
+    const oxygenTorr = Number(values.USLAB000053);
+    const co2Torr = Number(values.USLAB000055);
+    if (Number.isFinite(Number(values.USLAB000059))) document.querySelector('#cabin-temp').textContent = `${Number(values.USLAB000059).toFixed(1)} °C`;
+    if (Number.isFinite(pressureTorr)) document.querySelector('#cabin-pressure').textContent = `${(pressureTorr / 7.50062).toFixed(1)} kPa`;
+    if (Number.isFinite(pressureTorr) && pressureTorr > 0 && Number.isFinite(oxygenTorr)) document.querySelector('#cabin-oxygen').textContent = `${(oxygenTorr / pressureTorr * 100).toFixed(1)} %`;
+    if (Number.isFinite(pressureTorr) && pressureTorr > 0 && Number.isFinite(co2Torr)) document.querySelector('#cabin-co2').textContent = `${Math.round(co2Torr / pressureTorr * 1000000)} ppm`;
+  };
   const client = new LightstreamerClient('https://push.lightstreamer.com', 'ISSLIVE');
-  const subscription = new Subscription('MERGE', ['NODE3000004', 'NODE3000005', 'NODE3000006', 'NODE3000007', 'NODE3000008', 'NODE3000009'], ['Value', 'TimeStamp']);
+  const subscription = new Subscription('MERGE', ['NODE3000004', 'NODE3000005', 'NODE3000006', 'NODE3000007', 'NODE3000008', 'NODE3000009', 'USLAB000053', 'USLAB000055', 'USLAB000058', 'USLAB000059'], ['Value', 'TimeStamp']);
   subscription.addListener({
     onItemUpdate(update) {
       const item = update.getItemName();
       const value = update.getValue('Value');
       values[item] = value;
+      updateAtmosphere();
       if (fields[item] && Number.isFinite(Number(value))) document.querySelector(`#${fields[item][0]}`).textContent = fields[item][1](value);
       document.querySelector('#upa-state').textContent = state(upaStates, values.NODE3000004);
       document.querySelector('#wpa-state').textContent = state(wpaStates, values.NODE3000006);
