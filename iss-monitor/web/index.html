@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ISS živě</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><div><span class="eyebrow">MEZINÁRODNÍ VESMÍRNÁ STANICE</span><h1>ISS živě</h1></div><div id="state" class="state">Připojuji…</div></header>
+  <main>
+    <section class="map-wrap"><div id="map"></div><div class="telemetry">
+      <div><b id="speed">–</b><span>km/h</span></div><div><b id="altitude">–</b><span>výška km</span></div>
+      <div><b id="coords">–</b><span>souřadnice</span></div><div><b id="light">–</b><span>osvětlení</span></div>
+    </div></section>
+    <section class="orientation section"><div><h2>Natočení stanice</h2><p>Odhad podle směru pohybu. ISS běžně letí v režimu, kdy je její spodní strana orientována k Zemi.</p></div><div class="compass"><span>N</span><div id="station">ISS➤</div><small id="heading">směr se počítá</small></div></section>
+    <section class="section"><div class="section-head"><div><h2>Posádka Expedice 75</h2><p>Délka pobytu se dopočítává od příletu.</p></div><span>ověřeno 14. 9. 2026</span></div><div id="crew" class="crew"></div></section>
+    <section class="two-col">
+      <div class="section"><h2>Uvnitř ISS</h2><p class="notice">Nejde o živou palubní telemetrii, ale o běžné provozní hodnoty.</p><div class="inside">
+        <div><b>18–27 °C</b><span>teplota kabiny</span></div><div><b>≈ 101 kPa</b><span>tlak podobný Zemi</span></div><div><b>≈ 21 %</b><span>podíl kyslíku</span></div><div><b>7 osob</b><span>současná posádka</span></div>
+      </div><h3>Připojené lodě</h3><p>Crew-12 Dragon, Soyuz MS-29, Cygnus XL, Progress 95 a očekávaně Progress 96 po příletu 11. září.</p></div>
+      <div class="section"><h2>Co přiletí dál</h2><div class="events">
+        <article><time>nejdříve konec září 2026</time><b>SpaceX Crew-13</b><p>Jessica Watkins, Luke Delaney, Joshua Kutryk a Sergey Teteryatnikov.</p></article>
+        <article><time>podzim 2026</time><b>SpaceX CRS-35</b><p>Náklad a nové sluneční panely iROSA.</p></article>
+        <article><time>podzim / zima 2026</time><b>Northrop Grumman CRS-25</b><p>Přibližně 5 tun zásob a experimentů.</p></article>
+      </div></div>
+    </section>
+  </main>
+  <footer>Zdroje: <a href="https://www.nasa.gov/mission/expedition-75/">NASA Expedice 75</a> · <a href="https://www.nasa.gov/mission/nasas-spacex-crew-13/">Crew-13</a> · poloha <a href="https://wheretheiss.at/">Where the ISS at?</a></footer>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js"></script>
+</body></html>
