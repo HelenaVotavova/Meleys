@@ -30,6 +30,7 @@ ROUTES = {"L25D99": "25", "L26D99": "26"}
 schedule = {}
 journey_schedule = {}
 test_schedule = {}
+corridor_schedule = {}
 route_labels = {}
 trip_labels = {}
 vehicle_plans = {}
@@ -37,6 +38,7 @@ active_test_runs = {}
 test_target_seen = {}
 leg_target_seen = {}
 tracked_vehicle_state = {}
+corridor_vehicle_state = {}
 TRACKED_VEHICLES = {
     "31054": "Lena", "19080": "Helenka", "30650": "Mario", "30660": "Luigi",
     "16010": "Planeta her (dříve)", "11200": "Hvězdárna Brno",
@@ -78,6 +80,12 @@ def db():
         stop_name TEXT NOT NULL, planned INTEGER, first_seen INTEGER NOT NULL,
         last_seen INTEGER NOT NULL, passed_at INTEGER, latitude REAL, longitude REAL,
         PRIMARY KEY(service_date, trip_key, stop_id))""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS corridor_delays(
+        service_date TEXT NOT NULL, trip_id TEXT NOT NULL, line TEXT NOT NULL,
+        destination TEXT NOT NULL, stop_sequence INTEGER NOT NULL,
+        stop_id TEXT NOT NULL, stop_name TEXT NOT NULL, planned INTEGER NOT NULL,
+        actual INTEGER, observed_at INTEGER,
+        PRIMARY KEY(service_date, trip_id, stop_sequence))""")
     columns = {row[1] for row in connection.execute("PRAGMA table_info(vehicle_stops)")}
     if "vehicle_code" not in columns:
         connection.execute("ALTER TABLE vehicle_stops ADD COLUMN vehicle_code TEXT")
@@ -119,7 +127,8 @@ def realtime_stop_id(stop_id):
 
 
 def load_schedule(day):
-    global schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day
+    global schedule, journey_schedule, test_schedule, corridor_schedule
+    global route_labels, trip_labels, vehicle_plans, schedule_day
     if not GTFS.exists() or time.time() - GTFS.stat().st_mtime > 20 * 3600:
         GTFS.write_bytes(fetch(STATIC_URL))
     with zipfile.ZipFile(GTFS) as archive:
@@ -148,8 +157,10 @@ def load_schedule(day):
                     found[row["trip_id"]] = (*trips[row["trip_id"]], planned)
         legs = {}
         tests = {}
+        corridors = {}
         for trip, rows in stop_times.items():
             ids = [r["stop_id"] for r in rows]
+            names = [stop_names.get(r["stop_id"], r["stop_id"]) for r in rows]
             line, destination = trips[trip]
             if line == "1" and "U1272Z2" in ids and "U1483Z2" in ids:
                 oi, di = ids.index("U1272Z2"), ids.index("U1483Z2")
@@ -171,10 +182,21 @@ def load_schedule(day):
                 if targets:
                     di, target = targets[0]
                     tests[trip] = (line or "?", destination, target, seconds(rows[oi]["departure_time"]), seconds(rows[di]["arrival_time"]))
+            corridor_origin = "Pálavské náměstí" if line == "25" else "Štefánikova čtvrť" if line == "26" else None
+            if corridor_origin and corridor_origin in names and "Úvoz" in names:
+                oi, di = names.index(corridor_origin), names.index("Úvoz")
+                origin_time = seconds(rows[oi]["departure_time"])
+                if oi < di and 7 * 3600 + 15 * 60 <= origin_time <= 8 * 3600 + 15 * 60:
+                    corridors[trip] = [
+                        (index - oi + 1, realtime_stop_id(row["stop_id"]), names[index],
+                         seconds(row["departure_time"]))
+                        for index, row in enumerate(rows[oi:di + 1], start=oi)
+                    ]
         if day.weekday() >= 5:
-            found, legs = {}, {}
+            found, legs, corridors = {}, {}, {}
     with lock:
-        schedule, journey_schedule, test_schedule, route_labels, trip_labels, vehicle_plans, schedule_day = found, legs, tests, route_names, all_trip_labels, plans, day
+        schedule, journey_schedule, test_schedule, corridor_schedule = found, legs, tests, corridors
+        route_labels, trip_labels, vehicle_plans, schedule_day = route_names, all_trip_labels, plans, day
     connection = db()
     missing_vehicle_stops = connection.execute(
         "SELECT rowid,trip_id,stop_id FROM vehicle_stops WHERE planned IS NULL AND trip_id IS NOT NULL").fetchall()
@@ -190,6 +212,11 @@ def load_schedule(day):
         destination=excluded.destination, target=excluded.target, origin_planned=excluded.origin_planned,
         destination_planned=excluded.destination_planned, scheduled=1""",
         [(day.isoformat(), trip, *values) for trip, values in tests.items()])
+    connection.executemany("""INSERT OR IGNORE INTO corridor_delays(
+        service_date,trip_id,line,destination,stop_sequence,stop_id,stop_name,planned)
+        VALUES(?,?,?,?,?,?,?,?)""",
+        [(day.isoformat(), trip, trips[trip][0], trips[trip][1], *stop)
+         for trip, stops in corridors.items() for stop in stops])
     for trip_id, vehicle_id, target in connection.execute("""SELECT trip_id,vehicle_id,target FROM test_runs
             WHERE service_date=? AND origin_actual IS NOT NULL AND destination_actual IS NULL AND vehicle_id IS NOT NULL""", (day.isoformat(),)):
         active_test_runs[vehicle_id] = (trip_id, target)
@@ -209,6 +236,15 @@ def finish_test_run(day, vehicle_id, stamp, target):
     test_target_seen.pop(vehicle_id, None)
 
 
+def record_corridor_stop(day, trip, stop_id, stamp):
+    connection = db()
+    connection.execute("""UPDATE corridor_delays
+        SET actual=COALESCE(actual,?), observed_at=?
+        WHERE service_date=? AND trip_id=? AND stop_id=?""",
+        (stamp, stamp, day, trip, stop_id))
+    connection.commit(); connection.close()
+
+
 def collect_once():
     now = datetime.now(TZ)
     if schedule_day != now.date(): load_schedule(now.date())
@@ -219,6 +255,7 @@ def collect_once():
         current = dict(schedule)
         current_legs = dict(journey_schedule)
         current_tests = dict(test_schedule)
+        current_corridors = dict(corridor_schedule)
         current_routes = dict(route_labels)
         current_trip_labels = dict(trip_labels)
     leg_updates = []
@@ -234,6 +271,16 @@ def collect_once():
         local = datetime.fromtimestamp(stamp, TZ)
         if local.date() != now.date():
             continue
+        if trip in current_corridors:
+            route_stops = [item[1] for item in current_corridors[trip]]
+            current_stop = vehicle.stop_id
+            previous_stop = corridor_vehicle_state.get(trip)
+            if previous_stop in route_stops and current_stop != previous_stop:
+                record_corridor_stop(now.date().isoformat(), trip, previous_stop, stamp)
+            if current_stop in route_stops:
+                corridor_vehicle_state[trip] = current_stop
+                if current_stop == route_stops[-1] and vehicle.current_status in {0, 1}:
+                    record_corridor_stop(now.date().isoformat(), trip, current_stop, stamp)
         tracked_code = next((code for code in TRACKED_VEHICLES if code in {vehicle.vehicle.id, vehicle.vehicle.label}), None)
         if tracked_code:
             state = tracked_vehicle_state.get(tracked_code)
@@ -371,6 +418,15 @@ def test_runs():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
+def corridor_delays():
+    connection = db(); connection.row_factory = sqlite3.Row
+    rows = connection.execute("""SELECT * FROM corridor_delays
+        WHERE strftime('%w', service_date) NOT IN ('0', '6')
+        ORDER BY service_date DESC, line, trip_id, stop_sequence""").fetchall()
+    connection.close()
+    return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
+
+
 def line1_forecast(weekend=False):
     today = datetime.now(TZ).date()
     connection = db()
@@ -470,6 +526,11 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/test-runs":
             body = json.dumps(test_runs(), ensure_ascii=False).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.split("?", 1)[0] == "/api/corridor-delays":
+            body = json.dumps(corridor_delays(), ensure_ascii=False).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
