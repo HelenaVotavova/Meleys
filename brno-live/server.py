@@ -144,7 +144,7 @@ def dashboard_data():
         "latitude": lat, "longitude": lon, "timezone": "Europe/Prague",
         "forecast_days": 2,
         "current": "temperature_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m",
-        "hourly": "temperature_2m,precipitation_probability,precipitation,cloud_cover,wind_speed_10m,wind_gusts_10m",
+        "hourly": "temperature_2m,apparent_temperature,precipitation_probability,precipitation,cloud_cover,wind_speed_10m,wind_gusts_10m",
         "daily": "sunrise,sunset,daylight_duration,precipitation_sum,temperature_2m_max,temperature_2m_min",
     })
     air_query = urllib.parse.urlencode({

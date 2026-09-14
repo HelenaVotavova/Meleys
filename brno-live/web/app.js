@@ -48,6 +48,44 @@ function renderOccupancy(rows) {
     })
     .join("");
 }
+function clothingAdvice(feels, rainChance, rain, gust) {
+  let clothes;
+  if (feels < 0) clothes = "Zimní bundu, čepici, šálu a rukavice.";
+  else if (feels < 7) clothes = "Teplou bundu a mikinu, hodí se i čepice.";
+  else if (feels < 13) clothes = "Bundu a mikinu, ráno raději dlouhé kalhoty.";
+  else if (feels < 18) clothes = "Lehkou bundu nebo mikinu a dlouhé kalhoty.";
+  else if (feels < 24) clothes = "Tričko, lehkou mikinu s sebou a dlouhé kalhoty.";
+  else clothes = "Tričko a lehké oblečení, nezapomeň na pití.";
+  if (rainChance >= 40 || rain >= 0.2) clothes += " Přibal nepromokavou bundu nebo deštník.";
+  if (gust >= 35) clothes += " Bude nárazový vítr, zvol vrstvu, která neprofoukne.";
+  return clothes;
+}
+function renderWeatherAdvice(weather) {
+  const hourly = weather.hourly;
+  const now = new Date();
+  const localHour = Number(new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", hour: "numeric", hourCycle: "h23" }).format(now));
+  const localDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(now);
+  const target = new Date(`${localDate}T12:00:00`);
+  if (localHour >= 8) target.setDate(target.getDate() + 1);
+  const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(target);
+  const indices = (hours) => hourly.time.map((value, index) => ({ value, index })).filter(({ value }) => value.startsWith(date) && hours.includes(Number(value.slice(11, 13)))).map(({ index }) => index);
+  const summarize = (selected) => ({
+    feels: selected.reduce((sum, i) => sum + hourly.apparent_temperature[i], 0) / selected.length,
+    rainChance: Math.max(...selected.map((i) => hourly.precipitation_probability[i])),
+    rain: Math.max(...selected.map((i) => hourly.precipitation[i])),
+    gust: Math.max(...selected.map((i) => hourly.wind_gusts_10m[i])),
+  });
+  const morning = summarize(indices([7, 8]));
+  const afternoon = summarize(indices([12, 13, 14, 15]));
+  const label = target.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
+  $("#advice-day").textContent = label;
+  $("#morning-label").textContent = `RÁNO · 7:30 · ${label}`;
+  $("#afternoon-label").textContent = `ODPOLEDNE · 12:00–15:00 · ${label}`;
+  $("#morning-weather").textContent = `${Math.round(morning.feels)} °C pocitově · déšť ${morning.rainChance} %`;
+  $("#afternoon-weather").textContent = `${Math.round(afternoon.feels)} °C pocitově · déšť ${afternoon.rainChance} %`;
+  $("#morning-advice").textContent = clothingAdvice(morning.feels, morning.rainChance, morning.rain, morning.gust);
+  $("#afternoon-advice").textContent = clothingAdvice(afternoon.feels, afternoon.rainChance, afternoon.rain, afternoon.gust);
+}
 function escapeHtml(value) {
   const node = document.createElement("span");
   node.textContent = value ?? "";
@@ -155,6 +193,7 @@ async function load() {
   const data = await response.json();
   if (!response.ok) throw Error(data.error);
   renderOccupancy(data.occupancy);
+  renderWeatherAdvice(data.weather);
   const w = data.weather.current,
     a = data.air.current,
     d = data.weather.daily;

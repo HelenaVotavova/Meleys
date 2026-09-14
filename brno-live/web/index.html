@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="occupancy.css">
   <link rel="stylesheet" href="aviation.css">
+  <link rel="stylesheet" href="weather-advice.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -26,6 +27,10 @@
       <div><span>Srážky</span><b id="rain">–</b><small>mm</small></div>
     </section>
     <section class="section"><div class="head"><div><span>DALŠÍCH 24 HODIN</span><h2>Teplota, déšť a vítr</h2></div><strong id="condition">–</strong></div><div class="chart"><canvas id="forecastChart"></canvas></div></section>
+    <section class="section">
+      <div class="head"><div><span>PODLE POCITOVÉ TEPLOTY, DEŠTĚ A VĚTRU</span><h2>Co si obléct</h2></div><strong id="advice-day">–</strong></div>
+      <div class="weather-advice"><article><span id="morning-label">RÁNO · 7:30</span><b id="morning-weather">–</b><p id="morning-advice">Načítám doporučení…</p></article><article><span id="afternoon-label">ODPOLEDNE · 12:00–15:00</span><b id="afternoon-weather">–</b><p id="afternoon-advice">Načítám doporučení…</p></article></div>
+    </section>
     <section class="split">
       <div class="section"><span>KVALITA OVZDUŠÍ</span><h2 id="aqi-title">Načítám…</h2><div class="air"><div><b id="aqi">–</b><small>evropský AQI</small></div><dl><dt>PM₂.₅</dt><dd id="pm25">–</dd><dt>PM₁₀</dt><dd id="pm10">–</dd><dt>NO₂</dt><dd id="no2">–</dd><dt>O₃</dt><dd id="o3">–</dd></dl></div></div>
       <div class="section"><span>SLUNCE A DEN</span><h2>Dnešní světlo</h2><div class="sun"><div><small>Východ</small><b id="sunrise">–</b></div><div><small>Západ</small><b id="sunset">–</b></div><div><small>Délka dne</small><b id="daylight">–</b></div></div></div>
