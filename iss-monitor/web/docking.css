@@ -14,36 +14,63 @@
 .dock-point {
   position: absolute;
   z-index: 2;
-  min-width: 112px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 158px;
   background: #a8201bdc;
   color: #fff;
-  border-left: 5px solid #ff3b30;
-  padding: 6px 9px;
+  border: 2px solid #fff;
+  padding: 4px;
   font-size: 11px;
   font-weight: 600;
   box-shadow: 0 2px 8px #0006;
-  transform: translate(-10px, -50%);
+  transform: translate(-24px, -50%);
 }
-.dock-point::before {
-  content: "";
-  position: absolute;
-  left: -11px;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ff2117;
-  border: 3px solid #fff;
-  transform: translate(-50%, -50%);
+.dock-point img {
+  width: 54px;
+  height: 38px;
+  object-fit: cover;
+  flex: 0 0 auto;
 }
-.dock-point b { display: block; font-size: 13px; }
-.dock-point.zvezda { left: 19%; top: 25%; }
-.dock-point.prichal { left: 28%; top: 45%; }
-.dock-point.unity { left: 57%; top: 69%; }
-.dock-point.harmony { left: 72%; top: 84%; }
-.docking-diagram figcaption { font-size: 12px; color: #647177; margin-top: 9px; }
+.dock-point b {
+  display: block;
+  font-size: 13px;
+}
+.dock-point.zvezda {
+  left: 19%;
+  top: 25%;
+}
+.dock-point.prichal {
+  left: 28%;
+  top: 45%;
+}
+.dock-point.unity {
+  left: 57%;
+  top: 69%;
+}
+.dock-point.harmony {
+  left: 72%;
+  top: 84%;
+}
+.docking-diagram figcaption {
+  font-size: 12px;
+  color: #647177;
+  margin-top: 9px;
+}
 @media (max-width: 700px) {
-  .dock-point { min-width: 76px; padding: 3px 5px; font-size: 8px; transform: translate(-5px, -50%); }
-  .dock-point b { font-size: 9px; }
-  .dock-point::before { left: -7px; width: 8px; height: 8px; border-width: 2px; }
+  .dock-point {
+    gap: 3px;
+    min-width: 94px;
+    padding: 2px;
+    font-size: 7px;
+    transform: translate(-12px, -50%);
+  }
+  .dock-point img {
+    width: 34px;
+    height: 24px;
+  }
+  .dock-point b {
+    font-size: 9px;
+  }
 }
