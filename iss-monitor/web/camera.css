@@ -141,7 +141,7 @@
 }
 .visit-list {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 7px;
   margin-top: 14px;
 }
@@ -160,6 +160,13 @@
 .visit-list b,
 .visit-list span {
   display: block;
+}
+.visit-list p {
+  margin: 8px 0 0;
+  line-height: 1.35;
+}
+.visit-list strong {
+  font-size: 12px;
 }
 .visit-list b {
   margin: 5px 0;
@@ -195,6 +202,6 @@
     grid-template-columns: 1fr 1fr;
   }
   .visit-list {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
