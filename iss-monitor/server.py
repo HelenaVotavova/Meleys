@@ -19,6 +19,29 @@ CAMERA_CACHE = {}
 DB = ROOT / "iss_history.db"
 
 
+def space_environment(latitude, longitude, altitude):
+    rad = math.pi / 180
+    lat, lon = latitude * rad, longitude * rad
+    pole_lat, pole_lon = 80.65 * rad, -72.68 * rad
+    sin_mag = (math.sin(lat) * math.sin(pole_lat) +
+               math.cos(lat) * math.cos(pole_lat) * math.cos(lon - pole_lon))
+    magnetic_latitude = math.asin(max(-1, min(1, sin_mag)))
+    field = 30.7 * (6371 / (6371 + altitude)) ** 3 * math.sqrt(
+        1 + 3 * math.sin(magnetic_latitude) ** 2)
+    lon_delta = abs(((longitude + 45 + 180) % 360) - 180)
+    saa = math.exp(-0.5 * (((latitude + 25) / 14) ** 2 + (lon_delta / 28) ** 2))
+    dose = 8 + 9 * abs(math.sin(magnetic_latitude)) ** 2 + 32 * saa
+    return round(dose, 2), round(field, 2), round(math.degrees(magnetic_latitude), 1), round(saa, 3)
+
+
+def ensure_measurements(db):
+    db.execute("CREATE TABLE IF NOT EXISTS measurements (minute INTEGER PRIMARY KEY, altitude REAL, velocity REAL)")
+    columns = {row[1] for row in db.execute("PRAGMA table_info(measurements)")}
+    for name in ("latitude", "longitude", "radiation", "magnetic"):
+        if name not in columns:
+            db.execute(f"ALTER TABLE measurements ADD COLUMN {name} REAL")
+
+
 def camera_snapshot(latitude, longitude):
     date = (datetime.now(timezone.utc) - timedelta(days=1)).date().isoformat()
     key = (round(latitude, 1), round(longitude, 1), date)
@@ -64,17 +87,23 @@ def camera_snapshot(latitude, longitude):
 
 def save_measurement(data):
     with sqlite3.connect(DB) as db:
-        db.execute("CREATE TABLE IF NOT EXISTS measurements (minute INTEGER PRIMARY KEY, altitude REAL, velocity REAL)")
+        ensure_measurements(db)
         minute = data["timestamp"] // 60 * 60
-        db.execute("INSERT OR REPLACE INTO measurements VALUES (?, ?, ?)", (minute, data["altitude"], data["velocity"]))
+        radiation, magnetic, _, _ = space_environment(data["latitude"], data["longitude"], data["altitude"])
+        db.execute("""INSERT OR REPLACE INTO measurements
+                   (minute, altitude, velocity, latitude, longitude, radiation, magnetic)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   (minute, data["altitude"], data["velocity"], data["latitude"],
+                    data["longitude"], radiation, magnetic))
         db.execute("DELETE FROM measurements WHERE minute < ?", (time.time() - 30 * 86400,))
 
 
 def get_history():
     with sqlite3.connect(DB) as db:
-        db.execute("CREATE TABLE IF NOT EXISTS measurements (minute INTEGER PRIMARY KEY, altitude REAL, velocity REAL)")
-        rows = db.execute("SELECT minute, altitude, velocity FROM measurements ORDER BY minute").fetchall()
-    return [{"timestamp": r[0], "altitude": r[1], "velocity": r[2]} for r in rows]
+        ensure_measurements(db)
+        rows = db.execute("SELECT minute, altitude, velocity, radiation, magnetic FROM measurements ORDER BY minute").fetchall()
+    return [{"timestamp": r[0], "altitude": r[1], "velocity": r[2],
+             "radiation": r[3], "magnetic": r[4]} for r in rows]
 
 
 def get_forecast():
@@ -132,6 +161,10 @@ def fetch_position():
         "visibility": raw.get("visibility", "unknown"),
         "timestamp": raw["timestamp"], "heading": heading,
     }
+    radiation, magnetic, magnetic_latitude, saa = space_environment(
+        data["latitude"], data["longitude"], data["altitude"])
+    data.update(radiation=radiation, magnetic=magnetic,
+                magnetic_latitude=magnetic_latitude, saa=saa)
     CACHE.update(at=now, data=data)
     save_measurement(data)
     return data

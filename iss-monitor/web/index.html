@@ -37,6 +37,7 @@
           ><span class="future-key">další hodina</span
           ><span class="camera-key">záběr Astro Pi</span
           ><span class="night-key">noční strana Země</span>
+          <span class="saa-key">SAA: vliv vnitřního pásu</span>
         </div>
         <div class="telemetry">
           <div><b id="speed">–</b><span>km/h</span></div>
@@ -144,6 +145,31 @@
           <div><canvas id="altitudeChart"></canvas></div>
           <div><canvas id="speedChart"></canvas></div>
         </div>
+      </section>
+      <section class="space-weather section">
+        <span class="eyebrow">MODELOVÝ ODHAD PODLE POLOHY ISS</span>
+        <h2>Radiační prostředí a magnetické pole</h2>
+        <div class="space-weather-now">
+          <article>
+            <span>Absorbovaná dávka</span
+            ><b><strong id="radiation-dose">–</strong> µGy/h</b>
+            <p id="radiation-state">Počítám polohu…</p>
+          </article>
+          <article>
+            <span>Magnetické pole</span
+            ><b><strong id="magnetic-field">–</strong> µT</b>
+            <p id="magnetic-state">Dipólový model Země</p>
+          </article>
+        </div>
+        <div class="charts space-weather-charts">
+          <div><canvas id="radiationChart"></canvas></div>
+          <div><canvas id="magneticChart"></canvas></div>
+        </div>
+        <p class="camera-note">
+          Nejde o živá palubní čidla. Radiační model zohledňuje geomagnetickou
+          šířku a SAA a má orientační nejistotu přibližně ±50 %. Magnetické pole
+          je zjednodušený dipólový odhad.
+        </p>
       </section>
       <section class="sketchfab-section">
         <div class="model-title">

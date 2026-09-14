@@ -72,6 +72,38 @@
   color: #68757b;
   font-size: 10px;
 }
+.space-weather {
+  border-top: 4px solid #d44835;
+}
+.space-weather-now {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+.space-weather-now article {
+  padding: 15px;
+  background: #f3f6f6;
+  border-left: 4px solid #d44835;
+}
+.space-weather-now span {
+  color: #536168;
+  font-size: 13px;
+}
+.space-weather-now b {
+  display: block;
+  margin: 5px 0;
+  font-size: 18px;
+}
+.space-weather-now strong {
+  font-size: 28px;
+}
+.space-weather-now p {
+  margin: 0;
+}
+.space-weather-charts {
+  margin-top: 18px;
+}
 @media (max-width: 700px) {
   .camera-layout {
     grid-template-columns: 1fr;
@@ -88,5 +120,8 @@
   }
   .surface-analysis b {
     font-size: 20px;
+  }
+  .space-weather-now {
+    grid-template-columns: 1fr;
   }
 }

@@ -130,6 +130,18 @@ const marker = L.marker([0, 0], { icon }).addTo(map),
   }).addTo(map);
 let points = [],
   lastCameraUpdate = 0;
+const saaOutline = Array.from({ length: 73 }, (_, index) => {
+  const angle = (index / 72) * Math.PI * 2;
+  return [-25 + 18 * Math.sin(angle), -45 + 38 * Math.cos(angle)];
+});
+L.polygon(saaOutline, {
+  color: "#d44835",
+  weight: 2,
+  fillColor: "#d44835",
+  fillOpacity: 0.12,
+})
+  .bindTooltip("Jihoatlantská anomálie (SAA)")
+  .addTo(map);
 
 async function updateCamera(d) {
   if (Date.now() - lastCameraUpdate < 300000) return;
@@ -175,6 +187,18 @@ async function update() {
       d.visibility === "daylight" ? "den" : "noc";
     document.querySelector("#state").textContent =
       "Živá data · " + new Date(d.timestamp * 1000).toLocaleTimeString("cs-CZ");
+    document.querySelector("#radiation-dose").textContent =
+      d.radiation.toFixed(1);
+    document.querySelector("#magnetic-field").textContent =
+      d.magnetic.toFixed(1);
+    document.querySelector("#radiation-state").textContent =
+      d.saa > 0.38
+        ? "Zvýšená zátěž: průlet oblastí SAA."
+        : d.radiation > 16
+          ? "Zvýšená geomagnetická šířka."
+          : "Běžný odhad pro tuto část dráhy.";
+    document.querySelector("#magnetic-state").textContent =
+      `Magnetická šířka ${Math.abs(d.magnetic_latitude).toFixed(0)}° ${d.magnetic_latitude >= 0 ? "s." : "j."}`;
     updateCamera(d);
     if (d.heading != null) {
       document.querySelector("#station").style.transform =
@@ -232,7 +256,7 @@ const chartOptions = (label, unit) => ({
     y: { title: { display: true, text: unit } },
   },
 });
-let altitudeChart, speedChart;
+let altitudeChart, speedChart, radiationChart, magneticChart;
 async function updateCharts() {
   try {
     const r = await fetch("/api/history");
@@ -246,7 +270,9 @@ async function updateCharts() {
       }),
     );
     const altitude = rows.map((x) => x.altitude),
-      speed = rows.map((x) => x.velocity / 3600);
+      speed = rows.map((x) => x.velocity / 3600),
+      radiation = rows.map((x) => x.radiation),
+      magnetic = rows.map((x) => x.magnetic);
     if (!altitudeChart) {
       altitudeChart = new Chart(document.querySelector("#altitudeChart"), {
         type: "line",
@@ -272,10 +298,44 @@ async function updateCharts() {
         },
         options: chartOptions("Průměrná rychlost", "km/s"),
       });
+      radiationChart = new Chart(document.querySelector("#radiationChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              data: radiation,
+              borderColor: "#d44835",
+              backgroundColor: "#d4483522",
+              fill: true,
+              pointRadius: 0,
+              spanGaps: true,
+            },
+          ],
+        },
+        options: chartOptions("Odhad absorbované dávky", "µGy/h"),
+      });
+      magneticChart = new Chart(document.querySelector("#magneticChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              data: magnetic,
+              borderColor: "#315f92",
+              pointRadius: 0,
+              spanGaps: true,
+            },
+          ],
+        },
+        options: chartOptions("Odhad magnetického pole", "µT"),
+      });
     } else {
       for (const [chart, data] of [
         [altitudeChart, altitude],
         [speedChart, speed],
+        [radiationChart, radiation],
+        [magneticChart, magnetic],
       ]) {
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;

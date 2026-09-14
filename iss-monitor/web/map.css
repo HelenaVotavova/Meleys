@@ -12,3 +12,9 @@
   border: 0;
   background: #07152199;
 }
+.map-key .saa-key:before {
+  width: 12px;
+  height: 10px;
+  border: 2px solid #d44835;
+  background: #d4483533;
+}
