@@ -1,0 +1,40 @@
+main {
+  display: flex;
+  flex-direction: column;
+}
+.map-wrap {
+  order: 1;
+}
+.orbital-charts {
+  order: 2;
+}
+.environment {
+  order: 3;
+}
+.orientation-section {
+  order: 4;
+}
+.camera-section {
+  order: 5;
+}
+.sketchfab-section {
+  order: 6;
+}
+.module-diagram {
+  order: 7;
+}
+.docking-diagram {
+  order: 8;
+}
+.space-weather {
+  order: 9;
+}
+.crew-section {
+  order: 10;
+}
+.svoboda {
+  order: 11;
+}
+.schedule-section {
+  order: 12;
+}
