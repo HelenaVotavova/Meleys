@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="occupancy.css">
   <link rel="stylesheet" href="aviation.css">
   <link rel="stylesheet" href="weather-advice.css">
+  <link rel="stylesheet" href="transit.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -48,6 +49,10 @@
       <div class="head"><div><span>SÚJB MONRAS · HODINOVÉ MĚŘENÍ</span><h2>Aktuální radiace v Brně</h2></div><strong id="radiation-status">načítám…</strong></div>
       <div id="radiation" class="radiation"><p>Načítám měření…</p></div>
     </section>
+    <section class="section transit-section">
+      <div class="head"><div><span>DPMB · LINKY 1, 6, 25, 26 A 32</span><h2>Mimořádné události v MHD</h2></div><strong id="transit-status">kontroluji…</strong></div>
+      <div id="transit-incidents" class="transit-incidents"><p>Načítám aktuální provoz…</p></div>
+    </section>
     <section class="section">
       <div class="head"><div><span>LETIŠTĚ BRNO-TUŘANY</span><h2>Přílety a odlety · 48 hodin</h2></div><strong>BRQ</strong></div>
       <div id="flight-schedule" class="flight-schedule"><p>Načítám letový plán…</p></div>
@@ -57,7 +62,7 @@
       <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
     </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>

@@ -1,0 +1,8 @@
+.transit-incidents { display: grid; gap: 10px; margin-top: 14px; }
+.transit-ok { padding: 18px; background: #edf5f1; border-left: 4px solid #08736a; font-size: 17px; }
+.transit-incident { padding: 16px; background: #fff1ef; border-left: 4px solid #d44835; }
+.transit-incident h3 { margin: 0 0 8px; font-size: 18px; }
+.transit-incident h3 a { color: #17252a; }
+.transit-lines { display: flex; gap: 6px; margin-bottom: 8px; }
+.transit-line { display: inline-grid; place-items: center; min-width: 32px; height: 32px; padding: 0 5px; background: #d44835; color: white; font-weight: 700; }
+.transit-meta { margin: 0; color: #536168; font-size: 13px; }

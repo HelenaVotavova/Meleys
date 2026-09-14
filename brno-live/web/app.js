@@ -165,6 +165,32 @@ async function loadRadiation() {
     ? "normální situace"
     : "zkontrolujte stav měření";
 }
+async function loadTransitIncidents() {
+  const response = await fetch("/api/transit-incidents");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  const checked = new Date(data.checked * 1000).toLocaleTimeString("cs-CZ", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  $("#transit-status").textContent = data.incidents.length
+    ? `${data.incidents.length} aktivní · kontrola ${checked}`
+    : `bez omezení · kontrola ${checked}`;
+  if (!data.incidents.length) {
+    $("#transit-incidents").innerHTML = '<div class="transit-ok">Na sledovaných linkách nyní DPMB neeviduje žádnou mimořádnou událost.</div>';
+    return;
+  }
+  $("#transit-incidents").innerHTML = data.incidents
+    .map((incident) => {
+      const lines = incident.lines.map((line) => `<b class="transit-line">${line}</b>`).join("");
+      const period = incident.from
+        ? `${new Date(incident.from).toLocaleString("cs-CZ")} – ${incident.to ? new Date(incident.to).toLocaleString("cs-CZ") : "do odvolání"}`
+        : "platnost neuvedena";
+      const details = [period, incident.direction ? `směr: ${incident.direction}` : "", incident.delay_minutes ? `zdržení: ${incident.delay_minutes} min` : ""].filter(Boolean).join(" · ");
+      return `<article class="transit-incident"><div class="transit-lines">${lines}</div><h3><a href="${incident.url}" target="_blank" rel="noopener">${escapeHtml(incident.title)}</a></h3><p class="transit-meta">${escapeHtml(details)}</p></article>`;
+    })
+    .join("");
+}
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
   const rows = await response.json();
@@ -279,6 +305,9 @@ loadAviation().catch(() => {
 });
 loadRadiation().catch(() => {
   $("#radiation-status").textContent = "data dočasně nedostupná";
+});
+loadTransitIncidents().catch(() => {
+  $("#transit-status").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";

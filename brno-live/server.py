@@ -17,6 +17,7 @@ BRNO = (49.1951, 16.6068)
 CACHE = {}
 AVIATION_CACHE = {}
 RADIATION_CACHE = {}
+TRANSIT_CACHE = {}
 
 
 def fetch_json(url):
@@ -119,6 +120,35 @@ def radiation_data():
     return data
 
 
+def transit_incidents():
+    if TRANSIT_CACHE.get("data") and time.time() - TRANSIT_CACHE["at"] < 120:
+        return TRANSIT_CACHE["data"]
+    request = urllib.request.Request("https://www.dpmb.cz/", headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        page = response.read().decode("utf-8", "replace")
+    selected = {"1", "6", "25", "26", "32"}
+    incidents = []
+    for article in re.findall(r'<article class="[^"]*node--type-event[^"]*">(.*?)</article>', page, re.S):
+        lines = set(re.findall(r'field--name-name[^>]*field__item">\s*([^<]+)', article))
+        affected = sorted(lines & selected, key=int)
+        if not affected:
+            continue
+        title_match = re.search(r'<a href="([^"]+)"><span[^>]*field--name-title[^>]*>(.*?)</span>', article, re.S)
+        times = re.findall(r'<time datetime="([^"]+)"[^>]*>(.*?)</time>', article, re.S)
+        delay_match = re.search(r'field--name-field-zdrzeni.*?field__item">\s*([^<]+)', article, re.S)
+        direction_match = re.search(r'field--name-field-smer.*?field__item">\s*([^<]+)', article, re.S)
+        if not title_match:
+            continue
+        incidents.append({"title": " ".join(html.unescape(title_match.group(2)).split()),
+                          "url": "https://www.dpmb.cz" + title_match.group(1), "lines": affected,
+                          "from": times[0][0] if times else None, "to": times[1][0] if len(times) > 1 else None,
+                          "delay_minutes": delay_match.group(1).strip() if delay_match else None,
+                          "direction": direction_match.group(1).strip() if direction_match else None})
+    data = {"incidents": incidents, "lines": sorted(selected, key=int), "checked": int(time.time())}
+    TRANSIT_CACHE.update(data=data, at=time.time())
+    return data
+
+
 def daylight_series():
     today = datetime.now(ZoneInfo("Europe/Prague")).date()
     rows = []
@@ -177,6 +207,14 @@ def satellite_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/transit-incidents":
+            try:
+                body, status = json.dumps(transit_incidents()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/radiation":
             try:
                 body, status = json.dumps(radiation_data()).encode(), 200
