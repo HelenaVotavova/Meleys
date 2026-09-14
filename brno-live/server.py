@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import json
+import html
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -16,6 +18,33 @@ def fetch_json(url):
     request = urllib.request.Request(url, headers={"User-Agent": "Meleys-Brno-Live/1.0"})
     with urllib.request.urlopen(request, timeout=15) as response:
         return json.load(response)
+
+
+def sports_occupancy():
+    request = urllib.request.Request("https://wwwbrno.cz/default.asp", headers={"User-Agent": "Meleys-Brno-Live/1.0"})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        page = response.read().decode("utf-8", "replace")
+    wanted = ("Bazény Lužánky", "Bazény Lužánky – wellness", "Lázně Rašínova – bazén", "Lázně Rašínova – wellness")
+    rows = {}
+    for row in re.findall(r"<tr[^>]*>.*?</tr>", page, re.S):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+        values = [html.unescape(re.sub(r"<[^>]+>", " ", cell)).strip() for cell in cells]
+        if values:
+            for name in sorted(wanted, key=len, reverse=True):
+                if values[0].startswith(name):
+                    rows[name] = values
+                    break
+    result = []
+    for name in wanted:
+        values = rows.get(name)
+        if not values:
+            continue
+        numbers = [int(value) for value in values[1:5]]
+        result.append({"name": name, "capacity": numbers[0], "occupied": numbers[1],
+                       "free": numbers[2], "visits_today": numbers[3]})
+    if len(result) != 4:
+        raise ValueError("Obsazenost STAREZ není kompletní")
+    return result
 
 
 def dashboard_data():
@@ -36,6 +65,7 @@ def dashboard_data():
     data = {
         "weather": fetch_json("https://api.open-meteo.com/v1/forecast?" + weather_query),
         "air": fetch_json("https://air-quality-api.open-meteo.com/v1/air-quality?" + air_query),
+        "occupancy": sports_occupancy(),
         "updated": int(time.time()),
     }
     CACHE.update(data=data, at=time.time())

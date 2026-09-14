@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Brno živě</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="occupancy.css">
 </head>
 <body>
   <header><div><span>BRNO · AKTUÁLNÍ DATA</span><h1>Brno živě</h1></div><b id="updated">načítám…</b></header>
@@ -27,8 +28,13 @@
       <div class="section"><span>KVALITA OVZDUŠÍ</span><h2 id="aqi-title">Načítám…</h2><div class="air"><div><b id="aqi">–</b><small>evropský AQI</small></div><dl><dt>PM₂.₅</dt><dd id="pm25">–</dd><dt>PM₁₀</dt><dd id="pm10">–</dd><dt>NO₂</dt><dd id="no2">–</dd><dt>O₃</dt><dd id="o3">–</dd></dl></div></div>
       <div class="section"><span>SLUNCE A DEN</span><h2>Dnešní světlo</h2><div class="sun"><div><small>Východ</small><b id="sunrise">–</b></div><div><small>Západ</small><b id="sunset">–</b></div><div><small>Délka dne</small><b id="daylight">–</b></div></div></div>
     </section>
+    <section class="section occupancy-section">
+      <div class="head"><div><span>ŽIVÁ OBSAZENOST STAREZ</span><h2>Bazény a sauny</h2></div><strong>obnova každých 5 minut</strong></div>
+      <div id="occupancy" class="occupancy"><p>Načítám aktuální obsazenost…</p></div>
+      <p class="occupancy-note">Wellness zahrnuje saunovou a relaxační část podle členění provozovatele.</p>
+    </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>

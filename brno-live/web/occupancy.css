@@ -1,0 +1,12 @@
+.occupancy { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.occupancy article { padding: 15px; background: #f1f5f5; border-left: 4px solid #08736a; }
+.occupancy-head { display: flex; justify-content: space-between; gap: 12px; }
+.occupancy h3 { margin: 0; font-size: 17px; }
+.occupancy-head b { font-size: 25px; white-space: nowrap; }
+.occupancy article > span { display: block; margin: 6px 0; color: #536168; font-size: 12px; }
+.occupancy-meter { height: 8px; background: #d5ddde; overflow: hidden; }
+.occupancy-meter i { display: block; height: 100%; background: #08736a; }
+.occupancy article.busy { border-color: #d44835; }
+.occupancy article.busy .occupancy-meter i { background: #d44835; }
+.occupancy-note { font-size: 12px; color: #607076; }
+@media (max-width: 700px) { .occupancy { grid-template-columns: 1fr; } }
