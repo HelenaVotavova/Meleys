@@ -1,1 +1,14 @@
-.map-key .day-key:before{border-color:#68777d;border-top-width:2px}
+.map-key .day-key:before {
+  border-color: #68777d;
+  border-top-width: 2px;
+}
+.map-key .camera-key:before {
+  border-color: #e6a23c;
+  border-top-style: dashed;
+}
+.map-key .night-key:before {
+  width: 12px;
+  height: 10px;
+  border: 0;
+  background: #07152199;
+}

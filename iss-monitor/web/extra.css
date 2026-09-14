@@ -1,1 +1,122 @@
-.map-key{position:absolute;z-index:500;right:12px;top:12px;background:#fff;padding:8px 10px;font-size:12px}.map-key span{display:block}.map-key span:before{content:"";display:inline-block;width:22px;border-top:3px solid #08736a;margin-right:7px;vertical-align:middle}.map-key .future-key:before{border-color:#d44835;border-top-style:dashed}.svoboda{display:grid;grid-template-columns:72px 1fr;gap:20px;border-top:4px solid #cf2434}.mission-mark{width:66px;height:66px;border-radius:50%;background:#123f77;color:#fff;display:grid;place-items:center;font-size:22px;font-weight:900;border:6px solid #e7edf3}.svoboda p{margin:8px 0;line-height:1.45}.training{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.training span{background:#eaf0f4;border-left:3px solid #123f77;padding:7px 9px;font-size:13px;font-weight:700}.source-note{font-size:12px!important;border-top:1px solid #d9e0e2;padding-top:9px}.charts{display:grid;grid-template-columns:1fr 1fr;gap:20px}.charts>div{height:230px}.model-section{position:relative;height:620px;margin-top:16px;background:#101820;overflow:hidden}.model-title{position:absolute;z-index:2;left:24px;top:22px;color:#fff;pointer-events:none}.model-title h2{font-size:26px}.model-title p{color:#b9c6ca;font-size:13px}.model-section canvas{display:block}.model-label{color:#fff;background:#17212bd9;border-left:3px solid #48a99d;padding:4px 7px;font:600 11px system-ui;white-space:nowrap}.model-label.ship{border-color:#ef5a43}.model-label small{display:block;color:#afbec4;font-weight:400}@media(max-width:700px){.svoboda{grid-template-columns:1fr}.mission-mark{width:52px;height:52px;font-size:17px}.charts{grid-template-columns:1fr}.charts>div{height:210px}.model-section{height:540px}.model-title{left:17px}.model-title h2{max-width:280px;font-size:21px}}
+.map-key {
+  position: absolute;
+  z-index: 500;
+  right: 12px;
+  top: 12px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.map-key span {
+  display: block;
+}
+.map-key span:before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  border-top: 3px solid #08736a;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+.map-key .future-key:before {
+  border-color: #d44835;
+  border-top-style: dashed;
+}
+.svoboda {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 20px;
+  border-top: 4px solid #cf2434;
+}
+.svoboda p {
+  margin: 8px 0;
+  line-height: 1.45;
+}
+.training {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.training span {
+  background: #eaf0f4;
+  border-left: 3px solid #123f77;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.source-note {
+  font-size: 12px !important;
+  border-top: 1px solid #d9e0e2;
+  padding-top: 9px;
+}
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.charts > div {
+  height: 230px;
+}
+.model-section {
+  position: relative;
+  height: 620px;
+  margin-top: 16px;
+  background: #101820;
+  overflow: hidden;
+}
+.model-title {
+  position: absolute;
+  z-index: 2;
+  left: 24px;
+  top: 22px;
+  color: #fff;
+  pointer-events: none;
+}
+.model-title h2 {
+  font-size: 26px;
+}
+.model-title p {
+  color: #b9c6ca;
+  font-size: 13px;
+}
+.model-section canvas {
+  display: block;
+}
+.model-label {
+  color: #fff;
+  background: #17212bd9;
+  border-left: 3px solid #48a99d;
+  padding: 4px 7px;
+  font: 600 11px system-ui;
+  white-space: nowrap;
+}
+.model-label.ship {
+  border-color: #ef5a43;
+}
+.model-label small {
+  display: block;
+  color: #afbec4;
+  font-weight: 400;
+}
+@media (max-width: 700px) {
+  .svoboda {
+    grid-template-columns: 1fr;
+  }
+  .charts {
+    grid-template-columns: 1fr;
+  }
+  .charts > div {
+    height: 210px;
+  }
+  .model-section {
+    height: 540px;
+  }
+  .model-title {
+    left: 17px;
+  }
+  .model-title h2 {
+    max-width: 280px;
+    font-size: 21px;
+  }
+}

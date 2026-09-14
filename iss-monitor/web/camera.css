@@ -1,0 +1,92 @@
+.camera-section {
+  border-top: 4px solid #08736a;
+}
+.camera-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 1fr;
+  gap: 16px;
+  margin-top: 15px;
+}
+.camera-view {
+  position: relative;
+  margin: 0;
+  min-height: 300px;
+  overflow: hidden;
+  background: #101820;
+}
+.camera-view img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  object-fit: cover;
+}
+.camera-view > span {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  padding: 6px 9px;
+  color: #fff;
+  background: #101820cc;
+  font-size: 12px;
+  font-weight: 800;
+}
+.surface-analysis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.surface-analysis div {
+  padding: 13px;
+  background: #f3f6f6;
+  border-left: 4px solid #08736a;
+}
+.surface-analysis b,
+.surface-analysis span {
+  display: block;
+}
+.surface-analysis b {
+  font-size: 26px;
+}
+.surface-analysis span {
+  color: #536168;
+  font-size: 13px;
+}
+.surface-analysis p {
+  margin: 4px 0 0;
+}
+.camera-note {
+  margin: 12px 0 0;
+}
+.svoboda-photo {
+  margin: 0;
+}
+.svoboda-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 6;
+  object-fit: cover;
+}
+.svoboda-photo figcaption {
+  margin-top: 5px;
+  color: #68757b;
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .camera-layout {
+    grid-template-columns: 1fr;
+  }
+  .camera-view,
+  .camera-view img {
+    min-height: 220px;
+  }
+  .surface-analysis {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .surface-analysis p {
+    grid-column: 1 / -1;
+  }
+  .surface-analysis b {
+    font-size: 20px;
+  }
+}

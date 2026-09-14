@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="legend.css" />
     <link rel="stylesheet" href="docking.css" />
     <link rel="stylesheet" href="environment.css" />
+    <link rel="stylesheet" href="camera.css" />
   </head>
   <body>
     <header>
@@ -33,7 +34,9 @@
         <div class="map-key">
           <span class="day-key">posledních 24 hodin</span
           ><span class="past-key">od otevření</span
-          ><span class="future-key">další hodina</span>
+          ><span class="future-key">další hodina</span
+          ><span class="camera-key">záběr Astro Pi</span
+          ><span class="night-key">noční strana Země</span>
         </div>
         <div class="telemetry">
           <div><b id="speed">–</b><span>km/h</span></div>
@@ -56,6 +59,35 @@
           <small id="heading">směr se počítá</small>
         </div>
       </section>
+      <section class="camera-section section">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">SIMULACE ASTRO PI</span>
+            <h2>Přibližný pohled kamery pod ISS</h2>
+          </div>
+          <span id="camera-date">načítám mozaiku NASA…</span>
+        </div>
+        <div class="camera-layout">
+          <figure class="camera-view">
+            <img
+              id="camera-image"
+              alt="Simulovaný pohled kamery Astro Pi na Zemi"
+            />
+            <span>směr letu →</span>
+          </figure>
+          <div class="surface-analysis">
+            <div><b id="cloud-percent">– %</b><span>mraky</span></div>
+            <div><b id="land-percent">– %</b><span>pevnina</span></div>
+            <div><b id="water-percent">– %</b><span>voda</span></div>
+            <p id="camera-position">Čekám na polohu ISS.</p>
+          </div>
+        </div>
+        <p class="camera-note">
+          Model zobrazuje asi 400 × 400 km širokou oblast pod stanicí. Povrch a
+          oblačnost pocházejí z poslední dokončené denní mozaiky NASA MODIS;
+          nejde o živý obraz z ISS.
+        </p>
+      </section>
       <section class="section">
         <div class="section-head">
           <div>
@@ -67,7 +99,13 @@
         <div id="crew" class="crew"></div>
       </section>
       <section class="svoboda section">
-        <div class="mission-mark">CZ</div>
+        <figure class="svoboda-photo">
+          <img
+            src="assets/astronauts/ales-svoboda.webp"
+            alt="Aleš Svoboda v kombinéze ESA"
+          />
+          <figcaption>ESA / A. Conigli</figcaption>
+        </figure>
         <div>
           <span class="eyebrow">ČESKÁ MISE K ISS · PLÁN 2027</span>
           <h2>Aleš Svoboda: výcvik pro Vast PAM-1</h2>
@@ -344,6 +382,7 @@
       poloha <a href="https://wheretheiss.at/">Where the ISS at?</a>
     </footer>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@joergdietrich/leaflet.terminator@1.3.0/L.Terminator.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://demos.lightstreamer.com/commons/require.js"></script>
     <script src="https://demos.lightstreamer.com/commons/lightstreamer.min.js"></script>
