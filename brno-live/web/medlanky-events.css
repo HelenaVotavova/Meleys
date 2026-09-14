@@ -1,0 +1,10 @@
+.medlanky-events { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+.medlanky-event { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 15px; background: #f1f5f5; border-left: 4px solid #d49b24; }
+.event-date { display: grid; place-content: center; min-height: 60px; background: #17252a; color: white; text-align: center; }
+.event-date b { font-size: 24px; line-height: 1; }
+.event-date span { margin-top: 4px; font-size: 11px; text-transform: uppercase; }
+.medlanky-event h3 { margin: 0 0 7px; font-size: 17px; }
+.medlanky-event h3 a { color: #17252a; }
+.medlanky-event p { margin: 0; color: #536168; font-size: 12px; }
+.events-all { display: inline-block; margin-top: 12px; color: #08736a; font-weight: 700; }
+@media (max-width: 700px) { .medlanky-events { grid-template-columns: 1fr; } }

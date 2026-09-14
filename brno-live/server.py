@@ -19,6 +19,7 @@ AVIATION_CACHE = {}
 RADIATION_CACHE = {}
 TRANSIT_CACHE = {}
 AURORA_CACHE = {}
+MEDLANKY_CACHE = {}
 
 
 def fetch_json(url):
@@ -182,6 +183,25 @@ def aurora_data():
     return data
 
 
+def medlanky_events():
+    if MEDLANKY_CACHE.get("data") and time.time() - MEDLANKY_CACHE["at"] < 1800:
+        return MEDLANKY_CACHE["data"]
+    today = datetime.now(ZoneInfo("Europe/Prague")).date().isoformat()
+    query = urllib.parse.urlencode({"q": "", "fromDate": today, "groupId": "4864658",
+                                    "showSiteUrl": "false", "page": 1, "pageSize": 20,
+                                    "order": "datumOd"})
+    payload = fetch_json("https://medlanky.brno.cz/o/rest/search/mc/akce?" + query)
+    events = []
+    for row in payload.get("results", []):
+        events.append({"title": row.get("title"), "date_from": row.get("datumOd"),
+                       "date_to": row.get("datumDo"), "time_from": row.get("casOd"),
+                       "time_to": row.get("casDo"), "place": row.get("nazevMista"),
+                       "url": "https://medlanky.brno.cz" + row.get("url", "")})
+    data = {"events": events, "total": payload.get("total", len(events)), "checked": int(time.time())}
+    MEDLANKY_CACHE.update(data=data, at=time.time())
+    return data
+
+
 def daylight_series():
     today = datetime.now(ZoneInfo("Europe/Prague")).date()
     rows = []
@@ -267,6 +287,14 @@ def night_infrared_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/api/medlanky-events":
+            try:
+                body, status = json.dumps(medlanky_events()).encode(), 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc)}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/aurora":
             try:
                 body, status = json.dumps(aurora_data()).encode(), 200

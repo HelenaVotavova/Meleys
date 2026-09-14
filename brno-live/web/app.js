@@ -211,6 +211,28 @@ async function loadAurora() {
     : "neuvedeno";
   $("#aurora-time").textContent = `Model pro ${forecast} · očekávané maximum Kp: ${peak}`;
 }
+async function loadMedlankyEvents() {
+  const response = await fetch("/api/medlanky-events");
+  const data = await response.json();
+  if (!response.ok) throw Error(data.error);
+  $("#medlanky-events-status").textContent = `${data.total} nadcházejících akcí`;
+  if (!data.events.length) {
+    $("#medlanky-events").innerHTML = "<p>Kalendář nyní neobsahuje žádné nadcházející akce.</p>";
+    return;
+  }
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(new Date());
+  const formatDate = (value, options) => new Date(`${value}T12:00:00`).toLocaleDateString("cs-CZ", options);
+  $("#medlanky-events").innerHTML = data.events
+    .map((event) => {
+      const ongoing = event.date_from < today && event.date_to >= today;
+      const day = ongoing ? "běží" : formatDate(event.date_from, { day: "numeric" });
+      const month = ongoing ? `do ${formatDate(event.date_to, { day: "numeric", month: "numeric" })}` : formatDate(event.date_from, { month: "short" });
+      const dateRange = event.date_to && event.date_to !== event.date_from ? `${formatDate(event.date_from, { day: "numeric", month: "numeric" })} – ${formatDate(event.date_to, { day: "numeric", month: "numeric" })}` : formatDate(event.date_from, { weekday: "long", day: "numeric", month: "numeric" });
+      const timeRange = event.time_from ? `${event.time_from}${event.time_to ? `–${event.time_to}` : ""}` : "čas neuveden";
+      return `<article class="medlanky-event"><div class="event-date"><b>${day}</b><span>${month}</span></div><div><h3><a href="${event.url}" target="_blank" rel="noopener">${escapeHtml(event.title)}</a></h3><p>${escapeHtml(dateRange)} · ${escapeHtml(timeRange)}${event.place ? ` · ${escapeHtml(event.place)}` : ""}</p></div></article>`;
+    })
+    .join("");
+}
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
   const rows = await response.json();
@@ -331,6 +353,9 @@ loadTransitIncidents().catch(() => {
 });
 loadAurora().catch(() => {
   $("#aurora-status").textContent = "data dočasně nedostupná";
+});
+loadMedlankyEvents().catch(() => {
+  $("#medlanky-events-status").textContent = "data dočasně nedostupná";
 });
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";

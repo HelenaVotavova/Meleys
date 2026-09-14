@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="gliders.css">
   <link rel="stylesheet" href="night-satellite.css">
   <link rel="stylesheet" href="aurora.css">
+  <link rel="stylesheet" href="medlanky-events.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -73,6 +74,11 @@
       </nav>
       <p class="glider-note">Zobrazí se pouze kluzáky a další letadla vybavená FLARM/OGN, která zachytí pozemní přijímače.</p>
     </section>
+    <section class="section medlanky-events-section">
+      <div class="head"><div><span>MĚSTSKÁ ČÁST BRNO-MEDLÁNKY</span><h2>Kalendář akcí v Medlánkách</h2></div><strong id="medlanky-events-status">načítám…</strong></div>
+      <div id="medlanky-events" class="medlanky-events"><p>Načítám nejbližší akce…</p></div>
+      <a class="events-all" href="https://medlanky.brno.cz/kalendar-akci" target="_blank" rel="noopener">Celý kalendář městské části</a>
+    </section>
     <section class="section radiation-section">
       <div class="head"><div><span>SÚJB MONRAS · HODINOVÉ MĚŘENÍ</span><h2>Aktuální radiace v Brně</h2></div><strong id="radiation-status">načítám…</strong></div>
       <div id="radiation" class="radiation"><p>Načítám měření…</p></div>
@@ -90,7 +96,7 @@
       <div class="chart daylight-chart"><canvas id="daylightChart"></canvas></div>
     </section>
   </main>
-  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> / <a href="https://view.eumetsat.int/">EUMETSAT</a> · polární záře: <a href="https://www.spaceweather.gov/products/aurora-30-minute-forecast">NOAA SWPC</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
+  <footer>Počasí a ovzduší: <a href="https://open-meteo.com/">Open-Meteo</a> · družicový obraz: <a href="https://www.earthdata.nasa.gov/gibs">NASA GIBS</a> / <a href="https://view.eumetsat.int/">EUMETSAT</a> · polární záře: <a href="https://www.spaceweather.gov/products/aurora-30-minute-forecast">NOAA SWPC</a> · akce: <a href="https://medlanky.brno.cz/kalendar-akci">MČ Brno-Medlánky</a> · obsazenost: <a href="https://data.brno.cz/">STAREZ / data.brno.cz</a> · letadla: <a href="https://opensky-network.org/">OpenSky</a> · kluzáky: <a href="https://wiki.glidernet.org/">OGN</a> · letový plán: <a href="https://www.brno-airport.cz/">Letiště Brno</a> · radiace: <a href="https://sujb.gov.cz/aplikace/monras/">SÚJB MonRaS</a> · MHD: <a href="https://www.dpmb.cz/">DPMB</a></footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
