@@ -222,45 +222,51 @@ def medlanky_sports():
             "equipment": "Fitness a workout; v areálu jsou také víceúčelové sportovní plochy.",
             "access": "Veřejně přístupný venkovní areál.",
         },
+        "K Rybníku": {
+            "equipment": "Dvě pískoviště a houpačky; hřiště je určené zejména menším dětem.",
+            "access": "Veřejně přístupné, podle OSM bez omezení vstupu.",
+        },
     }
     for feature in data.get("features", []):
         props = feature.setdefault("properties", {})
         street = props.get("adresa_ulice") or props.get("nazev") or "Místo bez názvu"
         extra = enrichments.get(street, {})
+        if street == "V Újezdech" and props.get("typ_hriste_nazev") == "dětské hřiště":
+            extra = {}
         props["display_name"] = props.get("nazev") or f"{street} – {props.get('typ_hriste_nazev', 'hřiště')}"
-        props["equipment_display"] = props.get("popis") or props.get("sportoviste_nazev") or extra.get("equipment") or "Vybavení není v městském pasportu popsáno."
-        props["access_display"] = props.get("dostupnost") or extra.get("access") or "Vedeno v městském pasportu; režim přístupu není uveden."
+        props["equipment_display"] = props.get("popis") or props.get("sportoviste_nazev") or extra.get("equipment") or "Veřejné mapové zdroje místo potvrzují, konkrétní herní prvky ale nepopisují."
+        props["access_display"] = props.get("dostupnost") or extra.get("access") or "Veřejně přístupné podle OpenStreetMap; provozní doba není uvedena."
+        props["source_url"] = "https://www.openstreetmap.org/search?query=" + urllib.parse.quote(f"{street}, Brno-Medlánky")
+        if street == "K Rybníku":
+            props["source_url"] = "https://paro.damenavas.cz/project/498/"
         if street == "Jabloňová" and props.get("typ_hriste_nazev") == "sportoviště":
             props["display_name"] = "Workout u ZŠ Hudcova"
+            props["source_url"] = "https://zdravi.brno.cz/wp-content/uploads/2026/06/Adresar_seniorskych_organizaci_2026.pdf"
     data.setdefault("features", []).append({
         "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.57574, 49.24071]},
         "properties": {"display_name": "Multifunkční hřiště Matalova", "typ_hriste_nazev": "sportoviště",
                        "equipment_display": "Multifunkční plocha pro míčové hry.",
-                       "access_display": "Veřejně přístupné venkovní hřiště."},
+                       "access_display": "Veřejně přístupné venkovní hřiště.",
+                       "source_url": "https://www.openstreetmap.org/search?query=Matalova%2C%20Brno-Medl%C3%A1nky"},
     })
     MEDLANKY_SPORTS_CACHE.update(data=data, at=time.time())
     return data
 
 
 def _strava_menu(canteen, target):
-    info = fetch_json_with_body("https://app.strava.cz/api/s4Polozky", {
-        "cislo": canteen, "lang": "CZ", "polozky": "V_NAZEV,URLWSDL_S-URL",
-    })
-    s5url = (info.get("urlwsdl_s") or [""])[0]
-    payload = fetch_json_with_body("https://app.strava.cz/api/jidelnicky", {
-        "cislo": canteen, "s5url": s5url, "lang": "CZ", "ignoreCert": False,
-    })
+    payload = fetch_json_with_body("https://app.strava.cz/api/jidelnickyPage", {
+        "cislo": canteen, "lang": "CZ",
+    }, method="POST")
     target_text = target.strftime("%d.%m.%Y")
     rows = []
-    for block in payload if isinstance(payload, list) else []:
-        if not isinstance(block, dict):
-            continue
-        rows.extend(row for row in block.get("table0", []) if row.get("datum") == target_text)
+    for table in payload.get("meals", {}).values():
+        if isinstance(table, list):
+            rows.extend(row for row in table if row.get("datum") == target_text)
     return [{"type": row.get("druh_popis") or row.get("druh_chod"), "name": row.get("nazev")} for row in rows]
 
 
-def fetch_json_with_body(url, payload):
-    request = urllib.request.Request(url, data=json.dumps(payload).encode(), method="GET",
+def fetch_json_with_body(url, payload, method="GET"):
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(), method=method,
                                      headers={"User-Agent": "Meleys-Brno-Live/1.0",
                                               "Content-Type": "text/plain;charset=UTF-8",
                                               "Referer": "https://app.strava.cz/"})
@@ -295,7 +301,7 @@ def school_menus():
         return MENUS_CACHE["data"]
     sources = [
         ("ZŠ Úvoz", lambda: _uvoz_menu(target), "https://www.sjuvoz.cz/jidelnicky/"),
-        ("Vitalité Brno · MŠ", lambda: [x for x in _strava_menu("10190", target) if any(k in (x["type"] or "").lower() for k in ("přesníd", "mš", "svačin"))], "https://app.strava.cz/jidelnicky?jidelna=10190"),
+        ("Vitalité · MŠ Lentilka Kounicova", lambda: [x for x in _strava_menu("10190", target) if any(k in (x["type"] or "").lower() for k in ("přesníd", "mš", "svačin"))], "https://app.strava.cz/jidelnicky?jidelna=10190"),
         ("Gymnázium Brno-Řečkovice", lambda: _strava_menu("4658", target), "https://app.strava.cz/jidelnicky?jidelna=4658"),
     ]
     menus = []

@@ -7,4 +7,12 @@
 .medlanky-sports-list article span { color: #69736f; font-size: 11px; font-weight: 800; }
 .medlanky-sports-list h3 { font-size: 17px; margin: 4px 0 8px; }
 .medlanky-sports-list p { font-size: 13px; line-height: 1.45; margin: 4px 0; }
+.medlanky-sports-list a { color: #185a80; font-size: 12px; font-weight: 700; }
+.local-services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 14px; }
+.local-services article { border-top: 3px solid #2166b1; padding-top: 12px; }
+.local-services h3 { margin: 0 0 6px; }
+.local-services dl { display: grid; grid-template-columns: 62px 1fr; gap: 5px 10px; }
+.local-services dt { font-weight: 800; }.local-services dd { margin: 0; }
+.local-services a { color: #185a80; font-weight: 700; }
 @media (max-width: 760px) { #medlanky-sports-map { height: 330px; } .medlanky-sports-list { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .local-services { grid-template-columns: 1fr; } }

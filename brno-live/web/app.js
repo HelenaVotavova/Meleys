@@ -252,7 +252,7 @@ async function loadMedlankySports() {
     if (features.length && layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [16, 16], maxZoom: 15 });
     $("#medlanky-sports-list").innerHTML = features.map((feature) => {
       const p = feature.properties;
-      return `<article><span>${kind(feature) === "playground" ? "DĚTSKÉ HŘIŠTĚ" : "SPORTOVIŠTĚ"}</span><h3>${escapeHtml(p.display_name)}</h3><p><b>Vybavení:</b> ${escapeHtml(p.equipment_display)}</p><p><b>Přístup:</b> ${escapeHtml(p.access_display)}</p></article>`;
+      return `<article><span>${kind(feature) === "playground" ? "DĚTSKÉ HŘIŠTĚ" : "SPORTOVIŠTĚ"}</span><h3>${escapeHtml(p.display_name)}</h3><p><b>Vybavení:</b> ${escapeHtml(p.equipment_display)}</p><p><b>Přístup:</b> ${escapeHtml(p.access_display)}</p>${p.source_url ? `<a href="${p.source_url}" target="_blank" rel="noopener">Ověřovací zdroj</a>` : ""}</article>`;
     }).join("");
     $("#medlanky-sports-status").textContent = `${features.length} míst`;
   };
