@@ -6,3 +6,11 @@
 .school-menus dd { line-height: 1.4; margin: 2px 0 9px; }
 .school-menus a { color: #185a80; font-size: 13px; font-weight: 700; }
 @media (max-width: 760px) { .school-menus { grid-template-columns: 1fr; } }
+.family-schedules { margin-top: 14px; }
+.family-schedules article { border-top: 3px solid #2166b1; padding-top: 12px; }
+.family-schedules h3 { font-size: 21px; margin: 0 0 10px; }
+.lesson-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.lesson-row div { background: #eef3f5; border-left: 3px solid #2166b1; min-height: 70px; padding: 9px; }
+.lesson-row span { display: block; color: #69736f; font-size: 11px; font-weight: 700; }
+.lesson-row b { display: block; font-size: 20px; margin-top: 7px; }
+@media (max-width: 760px) { .lesson-row { grid-template-columns: repeat(2, 1fr); } }

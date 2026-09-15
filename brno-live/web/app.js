@@ -269,6 +269,26 @@ async function loadSchoolMenus() {
   $("#school-menus-date").textContent = new Date(`${data.date}T12:00:00`).toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
   $("#school-menus").innerHTML = data.menus.map((menu) => `<article><h3>${escapeHtml(menu.school)}</h3>${menu.meals.length ? `<dl>${menu.meals.map((meal) => `<dt>${escapeHtml(meal.type || "Jídlo")}</dt><dd>${escapeHtml(meal.name)}</dd>`).join("")}</dl>` : `<p>${escapeHtml(menu.message)}</p>`}<a href="${menu.source}" target="_blank" rel="noopener">Otevřít zdroj</a></article>`).join("");
 }
+function loadFamilySchedules() {
+  const schedules = {
+    Kuba: {
+      1: [[1, "Čj"], [2, "Čj"], [3, "M"], [4, "Stadion"]],
+      2: [[1, "Čj"], [2, "Prv"], [3, "Vv"], [4, "M"], [5, "Tv"]],
+      3: [[1, "Aj"], [2, "Čj"], [3, "Čj"], [4, "EPČ"], [5, "EPČ"]],
+      4: [[1, "Čj"], [2, "Aj"], [3, "M"], [4, "Hv"]],
+      5: [[1, "Prv"], [2, "M"], [3, "Tv"], [4, "Čj"]],
+    },
+  };
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
+  const weekday = date.getDay();
+  $("#schedule-date").textContent = date.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
+  $("#family-schedules").innerHTML = Object.entries(schedules).map(([name, days]) => {
+    const lessons = days[weekday] || [];
+    return `<article><h3>${escapeHtml(name)}</h3><div class="lesson-row">${lessons.map(([period, subject]) => `<div><span>${period}. hodina</span><b>${escapeHtml(subject)}</b></div>`).join("")}</div></article>`;
+  }).join("");
+}
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
   const rows = await response.json();
@@ -399,6 +419,7 @@ loadMedlankySports().catch(() => {
 loadSchoolMenus().catch(() => {
   $("#school-menus-date").textContent = "data dočasně nedostupná";
 });
+loadFamilySchedules();
 loadDaylight().catch(() => {
   $("#daylight-now").textContent = "data dočasně nedostupná";
 });
