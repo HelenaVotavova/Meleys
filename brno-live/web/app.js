@@ -308,17 +308,26 @@ function loadFamilySchedules() {
   while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
   const weekday = date.getDay();
   $("#schedule-date").textContent = date.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
-  $("#family-schedules").innerHTML = Object.entries(schedules).map(([name, days]) => {
+  const toMinutes = (value) => {
+    const [hours, minutes] = value.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+  const timelineStart = 8 * 60, timelineEnd = 15 * 60 + 35;
+  const markers = [];
+  for (let minute = timelineStart; minute <= 15 * 60; minute += 60) {
+    markers.push(`<span style="left:${((minute - timelineStart) / (timelineEnd - timelineStart)) * 100}%">${Math.floor(minute / 60)}:00</span>`);
+  }
+  const rows = Object.entries(schedules).map(([name, days]) => {
     const lessons = days[weekday] || [];
     const times = name === "Zdeněk" ? gymnasiumTimes : lessonTimes;
-    return `<article><h3>${escapeHtml(name)}</h3><div class="lesson-strip">${lessons.map(([period, subject], index) => {
+    return `<div class="comparison-row"><h3>${escapeHtml(name)}</h3><div class="comparison-track">${lessons.map(([period, subject]) => {
       const [start, end] = times[period];
-      const next = lessons[index + 1];
-      const breakLabel = next ? `${end}–${times[next[0]][0]}` : "";
-      const breakType = next && next[0] > period + 1 ? "volno" : "přestávka";
-      return `<div class="lesson-block"><span>${period}. hodina</span><b>${escapeHtml(subject)}</b><time>${start}–${end}</time></div>${breakLabel ? `<div class="break-block"><span>${breakType}</span><time>${breakLabel}</time></div>` : ""}`;
-    }).join("")}</div></article>`;
+      const left = ((toMinutes(start) - timelineStart) / (timelineEnd - timelineStart)) * 100;
+      const width = ((toMinutes(end) - toMinutes(start)) / (timelineEnd - timelineStart)) * 100;
+      return `<div class="comparison-lesson" style="left:${left}%;width:${width}%"><b>${escapeHtml(subject)}</b><time>${start}–${end}</time></div>`;
+    }).join("")}</div></div>`;
   }).join("");
+  $("#family-schedules").innerHTML = `<div class="schedule-comparison"><div class="comparison-inner"><div class="comparison-axis"><b>Čas</b><div>${markers.join("")}</div></div>${rows}</div></div>`;
 }
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
