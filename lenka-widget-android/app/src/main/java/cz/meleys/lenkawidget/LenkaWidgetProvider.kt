@@ -33,7 +33,8 @@ class LenkaWidgetProvider : AppWidgetProvider() {
 
     private fun update(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val store = SecureStore(context)
-        val child = parseChild(store.dashboard)
+        val dashboard = parseDashboard(store.dashboard)
+        val child = parseChild(dashboard)
         ids.forEach { id ->
             val view = RemoteViews(context.packageName, R.layout.widget_lenka)
             if (child == null) {
@@ -44,6 +45,8 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 view.setViewVisibility(R.id.widget_changes, View.GONE)
                 view.setViewVisibility(R.id.widget_tests, View.GONE)
                 view.setViewVisibility(R.id.widget_homework, View.GONE)
+                view.setViewVisibility(R.id.widget_meal, View.GONE)
+                view.setViewVisibility(R.id.widget_clothing, View.GONE)
             } else {
                 view.setTextViewText(R.id.widget_date, formatDate(child.optString("date")))
                 view.setViewVisibility(R.id.widget_message, View.GONE)
@@ -51,9 +54,13 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 setSection(view, R.id.widget_changes, "Suplování", child.optJSONArray("changes"), ::changeText)
                 setSection(view, R.id.widget_tests, "Testy", child.optJSONArray("exams"), ::examText)
                 setSection(view, R.id.widget_homework, "Úkoly", child.optJSONArray("homework"), ::homeworkText)
+                setLabelText(view, R.id.widget_meal, "Oběd", menuText(dashboard))
+                setLabelText(view, R.id.widget_clothing, "Oblečení", clothingText(dashboard))
                 val height = manager.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
                 view.setViewVisibility(R.id.widget_tests, if (height >= 150) View.VISIBLE else View.GONE)
                 view.setViewVisibility(R.id.widget_homework, if (height >= 210) View.VISIBLE else View.GONE)
+                view.setViewVisibility(R.id.widget_meal, if (height >= 250) View.VISIBLE else View.GONE)
+                view.setViewVisibility(R.id.widget_clothing, if (height >= 310) View.VISIBLE else View.GONE)
             }
             view.setTextViewText(R.id.widget_updated, if (store.error == null) "↻ Aktualizovat" else "↻ ${store.error}")
             val refresh = Intent(context, LenkaWidgetProvider::class.java).setAction(ACTION_REFRESH)
@@ -72,8 +79,10 @@ class LenkaWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun parseChild(raw: String?): JSONObject? = runCatching {
-        val children = JSONObject(raw ?: return null).getJSONArray("children")
+    private fun parseDashboard(raw: String?): JSONObject? = runCatching { JSONObject(raw ?: return null) }.getOrNull()
+
+    private fun parseChild(dashboard: JSONObject?): JSONObject? = runCatching {
+        val children = dashboard?.getJSONArray("children") ?: return null
         (0 until children.length()).map { children.getJSONObject(it) }
             .firstOrNull { it.optString("name").contains("Lenka", true) } ?: children.optJSONObject(0)
     }.getOrNull()
@@ -119,6 +128,25 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     private fun examText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
     private fun homeworkText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
     private fun objects(rows: JSONArray?) = (0 until (rows?.length() ?: 0)).map { rows!!.getJSONObject(it) }
+    private fun menuText(dashboard: JSONObject?): String = objects(dashboard?.optJSONArray("menu"))
+        .joinToString("; ") { it.optString("name") }.ifBlank { "zatím není zveřejněn" }
+
+    private fun clothingText(dashboard: JSONObject?): String {
+        val clothing = dashboard?.optJSONObject("clothing") ?: return "předpověď není dostupná"
+        fun period(key: String, label: String): String {
+            val row = clothing.optJSONObject(key) ?: return "$label: bez předpovědi"
+            return "$label ${row.optInt("temperature")} °C: ${row.optString("text")}"
+        }
+        return "${period("morning", "Ráno")}\n${period("afternoon", "Odpoledne")}"
+    }
+
+    private fun setLabelText(view: RemoteViews, id: Int, title: String, details: String) {
+        val text = "$title\n$details"
+        val styled = SpannableString(text).apply {
+            setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        view.setTextViewText(id, styled)
+    }
     private fun setSection(view: RemoteViews, id: Int, title: String, rows: JSONArray?, format: (JSONObject) -> String) {
         val limit = 5
         val details = objects(rows).take(limit).joinToString("\n") { "• ${format(it)}" }
