@@ -94,7 +94,8 @@ class LenkaWidgetProvider : AppWidgetProvider() {
 
     private fun setLessonBoxes(view: RemoteViews, rows: JSONArray?) {
         val ids = intArrayOf(R.id.lesson_1, R.id.lesson_2, R.id.lesson_3, R.id.lesson_4,
-            R.id.lesson_5, R.id.lesson_6, R.id.lesson_7)
+            R.id.lesson_5, R.id.lesson_6, R.id.lesson_7, R.id.lesson_8, R.id.lesson_9,
+            R.id.lesson_10)
         val lessons = objects(rows)
         ids.forEachIndexed { index, id ->
             val lesson = lessons.getOrNull(index)
@@ -165,7 +166,7 @@ class LenkaWidgetProvider : AppWidgetProvider() {
         view.setTextViewText(id, styled)
     }
     private fun setSection(view: RemoteViews, id: Int, title: String, rows: JSONArray?, format: (JSONObject) -> String) {
-        val limit = 5
+        val limit = if (id == R.id.widget_homework) 12 else 8
         val details = objects(rows).take(limit).joinToString("\n") { "• ${format(it)}" }
         val text = if (details.isBlank()) "$title: nic nového" else "$title\n$details"
         val styled = SpannableString(text).apply {
