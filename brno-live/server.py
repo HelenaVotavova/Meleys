@@ -293,7 +293,9 @@ def _uvoz_menu(target):
 
 def school_menus():
     now = datetime.now(ZoneInfo("Europe/Prague"))
-    target = now.date() + timedelta(days=1)
+    target = now.date()
+    if now.hour > 15 or (now.hour == 15 and now.minute >= 30):
+        target += timedelta(days=1)
     while target.weekday() >= 5:
         target += timedelta(days=1)
     key = target.isoformat()
