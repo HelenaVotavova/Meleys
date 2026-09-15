@@ -327,7 +327,20 @@ function loadFamilySchedules() {
       return `<div class="comparison-lesson" style="left:${left}%;width:${width}%"><b>${escapeHtml(subject)}</b><time>${start}–${end}</time></div>`;
     }).join("")}</div></div>`;
   }).join("");
-  $("#family-schedules").innerHTML = `<div class="schedule-comparison"><div class="comparison-inner"><div class="comparison-axis"><b>Čas</b><div>${markers.join("")}</div></div>${rows}</div></div>`;
+  const today = new Date();
+  const showsToday = date.toDateString() === today.toDateString();
+  $("#family-schedules").innerHTML = `<div class="schedule-comparison"><div class="comparison-inner"><div class="comparison-axis"><b>Čas</b><div>${markers.join("")}</div></div>${rows}${showsToday ? '<div class="current-time-wrap"><i id="current-time-line"></i></div>' : ""}</div></div>`;
+  const updateCurrentTime = () => {
+    const line = $("#current-time-line");
+    if (!line) return;
+    const now = new Date();
+    const minute = now.getHours() * 60 + now.getMinutes();
+    const visible = minute >= timelineStart && minute <= timelineEnd;
+    line.hidden = !visible;
+    if (visible) line.style.left = `${((minute - timelineStart) / (timelineEnd - timelineStart)) * 100}%`;
+  };
+  updateCurrentTime();
+  setInterval(updateCurrentTime, 60000);
 }
 async function loadDaylight() {
   const response = await fetch("/api/daylight");
