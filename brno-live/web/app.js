@@ -285,7 +285,7 @@ function loadFamilySchedules() {
     },
   };
   const date = new Date();
-  date.setDate(date.getDate() + 1);
+  if (date.getHours() >= 15) date.setDate(date.getDate() + 1);
   while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
   const weekday = date.getDay();
   $("#schedule-date").textContent = date.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
