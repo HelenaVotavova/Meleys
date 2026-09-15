@@ -275,6 +275,11 @@ function loadFamilySchedules() {
     4: ["10:55", "11:40"], 5: ["11:50", "12:35"], 6: ["12:45", "13:30"],
     7: ["13:40", "14:25"], 8: ["14:50", "15:35"],
   };
+  const gymnasiumTimes = {
+    1: ["8:00", "8:45"], 2: ["8:55", "9:40"], 3: ["9:55", "10:40"],
+    4: ["10:50", "11:35"], 5: ["12:05", "12:50"], 6: ["13:10", "13:55"],
+    7: ["14:00", "14:45"], 8: ["14:50", "15:35"],
+  };
   const schedules = {
     Kuba: {
       1: [[1, "Čj"], [2, "Čj"], [3, "M"], [4, "Stadion"]],
@@ -290,6 +295,13 @@ function loadFamilySchedules() {
       4: [[1, "Aj"], [2, "Čj"], [3, "M"], [4, "Vl"], [5, "Čj"]],
       5: [[1, "Čj"], [2, "M"], [3, "Přv"], [4, "Vv"], [5, "Vv"]],
     },
+    Zdeněk: {
+      1: [[1, "FYZ · Kva B"], [2, "FYZ · Sep B"], [4, "PRP · Sep B"], [5, "PRP · Sep B"], [6, "SFYZ · Sep A"], [7, "SFYZ · Sep A"]],
+      2: [[2, "FYZ · Pri A"], [3, "FYZ · Sep B"], [4, "FYZ · Kvi B"], [5, "PRP · Kvi B"], [6, "FYZ · Sex B"]],
+      3: [[3, "FYZ · Kvi B"], [5, "PRP · Pri A"]],
+      4: [[2, "FYZ · Kvi B"], [5, "FYZ · Kva B"], [6, "SFYZ · Okt A"], [7, "FYZ · Sex B"]],
+      5: [[3, "PRP · Kvi B"], [4, "FYZ · Pri A"], [5, "SFYZ · Okt A"], [6, "SFYZ · Okt A"]],
+    },
   };
   const date = new Date();
   if (date.getHours() >= 15) date.setDate(date.getDate() + 1);
@@ -298,11 +310,13 @@ function loadFamilySchedules() {
   $("#schedule-date").textContent = date.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
   $("#family-schedules").innerHTML = Object.entries(schedules).map(([name, days]) => {
     const lessons = days[weekday] || [];
+    const times = name === "Zdeněk" ? gymnasiumTimes : lessonTimes;
     return `<article><h3>${escapeHtml(name)}</h3><div class="lesson-strip">${lessons.map(([period, subject], index) => {
-      const [start, end] = lessonTimes[period];
+      const [start, end] = times[period];
       const next = lessons[index + 1];
-      const breakLabel = next ? `${end}–${lessonTimes[next[0]][0]}` : "";
-      return `<div class="lesson-block"><span>${period}. hodina</span><b>${escapeHtml(subject)}</b><time>${start}–${end}</time></div>${breakLabel ? `<div class="break-block"><span>přestávka</span><time>${breakLabel}</time></div>` : ""}`;
+      const breakLabel = next ? `${end}–${times[next[0]][0]}` : "";
+      const breakType = next && next[0] > period + 1 ? "volno" : "přestávka";
+      return `<div class="lesson-block"><span>${period}. hodina</span><b>${escapeHtml(subject)}</b><time>${start}–${end}</time></div>${breakLabel ? `<div class="break-block"><span>${breakType}</span><time>${breakLabel}</time></div>` : ""}`;
     }).join("")}</div></article>`;
   }).join("");
 }

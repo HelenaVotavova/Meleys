@@ -11,7 +11,7 @@
 .family-schedules h3 { font-size: 21px; margin: 0 0 10px; }
 .lesson-strip { align-items: stretch; display: flex; overflow-x: auto; padding: 2px 0 12px; }
 .lesson-block { background: #eef3f5; border-top: 4px solid #2166b1; flex: 0 0 132px; min-height: 88px; padding: 9px 10px; }
-.lesson-block span { color: #69736f; display: block; font-size: 11px; font-weight: 700; }.lesson-block b { display: block; font-size: 22px; margin: 5px 0; }.lesson-block time { font-size: 13px; font-weight: 700; }
+.lesson-block span { color: #69736f; display: block; font-size: 11px; font-weight: 700; }.lesson-block b { display: block; font-size: 18px; line-height: 1.15; margin: 5px 0; overflow-wrap: anywhere; }.lesson-block time { font-size: 13px; font-weight: 700; }
 .break-block { align-items: center; background: #fff; color: #69736f; display: flex; flex: 0 0 62px; flex-direction: column; font-size: 9px; justify-content: center; text-align: center; }
 .break-block time { font-size: 10px; margin-top: 4px; white-space: nowrap; }
 @media (max-width: 760px) { .lesson-block { flex-basis: 120px; }.break-block { flex-basis: 54px; } }
