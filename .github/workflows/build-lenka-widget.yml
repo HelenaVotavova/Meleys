@@ -18,7 +18,7 @@ jobs:
           gradle :app:assembleDebug > build.log 2>&1
           code=$?
           if [ "$code" -ne 0 ]; then
-            detail=$(tail -40 build.log | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            detail=$(tail -120 build.log | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
             echo "::error file=lenka-widget-android/build.log::$detail"
           else
             tail -20 build.log
