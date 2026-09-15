@@ -93,10 +93,19 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     }.getOrDefault(value)
 
     private fun setLessonBoxes(view: RemoteViews, rows: JSONArray?) {
-        val ids = intArrayOf(R.id.lesson_1, R.id.lesson_2, R.id.lesson_3, R.id.lesson_4,
-            R.id.lesson_5, R.id.lesson_6, R.id.lesson_7, R.id.lesson_8, R.id.lesson_9,
-            R.id.lesson_10)
-        val lessons = objects(rows)
+        val lessonIds = intArrayOf(R.id.lesson_1, R.id.lesson_2, R.id.lesson_3,
+            R.id.lesson_4, R.id.lesson_5, R.id.lesson_6)
+        val all = objects(rows)
+        val clubs = all.filter(::isClub)
+        fillLessonBoxes(view, lessonIds, all.filterNot(::isClub))
+        view.setViewVisibility(R.id.widget_clubs, if (clubs.isEmpty()) View.GONE else View.VISIBLE)
+        if (clubs.isNotEmpty()) {
+            val text = clubs.joinToString("; ") { "${it.optString("start")} ${it.optString("subject")}" }
+            setLabelText(view, R.id.widget_clubs, "⭐ Kroužky", text)
+        }
+    }
+
+    private fun fillLessonBoxes(view: RemoteViews, ids: IntArray, lessons: List<JSONObject>) {
         ids.forEachIndexed { index, id ->
             val lesson = lessons.getOrNull(index)
             view.setViewVisibility(id, if (lesson == null) View.GONE else View.VISIBLE)
@@ -106,6 +115,12 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 view.setTextViewText(id, if (lesson.optBoolean("cancelled")) "$text ×" else text)
             }
         }
+    }
+
+    private fun isClub(lesson: JSONObject): Boolean {
+        val name = lesson.optString("subject").lowercase(Locale("cs", "CZ"))
+        val markers = listOf("krouž", "družin", "klub", "keramik", "flétn", "šach", "robot", "dramat")
+        return markers.any(name::contains) || lesson.optString("start") >= "14:00"
     }
 
     private fun abbreviate(subject: String): String {
