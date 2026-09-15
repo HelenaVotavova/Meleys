@@ -51,11 +51,11 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 view.setTextViewText(R.id.widget_date, formatDate(child.optString("date")))
                 view.setViewVisibility(R.id.widget_message, View.GONE)
                 setLessonBoxes(view, child.optJSONArray("lessons"))
-                setSection(view, R.id.widget_changes, "Suplování", child.optJSONArray("changes"), ::changeText)
-                setSection(view, R.id.widget_tests, "Testy", child.optJSONArray("exams"), ::examText)
-                setSection(view, R.id.widget_homework, "Úkoly", child.optJSONArray("homework"), ::homeworkText)
-                setLabelText(view, R.id.widget_meal, "Oběd", menuText(dashboard))
-                setLabelText(view, R.id.widget_clothing, "Oblečení", clothingText(dashboard))
+                setSection(view, R.id.widget_changes, "🔄 Suplování", child.optJSONArray("changes"), ::changeText)
+                setSection(view, R.id.widget_tests, "📝 Testy", child.optJSONArray("exams"), ::examText)
+                setSection(view, R.id.widget_homework, "📚 Úkoly", child.optJSONArray("homework"), ::homeworkText)
+                setLabelText(view, R.id.widget_meal, "🍽️ Oběd", menuText(dashboard))
+                setLabelText(view, R.id.widget_clothing, "🧥 Oblečení", clothingText(dashboard))
                 val height = manager.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
                 view.setViewVisibility(R.id.widget_tests, if (height >= 150) View.VISIBLE else View.GONE)
                 view.setViewVisibility(R.id.widget_homework, if (height >= 210) View.VISIBLE else View.GONE)
@@ -100,7 +100,8 @@ class LenkaWidgetProvider : AppWidgetProvider() {
             val lesson = lessons.getOrNull(index)
             view.setViewVisibility(id, if (lesson == null) View.GONE else View.VISIBLE)
             if (lesson != null) {
-                val text = abbreviate(lesson.optString("subject"))
+                val subject = lesson.optString("subject")
+                val text = "${subjectEmoji(subject)}\n${abbreviate(subject)}"
                 view.setTextViewText(id, if (lesson.optBoolean("cancelled")) "$text ×" else text)
             }
         }
@@ -124,9 +125,25 @@ class LenkaWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun changeText(row: JSONObject) = "${row.optString("start")} ${row.optString("subject")} – zrušeno"
-    private fun examText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
-    private fun homeworkText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
+    private fun subjectEmoji(subject: String): String {
+        val name = subject.lowercase(Locale("cs", "CZ"))
+        return when {
+            name.contains("česk") -> "📖"
+            name.contains("mat") -> "➗"
+            name.contains("angl") -> "🇬🇧"
+            name.contains("přírod") || name.contains("vědou") || name.contains("prvou") -> "🌿"
+            name.contains("vlasti") -> "🗺️"
+            name.contains("informat") -> "💻"
+            name.contains("těles") || name.contains("brusl") -> "🏃"
+            name.contains("hudeb") -> "🎵"
+            name.contains("výtvar") || name.contains("pracovn") || name.contains("estet") -> "🎨"
+            else -> "📘"
+        }
+    }
+
+    private fun changeText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("start")} ${row.optString("subject")} – zrušeno"
+    private fun examText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
+    private fun homeworkText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
     private fun objects(rows: JSONArray?) = (0 until (rows?.length() ?: 0)).map { rows!!.getJSONObject(it) }
     private fun menuText(dashboard: JSONObject?): String = objects(dashboard?.optJSONArray("menu"))
         .joinToString("; ") { it.optString("name") }.ifBlank { "zatím není zveřejněn" }
