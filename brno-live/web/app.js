@@ -312,10 +312,11 @@ function loadFamilySchedules() {
     const [hours, minutes] = value.split(":").map(Number);
     return hours * 60 + minutes;
   };
-  const timelineStart = 8 * 60, timelineEnd = 15 * 60 + 35;
+  const timelineStart = 7 * 60 + 30, timelineEnd = 15 * 60;
   const markers = [];
-  for (let minute = timelineStart; minute <= 15 * 60; minute += 60) {
-    markers.push(`<span style="left:${((minute - timelineStart) / (timelineEnd - timelineStart)) * 100}%">${Math.floor(minute / 60)}:00</span>`);
+  for (const minute of [timelineStart, 8 * 60, 9 * 60, 10 * 60, 11 * 60, 12 * 60, 13 * 60, 14 * 60, timelineEnd]) {
+    const label = `${Math.floor(minute / 60)}:${String(minute % 60).padStart(2, "0")}`;
+    markers.push(`<span style="left:${((minute - timelineStart) / (timelineEnd - timelineStart)) * 100}%">${label}</span>`);
   }
   const rows = Object.entries(schedules).map(([name, days]) => {
     const lessons = days[weekday] || [];
