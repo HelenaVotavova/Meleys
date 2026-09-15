@@ -270,6 +270,11 @@ async function loadSchoolMenus() {
   $("#school-menus").innerHTML = data.menus.map((menu) => `<article><h3>${escapeHtml(menu.school)}</h3>${menu.meals.length ? `<dl>${menu.meals.map((meal) => `<dt>${escapeHtml(meal.type || "Jídlo")}</dt><dd>${escapeHtml(meal.name)}</dd>`).join("")}</dl>` : `<p>${escapeHtml(menu.message)}</p>`}<a href="${menu.source}" target="_blank" rel="noopener">Otevřít zdroj</a></article>`).join("");
 }
 function loadFamilySchedules() {
+  const lessonTimes = {
+    1: ["8:00", "8:45"], 2: ["8:55", "9:40"], 3: ["10:00", "10:45"],
+    4: ["10:55", "11:40"], 5: ["11:50", "12:35"], 6: ["12:45", "13:30"],
+    7: ["13:40", "14:25"], 8: ["14:50", "15:35"],
+  };
   const schedules = {
     Kuba: {
       1: [[1, "Čj"], [2, "Čj"], [3, "M"], [4, "Stadion"]],
@@ -286,7 +291,12 @@ function loadFamilySchedules() {
   $("#schedule-date").textContent = date.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
   $("#family-schedules").innerHTML = Object.entries(schedules).map(([name, days]) => {
     const lessons = days[weekday] || [];
-    return `<article><h3>${escapeHtml(name)}</h3><div class="lesson-row">${lessons.map(([period, subject]) => `<div><span>${period}. hodina</span><b>${escapeHtml(subject)}</b></div>`).join("")}</div></article>`;
+    return `<article><h3>${escapeHtml(name)}</h3><div class="lesson-timeline">${lessons.map(([period, subject], index) => {
+      const [start, end] = lessonTimes[period];
+      const next = lessons[index + 1];
+      const breakLabel = next ? `${end}–${lessonTimes[next[0]][0]}` : "";
+      return `<div class="timeline-step"><div class="lesson-time"><b>${start}</b><span>${end}</span></div><div class="lesson-node"><i></i></div><div class="lesson-card"><span>${period}. hodina</span><b>${escapeHtml(subject)}</b></div>${breakLabel ? `<small class="break-time">přestávka ${breakLabel}</small>` : ""}</div>`;
+    }).join("")}</div></article>`;
   }).join("");
 }
 async function loadDaylight() {
