@@ -1,4 +1,19 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="14dp" android:textSize="16sp" android:text="Přihlas se do EduPage. Heslo zůstane pouze v přihlašovací stránce."/>
-    <WebView android:id="@+id/web" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="24dp">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Lenčin přehled" android:textColor="#173E38" android:textSize="28sp" android:textStyle="bold" />
+    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" android:textSize="16sp" />
+    <EditText android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:hint="Uživatelské jméno EduPage" android:inputType="textEmailAddress" />
+    <EditText android:id="@+id/password" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:hint="Heslo" android:inputType="textPassword" />
+    <Button android:id="@+id/login" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" android:text="Přihlásit" />
+    <Button android:id="@+id/logout" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="Odhlásit" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:text="Heslo se neukládá do telefonu ani na disk serveru. Telefon ukládá pouze šifrovaný dočasný přístupový token."
+        android:textColor="#52615C" android:textSize="14sp" />
 </LinearLayout>
