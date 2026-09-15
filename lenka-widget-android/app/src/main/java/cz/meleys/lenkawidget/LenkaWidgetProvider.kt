@@ -108,11 +108,13 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     private fun fillLessonBoxes(view: RemoteViews, ids: IntArray, lessons: List<JSONObject>) {
         ids.forEachIndexed { index, id ->
             val lesson = lessons.getOrNull(index)
-            view.setViewVisibility(id, if (lesson == null) View.GONE else View.VISIBLE)
+            view.setViewVisibility(id, View.VISIBLE)
             if (lesson != null) {
                 val subject = lesson.optString("subject")
                 val text = "${subjectEmoji(subject)}\n${abbreviate(subject)}"
                 view.setTextViewText(id, if (lesson.optBoolean("cancelled")) "$text ×" else text)
+            } else {
+                view.setTextViewText(id, "—")
             }
         }
     }
@@ -120,7 +122,7 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     private fun isClub(lesson: JSONObject): Boolean {
         val name = lesson.optString("subject").lowercase(Locale("cs", "CZ"))
         val markers = listOf("krouž", "družin", "klub", "keramik", "flétn", "šach", "robot", "dramat")
-        return markers.any(name::contains) || lesson.optString("start") >= "14:00"
+        return markers.any(name::contains)
     }
 
     private fun abbreviate(subject: String): String {
@@ -182,7 +184,13 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     }
     private fun setSection(view: RemoteViews, id: Int, title: String, rows: JSONArray?, format: (JSONObject) -> String) {
         val limit = if (id == R.id.widget_homework) 12 else 8
-        val details = objects(rows).take(limit).joinToString("\n") { "• ${format(it)}" }
+        val items = objects(rows)
+        if (items.isEmpty() && id != R.id.widget_homework) {
+            view.setViewVisibility(id, View.GONE)
+            return
+        }
+        view.setViewVisibility(id, View.VISIBLE)
+        val details = items.take(limit).joinToString("\n") { "• ${format(it)}" }
         val text = if (details.isBlank()) "$title: nic nového" else "$title\n$details"
         val styled = SpannableString(text).apply {
             setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
