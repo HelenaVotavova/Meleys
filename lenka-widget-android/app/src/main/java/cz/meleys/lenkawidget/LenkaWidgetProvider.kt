@@ -7,6 +7,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.StyleSpan
+import android.graphics.Typeface
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -34,13 +38,16 @@ class LenkaWidgetProvider : AppWidgetProvider() {
             val view = RemoteViews(context.packageName, R.layout.widget_lenka)
             if (child == null) {
                 view.setTextViewText(R.id.widget_date, "Lenčin přehled")
-                view.setTextViewText(R.id.widget_schedule, store.error ?: "Otevři aplikaci a přihlas se.")
+                view.setTextViewText(R.id.widget_message, store.error ?: "Otevři aplikaci a přihlas se.")
+                view.setViewVisibility(R.id.widget_message, View.VISIBLE)
+                setLessonBoxes(view, null)
                 view.setViewVisibility(R.id.widget_changes, View.GONE)
                 view.setViewVisibility(R.id.widget_tests, View.GONE)
                 view.setViewVisibility(R.id.widget_homework, View.GONE)
             } else {
                 view.setTextViewText(R.id.widget_date, formatDate(child.optString("date")))
-                view.setTextViewText(R.id.widget_schedule, lessonText(child.optJSONArray("lessons")))
+                view.setViewVisibility(R.id.widget_message, View.GONE)
+                setLessonBoxes(view, child.optJSONArray("lessons"))
                 setSection(view, R.id.widget_changes, "Suplování", child.optJSONArray("changes"), ::changeText)
                 setSection(view, R.id.widget_tests, "Testy", child.optJSONArray("exams"), ::examText)
                 setSection(view, R.id.widget_homework, "Úkoly", child.optJSONArray("homework"), ::homeworkText)
@@ -76,16 +83,49 @@ class LenkaWidgetProvider : AppWidgetProvider() {
         SimpleDateFormat("EEEE d. M.", Locale("cs", "CZ")).format(date).replaceFirstChar { it.uppercase() }
     }.getOrDefault(value)
 
-    private fun lessonText(rows: JSONArray?): String = objects(rows).joinToString("  •  ") {
-        "${it.optString("start")} ${it.optString("subject")}${if (it.optBoolean("cancelled")) " (zrušeno)" else ""}"
-    }.ifBlank { "Žádná výuka" }
+    private fun setLessonBoxes(view: RemoteViews, rows: JSONArray?) {
+        val ids = intArrayOf(R.id.lesson_1, R.id.lesson_2, R.id.lesson_3, R.id.lesson_4,
+            R.id.lesson_5, R.id.lesson_6, R.id.lesson_7)
+        val lessons = objects(rows)
+        ids.forEachIndexed { index, id ->
+            val lesson = lessons.getOrNull(index)
+            view.setViewVisibility(id, if (lesson == null) View.GONE else View.VISIBLE)
+            if (lesson != null) {
+                val text = abbreviate(lesson.optString("subject"))
+                view.setTextViewText(id, if (lesson.optBoolean("cancelled")) "$text ×" else text)
+            }
+        }
+    }
+
+    private fun abbreviate(subject: String): String {
+        val name = subject.lowercase(Locale("cs", "CZ"))
+        return when {
+            name.contains("česk") -> "ČJ"
+            name.contains("mat") -> "M"
+            name.contains("angl") -> "AJ"
+            name.contains("přírod") || name.contains("vědou") -> "PŘ"
+            name.contains("prvou") -> "PRV"
+            name.contains("vlasti") -> "VL"
+            name.contains("informat") -> "INF"
+            name.contains("těles") || name.contains("brusl") -> "TV"
+            name.contains("hudeb") -> "HV"
+            name.contains("výtvar") -> "VV"
+            name.contains("pracovn") || name.contains("estet") -> "PČ"
+            else -> subject.trim().take(4).uppercase(Locale("cs", "CZ"))
+        }
+    }
 
     private fun changeText(row: JSONObject) = "${row.optString("start")} ${row.optString("subject")} – zrušeno"
     private fun examText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
     private fun homeworkText(row: JSONObject) = "${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
     private fun objects(rows: JSONArray?) = (0 until (rows?.length() ?: 0)).map { rows!!.getJSONObject(it) }
     private fun setSection(view: RemoteViews, id: Int, title: String, rows: JSONArray?, format: (JSONObject) -> String) {
-        val text = objects(rows).take(2).joinToString("\n", transform = format)
-        view.setTextViewText(id, if (text.isBlank()) "$title: nic nového" else "$title: $text")
+        val limit = 5
+        val details = objects(rows).take(limit).joinToString("\n") { "• ${format(it)}" }
+        val text = if (details.isBlank()) "$title: nic nového" else "$title\n$details"
+        val styled = SpannableString(text).apply {
+            setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        view.setTextViewText(id, styled)
     }
 }
