@@ -172,7 +172,14 @@ class LenkaWidgetProvider : AppWidgetProvider() {
             val row = clothing.optJSONObject(key) ?: return "$label: bez předpovědi"
             return "$label ${row.optInt("temperature")} °C: ${row.optString("text")}"
         }
-        return "${period("morning", "Ráno")}\n${period("afternoon", "Odpoledne")}"
+        val rain = clothing.optJSONObject("rain")
+        val rainText = if (rain == null) {
+            "Déšť 7:30–14:00: bez předpovědi"
+        } else {
+            val expected = if (rain.optBoolean("expected")) "ano" else "ne"
+            "Déšť 7:30–14:00: $expected · ${rain.optInt("chance")} % · ${rain.optDouble("amount")} mm"
+        }
+        return "${period("morning", "Ráno")}\n${period("afternoon", "Odpoledne")}\n$rainText"
     }
 
     private fun setLabelText(view: RemoteViews, id: Int, title: String, details: String) {
