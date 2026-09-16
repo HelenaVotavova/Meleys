@@ -1,0 +1,4 @@
+.header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.header-actions b{color:#536168;font-size:12px}
+.header-actions a{color:#08736a;font-size:13px;font-weight:800;text-decoration:none}
+.header-actions a:hover{text-decoration:underline}
