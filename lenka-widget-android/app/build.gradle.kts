@@ -3,7 +3,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 android {
     namespace = "cz.meleys.lenkawidget"
     compileSdk = 35
-    defaultConfig { applicationId = "cz.meleys.lenkawidget"; minSdk = 26; targetSdk = 35; versionCode = 13; versionName = "3.0" }
+    defaultConfig { applicationId = "cz.meleys.lenkawidget"; minSdk = 26; targetSdk = 35; versionCode = 14; versionName = "3.1" }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }

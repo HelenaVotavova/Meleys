@@ -3,6 +3,8 @@ package cz.meleys.lenkawidget
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.method.LinkMovementMethod
+import android.text.util.Linkify
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -118,6 +120,9 @@ class MainActivity : AppCompatActivity() {
                 text = "${emoji(task.optString("subject"))} ${task.optString("subject")}: ${task.optString("text")}\nTermín: ${task.optString("due")}"
                 textSize = 15f
                 isChecked = SecureStore.taskKey(task) in completed
+                Linkify.addLinks(this, Linkify.WEB_URLS)
+                linksClickable = true
+                movementMethod = LinkMovementMethod.getInstance()
                 setOnCheckedChangeListener { _, checked ->
                     store.setTaskCompleted(task, checked)
                     LenkaWidgetProvider.refreshAll(this@MainActivity)
