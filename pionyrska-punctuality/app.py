@@ -488,11 +488,12 @@ def live_departures(window_minutes=25):
         departures = []
         for item in groups.get(group_key, []):
             delay = delays.get(item["trip_id"], 0)
-            expected = item["planned"] + delay
+            early_clamped = item["trip_id"] in dispatched and delay < -120
+            expected = item["planned"] if early_clamped else item["planned"] + delay
             if now_seconds - 30 <= expected <= end_seconds:
                 departures.append({
                     **item, "expected": expected, "delay": delay,
-                    "live": item["trip_id"] in dispatched,
+                    "live": item["trip_id"] in dispatched, "early_clamped": early_clamped,
                 })
         departures.sort(key=lambda row: row["expected"])
         result.append({"id": group_key, "label": labels[group_key], "order": order,

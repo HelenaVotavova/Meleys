@@ -8,6 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.util.TypedValue
+import android.graphics.Color
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -52,12 +56,23 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun compact(group: JSONObject): String {
-        val values = DepartureFormat.departures(group).take(5).joinToString("\n") {
+    private fun compact(group: JSONObject): CharSequence {
+        val rows = DepartureFormat.departures(group).take(5)
+        val values = rows.joinToString("\n") {
             val line = it.optString("line")
             "${DepartureFormat.icon(line)} $line   ${DepartureFormat.time(it.optInt("expected"))}"
         }
-        return "${group.optString("label")}\n${values.ifBlank { "Žádný odjezd do 25 minut" }}"
+        val text = "${group.optString("label")}\n${values.ifBlank { "Žádný odjezd v nastaveném intervalu" }}"
+        return SpannableString(text).apply {
+            var offset = group.optString("label").length + 1
+            rows.forEachIndexed { index, row ->
+                val lineText = "${DepartureFormat.icon(row.optString("line"))} ${row.optString("line")}   ${DepartureFormat.time(row.optInt("expected"))}"
+                if (row.optBoolean("early_clamped")) {
+                    setSpan(ForegroundColorSpan(Color.rgb(23, 107, 73)), offset, offset + lineText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                offset += lineText.length + if (index < rows.lastIndex) 1 else 0
+            }
+        }
     }
 
     companion object {

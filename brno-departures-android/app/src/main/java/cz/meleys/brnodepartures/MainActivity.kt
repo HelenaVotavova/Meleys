@@ -99,7 +99,9 @@ class MainActivity : AppCompatActivity() {
             routes.addView(title)
             val departures = DepartureFormat.departures(group)
             if (departures.isEmpty()) addText(routes, "Žádný odjezd v následujících 25 minutách.")
-            departures.forEach { departure -> addText(routes, departureText(departure)) }
+            departures.forEach { departure ->
+                addText(routes, departureText(departure), departure.optBoolean("early_clamped"))
+            }
         }
         if (groups.isEmpty()) addText(routes, "Data zatím nejsou načtená.")
     }
@@ -121,8 +123,9 @@ class MainActivity : AppCompatActivity() {
         return "${DepartureFormat.icon(line)}  Linka $line     $expected"
     }
 
-    private fun addText(parent: LinearLayout, value: String) = parent.addView(TextView(this).apply {
+    private fun addText(parent: LinearLayout, value: String, green: Boolean = false) = parent.addView(TextView(this).apply {
         text = value; textSize = (store.fontSize + 2).toFloat(); setPadding(dp(8), dp(7), dp(8), dp(7)); setBackgroundColor(Color.rgb(245, 248, 247))
+        if (green) setTextColor(Color.rgb(23, 107, 73))
     })
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 }
