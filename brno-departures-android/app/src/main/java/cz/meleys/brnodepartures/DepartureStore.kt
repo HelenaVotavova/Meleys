@@ -12,4 +12,7 @@ class DepartureStore(context: Context) {
         set(value) = prefs.edit().putString("error", value).apply()
     fun visible(id: String) = prefs.getBoolean("visible_$id", true)
     fun setVisible(id: String, value: Boolean) = prefs.edit().putBoolean("visible_$id", value).apply()
+    var windowMinutes: Int
+        get() = prefs.getInt("window_minutes", 25)
+        set(value) = prefs.edit().putInt("window_minutes", value.coerceIn(5, 60)).apply()
 }

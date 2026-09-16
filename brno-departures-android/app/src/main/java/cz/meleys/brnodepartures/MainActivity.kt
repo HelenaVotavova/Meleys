@@ -20,6 +20,22 @@ class MainActivity : AppCompatActivity() {
         status = findViewById(R.id.status)
         routes = findViewById(R.id.routes)
         settings = findViewById(R.id.settings)
+        val windowLabel = findViewById<TextView>(R.id.window_label)
+        findViewById<SeekBar>(R.id.window_seek).apply {
+            max = 11
+            progress = store.windowMinutes / 5 - 1
+            windowLabel.text = "Sledovaný úsek: ${store.windowMinutes} minut"
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
+                    windowLabel.text = "Sledovaný úsek: ${(progress + 1) * 5} minut"
+                }
+                override fun onStartTrackingTouch(bar: SeekBar) = Unit
+                override fun onStopTrackingTouch(bar: SeekBar) {
+                    store.windowMinutes = (bar.progress + 1) * 5
+                    refresh()
+                }
+            })
+        }
         findViewById<Button>(R.id.refresh).setOnClickListener { refresh() }
         render()
         refresh()
@@ -29,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         status.text = "Načítám aktuální odjezdy…"
         Thread {
             try {
-                store.data = DepartureApi.load(); store.error = null
+                store.data = DepartureApi.load(store.windowMinutes); store.error = null
                 runOnUiThread { status.text = "Aktualizováno"; render(); DeparturesWidgetProvider.refreshAll(this) }
             } catch (error: Exception) {
                 runOnUiThread { status.text = error.message ?: "Načtení selhalo." }
@@ -67,9 +83,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun departureText(row: JSONObject): String {
         val expected = DepartureFormat.time(row.optInt("expected"))
-        val planned = DepartureFormat.time(row.optInt("planned"))
-        val state = if (row.optBoolean("live")) "živý odhad · ${DepartureFormat.delay(row.optInt("delay"))}" else "vozidlo ještě nevypraveno · jízdní řád"
-        return "Linka ${row.optString("line")}  $expected\n$state · plán $planned · směr ${row.optString("destination")}"
+        val line = row.optString("line")
+        return "${DepartureFormat.icon(line)}  Linka $line     $expected"
     }
 
     private fun addText(parent: LinearLayout, value: String) = parent.addView(TextView(this).apply {

@@ -30,6 +30,7 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
         val rowIds = intArrayOf(R.id.route_1, R.id.route_2, R.id.route_3, R.id.route_4, R.id.route_5, R.id.route_6)
         ids.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_departures)
+            views.setTextViewText(R.id.window, "+${store.windowMinutes} min")
             rowIds.forEachIndexed { index, id ->
                 val group = groups.getOrNull(index)
                 views.setViewVisibility(id, if (group == null) View.GONE else View.VISIBLE)
@@ -45,9 +46,9 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
     }
 
     private fun compact(group: JSONObject): String {
-        val values = DepartureFormat.departures(group).take(4).joinToString("  ·  ") {
-            val source = if (it.optBoolean("live")) DepartureFormat.delay(it.optInt("delay")) else "JŘ"
-            "${it.optString("line")} ${DepartureFormat.time(it.optInt("expected"))} ($source)"
+        val values = DepartureFormat.departures(group).take(5).joinToString("\n") {
+            val line = it.optString("line")
+            "${DepartureFormat.icon(line)} $line   ${DepartureFormat.time(it.optInt("expected"))}"
         }
         return "${group.optString("label")}\n${values.ifBlank { "Žádný odjezd do 25 minut" }}"
     }

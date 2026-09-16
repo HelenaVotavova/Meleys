@@ -24,4 +24,6 @@ object DepartureFormat {
         seconds <= -60 -> "${seconds / 60} min"
         else -> "včas"
     }
+
+    fun icon(line: String) = if (line in setOf("25", "26", "32")) "🚎" else "🚋"
 }

@@ -8,7 +8,7 @@ class WidgetUpdater(context: Context, params: WorkerParameters) : CoroutineWorke
     override suspend fun doWork(): Result {
         val store = DepartureStore(applicationContext)
         return try {
-            store.data = DepartureApi.load(); store.error = null
+            store.data = DepartureApi.load(store.windowMinutes); store.error = null
             DeparturesWidgetProvider.refreshAll(applicationContext)
             schedule(applicationContext, 5)
             Result.success()

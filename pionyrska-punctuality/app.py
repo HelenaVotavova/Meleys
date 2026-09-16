@@ -8,6 +8,7 @@ from statistics import mean
 import threading
 import time
 import urllib.request
+import urllib.parse
 import zipfile
 from datetime import datetime, date, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -446,7 +447,7 @@ def corridor_delays():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
-def live_departures():
+def live_departures(window_minutes=25):
     now = datetime.now(TZ)
     if schedule_day != now.date():
         load_schedule(now.date())
@@ -479,7 +480,8 @@ def live_departures():
         delays[trip_id] = max(-300, min(1800, delay))
 
     now_seconds = now.hour * 3600 + now.minute * 60 + now.second
-    end_seconds = now_seconds + 25 * 60
+    window_minutes = max(5, min(60, int(window_minutes)))
+    end_seconds = now_seconds + window_minutes * 60
     result = []
     labels = {key: label for key, label, stop_id in LIVE_DEPARTURE_GROUPS}
     for order, (group_key, label, stop_id) in enumerate(LIVE_DEPARTURE_GROUPS):
@@ -495,7 +497,7 @@ def live_departures():
         departures.sort(key=lambda row: row["expected"])
         result.append({"id": group_key, "label": labels[group_key], "order": order,
                        "departures": departures})
-    return {"generated": int(time.time()), "window_minutes": 25, "groups": result}
+    return {"generated": int(time.time()), "window_minutes": window_minutes, "groups": result}
 
 
 def line1_forecast(weekend=False):
@@ -607,7 +609,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/live-departures":
             try:
-                payload, status = live_departures(), 200
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                payload, status = live_departures(query.get("minutes", [25])[0]), 200
             except Exception as error:
                 payload, status = {"generated": int(time.time()), "error": str(error), "groups": []}, 503
             body = json.dumps(payload, ensure_ascii=False).encode()

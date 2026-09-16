@@ -564,9 +564,11 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(status); self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
-        if self.path == "/api/live-departures":
+        if urllib.parse.urlsplit(self.path).path == "/api/live-departures":
             try:
-                body = json.dumps(fetch_json("http://127.0.0.1:8097/api/live-departures"), ensure_ascii=False).encode()
+                query = urllib.parse.urlsplit(self.path).query
+                url = "http://127.0.0.1:8097/api/live-departures" + ("?" + query if query else "")
+                body = json.dumps(fetch_json(url), ensure_ascii=False).encode()
                 status = 200
             except Exception as exc:
                 body, status = json.dumps({"error": str(exc), "groups": []}).encode(), 503
