@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import base64
+import hmac
 import json
 import html
 import math
@@ -22,6 +24,17 @@ AURORA_CACHE = {}
 MEDLANKY_CACHE = {}
 MEDLANKY_SPORTS_CACHE = {}
 MENUS_CACHE = {}
+AUTH_FILE = Path.home() / ".config" / "brno-live-auth"
+
+
+def dashboard_authorized(header):
+    try:
+        expected = AUTH_FILE.read_text(encoding="utf-8").strip()
+        scheme, token = (header or "").split(" ", 1)
+        supplied = base64.b64decode(token).decode("utf-8")
+        return scheme.lower() == "basic" and hmac.compare_digest(supplied, expected)
+    except (OSError, ValueError, UnicodeDecodeError):
+        return False
 
 
 def fetch_json(url):
@@ -71,30 +84,86 @@ def aircraft_and_flights():
                          "heading": state[10], "vertical_rate": state[11],
                          "category": state[17] if len(state) > 17 else None})
     now = datetime.now(ZoneInfo("Europe/Prague"))
+    flights = brno_airport_schedule(now)
+    schedule_available = bool(flights)
+    flight_source = "Letiště Brno"
+    flight_source_url = "https://www.brno-airport.cz/en/flight-information"
+    if not flights:
+        flights = flightstats_schedule(now)
+        schedule_available = bool(flights)
+        flight_source = "FlightStats (záložní zdroj)"
+        flight_source_url = "https://www.airportia.com/czech-republic/brno-turany-airport/"
+    data = {"aircraft": aircraft, "flights": sorted(flights, key=lambda item: item["scheduled"]),
+            "schedule_available": schedule_available, "flight_source": flight_source,
+            "flight_source_url": flight_source_url, "updated": int(time.time())}
+    AVIATION_CACHE.update(data=data, at=time.time())
+    return data
+
+
+def brno_airport_schedule(now):
     flights = []
-    schedule_available = True
-    for direction in ("arrivals", "departures"):
-        request = urllib.request.Request(f"https://www.brno-airport.cz/en/{direction}", headers={"User-Agent": "Meleys-Brno-Live/1.0"})
-        with urllib.request.urlopen(request, timeout=15) as response:
-            page = response.read().decode("utf-8", "replace")
-        if "flight-table__table" not in page:
-            schedule_available = False
+    pages = {"arrivals": "prilety", "departures": "odlety"}
+    for direction, path in pages.items():
+        request = urllib.request.Request(
+            f"https://www.brno-airport.cz/{path}",
+            headers={"User-Agent": "facebookexternalhit/1.1"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                page = response.read().decode("utf-8", "replace")
+        except OSError:
             continue
-        for row in re.findall(r"<tr>(.*?)</tr>", page, re.S):
+        if "flight-table__table" not in page:
+            continue
+        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", page, re.S):
             cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
             values = [" ".join(html.unescape(re.sub(r"<[^>]+>", " ", cell)).split()) for cell in cells]
             if len(values) < 5 or not re.fullmatch(r"\d{2}:\d{2}", values[0]):
                 continue
-            day = now.date() + timedelta(days=1 if values[1] == "Tomorrow" else 0)
-            scheduled = datetime.combine(day, datetime.strptime(values[0], "%H:%M").time(), now.tzinfo)
-            if now <= scheduled <= now + timedelta(hours=48):
+            date_label = values[1].lower()
+            day_offset = 1 if date_label in ("zítra", "zitra", "tomorrow") else 0
+            scheduled = datetime.combine(
+                now.date() + timedelta(days=day_offset),
+                datetime.strptime(values[0], "%H:%M").time(),
+                now.tzinfo,
+            )
+            if now - timedelta(hours=3) <= scheduled <= now + timedelta(hours=48):
                 flights.append({"direction": direction, "scheduled": scheduled.isoformat(),
                                 "airline": values[2], "place": values[3], "flight": values[4],
                                 "note": values[5] if len(values) > 5 else ""})
-    data = {"aircraft": aircraft, "flights": sorted(flights, key=lambda item: item["scheduled"]),
-            "schedule_available": schedule_available, "updated": int(time.time())}
-    AVIATION_CACHE.update(data=data, at=time.time())
-    return data
+    return flights
+
+
+def flightstats_schedule(now):
+    flights = []
+    for direction in ("arrivals", "departures"):
+        url = f"https://www.flightstats.com/v2/flight-tracker/{direction}/BRQ"
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            page = urllib.request.urlopen(request, timeout=15).read().decode("utf-8", "replace")
+            match = re.search(r"__NEXT_DATA__\s*=\s*(\{.*?\});__NEXT_LOADED_PAGES__", page, re.S)
+            payload = json.loads(match.group(1)) if match else {}
+            rows = payload.get("props", {}).get("initialState", {}).get("flightTracker", {}).get("route", {}).get("flights", [])
+            for row in rows:
+                stamp = row.get("sortTime")
+                carrier = row.get("carrier") or {}
+                airport = row.get("airport") or {}
+                if not stamp:
+                    continue
+                scheduled = datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(now.tzinfo)
+                if not (now - timedelta(hours=3) <= scheduled <= now + timedelta(hours=48)):
+                    continue
+                flights.append({
+                    "direction": direction,
+                    "scheduled": scheduled.isoformat(),
+                    "airline": carrier.get("name") or carrier.get("fs") or "–",
+                    "place": airport.get("city") or airport.get("fs") or "–",
+                    "flight": f'{carrier.get("fs", "")}{carrier.get("flightNumber", "")}' or "–",
+                    "note": "",
+                })
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+    return flights
 
 
 def radiation_data():
@@ -240,14 +309,28 @@ def medlanky_sports():
         if street == "K Rybníku":
             props["source_url"] = "https://paro.damenavas.cz/project/498/"
         if street == "Jabloňová" and props.get("typ_hriste_nazev") == "sportoviště":
-            props["display_name"] = "Workout u ZŠ Hudcova"
+            props["display_name"] = "Workout na Jabloňové u ZŠ"
             props["source_url"] = "https://zdravi.brno.cz/wp-content/uploads/2026/06/Adresar_seniorskych_organizaci_2026.pdf"
     data.setdefault("features", []).append({
-        "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.57574, 49.24071]},
+        "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.5797361, 49.2389839]},
+        "properties": {"display_name": "Centrum volného času Jabloňka", "typ_hriste_nazev": "volnočasové centrum",
+                       "equipment_display": "Prostory pro dětské kroužky, výtvarné aktivity, jógu, pilates a komunitní program.",
+                       "access_display": "Přístup v době pořádaných aktivit nebo po sjednaném pronájmu.",
+                       "source_url": "https://medlanky.brno.cz/w/pronajem-centra-volneho-casu-jablonka"},
+    })
+    data.setdefault("features", []).append({
+        "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.579094, 49.239175]},
+        "properties": {"display_name": "Sportovní hřiště u CVČ Jabloňka", "typ_hriste_nazev": "sportoviště",
+                       "equipment_display": "Běžecký ovál a víceúčelové hřiště pro basketbal a házenou.",
+                       "access_display": "Školní sportovní areál; vstup se řídí provozem školy a organizovaných aktivit.",
+                       "source_url": "https://www.openstreetmap.org/?mlat=49.239175&mlon=16.579094#map=19/49.239175/16.579094"},
+    })
+    data.setdefault("features", []).append({
+        "type": "Feature", "geometry": {"type": "Point", "coordinates": [16.575801, 49.240191]},
         "properties": {"display_name": "Multifunkční hřiště Matalova", "typ_hriste_nazev": "sportoviště",
-                       "equipment_display": "Multifunkční plocha pro míčové hry.",
+                       "equipment_display": "Asfaltová multifunkční plocha pro míčové hry.",
                        "access_display": "Veřejně přístupné venkovní hřiště.",
-                       "source_url": "https://www.openstreetmap.org/search?query=Matalova%2C%20Brno-Medl%C3%A1nky"},
+                       "source_url": "https://www.openstreetmap.org/?mlat=49.240191&mlon=16.575801#map=19/49.240191/16.575801"},
     })
     MEDLANKY_SPORTS_CACHE.update(data=data, at=time.time())
     return data
@@ -404,6 +487,25 @@ def night_infrared_image():
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        path = urllib.parse.urlsplit(self.path).path
+        if path in ("/", "/index.html", "/api/school-menus") and not dashboard_authorized(self.headers.get("Authorization")):
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="Soukromy dashboard Brno", charset="UTF-8"')
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if self.path in ("/verejne", "/verejne.html"):
+            page = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+            page = page.replace("<title>Brno živě</title>", "<title>Brno živě · veřejný přehled</title>")
+            page = re.sub(r'\s*<section class="section family-schedule-section">.*?</section>', "", page, flags=re.S)
+            page = re.sub(r'\s*<section class="section school-menus-section">.*?</section>', "", page, flags=re.S)
+            page = re.sub(r'\s*<article><h3>MUDr\. Ivana Bartůňková</h3>.*?</article>', "", page, flags=re.S)
+            page = page.replace("<h2>Lékařka a lékárna</h2>", "<h2>Lékárna v Medlánkách</h2>")
+            body = page.encode("utf-8")
+            self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/school-menus":
             try:
                 body, status = json.dumps(school_menus()).encode(), 200
@@ -460,6 +562,15 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 body, status = json.dumps({"error": str(exc)}).encode(), 503
             self.send_response(status); self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path == "/api/live-departures":
+            try:
+                body = json.dumps(fetch_json("http://127.0.0.1:8097/api/live-departures"), ensure_ascii=False).encode()
+                status = 200
+            except Exception as exc:
+                body, status = json.dumps({"error": str(exc), "groups": []}).encode(), 503
+            self.send_response(status); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
         if self.path == "/api/radiation":

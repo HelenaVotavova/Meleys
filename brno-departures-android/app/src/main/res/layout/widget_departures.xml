@@ -1,0 +1,14 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F7FAF9" android:orientation="vertical" android:padding="12dp">
+    <LinearLayout android:id="@+id/header" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="ODJEZDY BRNO" android:textColor="#176B61" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+25 min" android:textColor="#52615C" android:textSize="11sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/route_1" style="@style/WidgetRoute" />
+    <TextView android:id="@+id/route_2" style="@style/WidgetRoute" />
+    <TextView android:id="@+id/route_3" style="@style/WidgetRoute" />
+    <TextView android:id="@+id/route_4" style="@style/WidgetRoute" />
+    <TextView android:id="@+id/route_5" style="@style/WidgetRoute" />
+    <TextView android:id="@+id/route_6" style="@style/WidgetRoute" />
+    <TextView android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" android:text="" />
+    <TextView android:id="@+id/updated" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end" android:maxLines="1" android:textColor="#176B61" android:textSize="10sp" />
+</LinearLayout>

@@ -34,6 +34,7 @@ corridor_schedule = {}
 route_labels = {}
 trip_labels = {}
 vehicle_plans = {}
+live_departure_schedule = {}
 active_test_runs = {}
 test_target_seen = {}
 leg_target_seen = {}
@@ -50,6 +51,14 @@ TRACKED_VEHICLES = {
 schedule_day = None
 lock = threading.Lock()
 forecast_cache = {}
+LIVE_DEPARTURE_GROUPS = [
+    ("pionyrska_reckovice", "Pionýrská → Řečkovice", "U1483Z1"),
+    ("pionyrska_antoninska", "Pionýrská → Antonínská", "U1483Z2"),
+    ("pionyrska_capkova", "Pionýrská → Čápkova", "U1483Z6"),
+    ("pionyrska_lesnicka", "Pionýrská → Lesnická", "U1483Z5"),
+    ("zahradnikova_smetanova", "Zahradníkova → Smetanova", "U1776Z2"),
+    ("zahradnikova_chodska", "Zahradníkova → Chodská", "U1776Z1"),
+]
 
 
 def db():
@@ -128,7 +137,7 @@ def realtime_stop_id(stop_id):
 
 def load_schedule(day):
     global schedule, journey_schedule, test_schedule, corridor_schedule
-    global route_labels, trip_labels, vehicle_plans, schedule_day
+    global route_labels, trip_labels, vehicle_plans, live_departure_schedule, schedule_day
     if not GTFS.exists() or time.time() - GTFS.stat().st_mtime > 20 * 3600:
         GTFS.write_bytes(fetch(STATIC_URL))
     with zipfile.ZipFile(GTFS) as archive:
@@ -158,10 +167,18 @@ def load_schedule(day):
         legs = {}
         tests = {}
         corridors = {}
+        live_departures = {key: [] for key, label, stop_id in LIVE_DEPARTURE_GROUPS}
         for trip, rows in stop_times.items():
             ids = [r["stop_id"] for r in rows]
             names = [stop_names.get(r["stop_id"], r["stop_id"]) for r in rows]
             line, destination = trips[trip]
+            for group_key, group_label, origin_stop in LIVE_DEPARTURE_GROUPS:
+                if origin_stop in ids:
+                    index = ids.index(origin_stop)
+                    live_departures[group_key].append({
+                        "trip_id": trip, "line": line or "?", "destination": destination,
+                        "planned": seconds(rows[index]["departure_time"]),
+                    })
             if line == "1" and "U1272Z2" in ids and "U1483Z2" in ids:
                 oi, di = ids.index("U1272Z2"), ids.index("U1483Z2")
                 origin = seconds(rows[oi]["departure_time"])
@@ -197,7 +214,8 @@ def load_schedule(day):
             found, legs, corridors = {}, {}, {}
     with lock:
         schedule, journey_schedule, test_schedule, corridor_schedule = found, legs, tests, corridors
-        route_labels, trip_labels, vehicle_plans, schedule_day = route_names, all_trip_labels, plans, day
+        route_labels, trip_labels, vehicle_plans = route_names, all_trip_labels, plans
+        live_departure_schedule, schedule_day = live_departures, day
     connection = db()
     missing_vehicle_stops = connection.execute(
         "SELECT rowid,trip_id,stop_id FROM vehicle_stops WHERE planned IS NULL AND trip_id IS NOT NULL").fetchall()
@@ -428,6 +446,58 @@ def corridor_delays():
     return {"generated": int(time.time()), "records": [dict(row) for row in rows]}
 
 
+def live_departures():
+    now = datetime.now(TZ)
+    if schedule_day != now.date():
+        load_schedule(now.date())
+    feed = gtfs_realtime_pb2.FeedMessage()
+    feed.ParseFromString(fetch(REALTIME_URL))
+    delays = {}
+    dispatched = set()
+    with lock:
+        plans = dict(vehicle_plans)
+        groups = {key: list(rows) for key, rows in live_departure_schedule.items()}
+    for entity in feed.entity:
+        if not entity.HasField("vehicle"):
+            continue
+        vehicle = entity.vehicle
+        trip_id = vehicle.trip.trip_id
+        if not trip_id:
+            continue
+        dispatched.add(trip_id)
+        plan = plans.get((trip_id, vehicle.stop_id))
+        if not plan:
+            continue
+        stamp = int(vehicle.timestamp or feed.header.timestamp or time.time())
+        local = datetime.fromtimestamp(stamp, TZ)
+        actual_seconds = local.hour * 3600 + local.minute * 60 + local.second
+        delay = actual_seconds - plan[0]
+        if delay < -12 * 3600:
+            delay += 24 * 3600
+        elif delay > 12 * 3600:
+            delay -= 24 * 3600
+        delays[trip_id] = max(-300, min(1800, delay))
+
+    now_seconds = now.hour * 3600 + now.minute * 60 + now.second
+    end_seconds = now_seconds + 25 * 60
+    result = []
+    labels = {key: label for key, label, stop_id in LIVE_DEPARTURE_GROUPS}
+    for order, (group_key, label, stop_id) in enumerate(LIVE_DEPARTURE_GROUPS):
+        departures = []
+        for item in groups.get(group_key, []):
+            delay = delays.get(item["trip_id"], 0)
+            expected = item["planned"] + delay
+            if now_seconds - 30 <= expected <= end_seconds:
+                departures.append({
+                    **item, "expected": expected, "delay": delay,
+                    "live": item["trip_id"] in dispatched,
+                })
+        departures.sort(key=lambda row: row["expected"])
+        result.append({"id": group_key, "label": labels[group_key], "order": order,
+                       "departures": departures})
+    return {"generated": int(time.time()), "window_minutes": 25, "groups": result}
+
+
 def line1_forecast(weekend=False):
     today = datetime.now(TZ).date()
     connection = db()
@@ -533,6 +603,15 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.split("?", 1)[0] == "/api/corridor-delays":
             body = json.dumps(corridor_delays(), ensure_ascii=False).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
+            self.end_headers(); self.wfile.write(body); return
+        if self.path.split("?", 1)[0] == "/api/live-departures":
+            try:
+                payload, status = live_departures(), 200
+            except Exception as error:
+                payload, status = {"generated": int(time.time()), "error": str(error), "groups": []}, 503
+            body = json.dumps(payload, ensure_ascii=False).encode()
+            self.send_response(status); self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store"); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
         if self.path.split("?", 1)[0] == "/api/line1-forecast":

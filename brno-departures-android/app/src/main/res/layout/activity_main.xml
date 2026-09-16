@@ -1,0 +1,11 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Odjezdy Brno" android:textColor="#173E38" android:textSize="28sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Aktuální čas až +25 minut" android:textColor="#52615C" android:textSize="15sp" />
+        <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textSize="13sp" />
+        <Button android:id="@+id/refresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Aktualizovat" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="Trasy ve widgetu" android:textColor="#176B61" android:textSize="18sp" android:textStyle="bold" />
+        <LinearLayout android:id="@+id/settings" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        <LinearLayout android:id="@+id/routes" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

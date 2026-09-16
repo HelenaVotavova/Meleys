@@ -1,0 +1,8 @@
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">#176B61</item></style>
+    <style name="WidgetRoute">
+        <item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item><item name="android:maxLines">3</item>
+        <item name="android:textColor">#17211E</item><item name="android:textSize">12sp</item>
+    </style>
+</resources>
