@@ -11,6 +11,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -92,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         renderSchedule(expandLessons(objects(child.optJSONArray("lessons"))))
         renderLines(R.id.changes_list, child.optJSONArray("changes")) { "${it.optString("start")} ${it.optString("subject")} – zrušeno" }
         renderLines(R.id.tests_list, child.optJSONArray("exams")) { "${it.optString("subject")}: ${it.optString("text")} · ${it.optString("date")}" }
-        renderHomework(child.optJSONArray("homework"))
+        renderHomework(child.optJSONArray("homework"), child.optString("date"))
         renderLines(R.id.meal_list, root.optJSONArray("menu")) { it.optString("name") }
         findViewById<TextView>(R.id.clothing).text = clothingText(root.optJSONObject("clothing"))
     }
@@ -114,11 +115,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderHomework(rows: JSONArray?) {
+    private fun renderHomework(rows: JSONArray?, displayedDate: String) {
         val target = findViewById<LinearLayout>(R.id.homework_list)
         target.removeAllViews()
         val completed = store.completedTasks
-        objects(rows).forEach { task ->
+        objects(rows).filter { isCurrentHomework(it, displayedDate) }.forEach { task ->
             val checkbox = CheckBox(this).apply {
                 text = "${emoji(task.optString("subject"))} ${task.optString("subject")}: ${task.optString("text")}\nTermín: ${task.optString("due")}"
                 textSize = 15f
@@ -134,6 +135,13 @@ class MainActivity : AppCompatActivity() {
             target.addView(checkbox)
         }
         if (target.childCount == 0) addLine(target, "Žádné aktuální úkoly")
+    }
+
+    private fun isCurrentHomework(task: JSONObject, displayedDate: String): Boolean {
+        if (task.optBoolean("done")) return false
+        return runCatching {
+            !LocalDate.parse(task.optString("due")).isBefore(LocalDate.parse(displayedDate))
+        }.getOrDefault(true)
     }
 
     private fun renderLines(containerId: Int, rows: JSONArray?, format: (JSONObject) -> String) {

@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,8 +54,9 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 setLessonBoxes(view, child.optJSONArray("lessons"))
                 setSection(view, R.id.widget_changes, "🔄 Suplování", child.optJSONArray("changes"), ::changeText)
                 setSection(view, R.id.widget_tests, "📝 Testy", child.optJSONArray("exams"), ::examText)
-                val pendingHomework = JSONArray(objects(child.optJSONArray("homework")).filterNot {
-                    SecureStore.taskKey(it) in store.completedTasks
+                val displayedDate = child.optString("date")
+                val pendingHomework = JSONArray(objects(child.optJSONArray("homework")).filter {
+                    isCurrentHomework(it, displayedDate) && SecureStore.taskKey(it) !in store.completedTasks
                 })
                 setSection(view, R.id.widget_homework, "📚 Úkoly", pendingHomework, ::homeworkText)
                 setLabelText(view, R.id.widget_meal, "🍽️ Oběd", menuText(dashboard))
@@ -183,6 +185,12 @@ class LenkaWidgetProvider : AppWidgetProvider() {
     private fun changeText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("start")} ${row.optString("subject")} – zrušeno"
     private fun examText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
     private fun homeworkText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
+    private fun isCurrentHomework(row: JSONObject, displayedDate: String): Boolean {
+        if (row.optBoolean("done")) return false
+        return runCatching {
+            !LocalDate.parse(row.optString("due")).isBefore(LocalDate.parse(displayedDate))
+        }.getOrDefault(true)
+    }
     private fun objects(rows: JSONArray?) = (0 until (rows?.length() ?: 0)).map { rows!!.getJSONObject(it) }
     private fun menuText(dashboard: JSONObject?): String = objects(dashboard?.optJSONArray("menu"))
         .joinToString("; ") { it.optString("name") }.ifBlank { "zatím není zveřejněn" }
