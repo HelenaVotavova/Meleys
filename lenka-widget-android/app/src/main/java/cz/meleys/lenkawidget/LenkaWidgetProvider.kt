@@ -97,12 +97,30 @@ class LenkaWidgetProvider : AppWidgetProvider() {
             R.id.lesson_4, R.id.lesson_5, R.id.lesson_6)
         val all = objects(rows)
         val clubs = all.filter(::isClub)
-        fillLessonBoxes(view, lessonIds, all.filterNot(::isClub))
+        fillLessonBoxes(view, lessonIds, expandLessons(all.filterNot(::isClub)))
         view.setViewVisibility(R.id.widget_clubs, if (clubs.isEmpty()) View.GONE else View.VISIBLE)
         if (clubs.isNotEmpty()) {
             val text = clubs.joinToString("; ") { "${it.optString("start")} ${it.optString("subject")}" }
             setLabelText(view, R.id.widget_clubs, "⭐ Kroužky", text)
         }
+    }
+
+    private fun expandLessons(lessons: List<JSONObject>): List<JSONObject> = lessons.flatMap { lesson ->
+        val start = timeInMinutes(lesson.optString("start"))
+        val end = timeInMinutes(lesson.optString("end"))
+        val duration = if (start != null && end != null) end - start else 45
+        val periods = when {
+            duration >= 125 -> 3
+            duration >= 70 -> 2
+            else -> 1
+        }
+        List(periods) { lesson }
+    }
+
+    private fun timeInMinutes(value: String): Int? {
+        val parts = value.split(":")
+        if (parts.size != 2) return null
+        return parts[0].toIntOrNull()?.times(60)?.plus(parts[1].toIntOrNull() ?: return null)
     }
 
     private fun fillLessonBoxes(view: RemoteViews, ids: IntArray, lessons: List<JSONObject>) {
