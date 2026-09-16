@@ -40,7 +40,7 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
         ids.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_departures)
             rowIds.forEach { views.setTextViewTextSize(it, TypedValue.COMPLEX_UNIT_SP, store.fontSize.toFloat()) }
-            views.setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, (store.fontSize - 3).coerceAtLeast(9).toFloat())
+            views.setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, store.fontSize.coerceAtLeast(14).toFloat())
             views.setTextViewText(R.id.window, "+${store.windowMinutes} min")
             rowIds.forEachIndexed { index, id ->
                 val group = groups.getOrNull(index)
