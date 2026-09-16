@@ -1,19 +1,28 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="24dp">
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Lenčin přehled" android:textColor="#173E38" android:textSize="28sp" android:textStyle="bold" />
-    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" android:textSize="16sp" />
-    <EditText android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="24dp" android:hint="Uživatelské jméno EduPage" android:inputType="textEmailAddress" />
-    <EditText android:id="@+id/password" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:hint="Heslo" android:inputType="textPassword" />
-    <Button android:id="@+id/login" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" android:text="Přihlásit" />
-    <Button android:id="@+id/logout" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" android:text="Odhlásit" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="24dp" android:text="Heslo se neukládá do telefonu ani na disk serveru. Telefon ukládá pouze šifrovaný dočasný přístupový token."
-        android:textColor="#52615C" android:textSize="14sp" />
-</LinearLayout>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Lenčin přehled" android:textColor="#173E38" android:textSize="28sp" android:textStyle="bold" />
+        <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textSize="14sp" />
+        <LinearLayout android:id="@+id/login_panel" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <EditText android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:hint="Uživatelské jméno EduPage" android:inputType="textEmailAddress" />
+            <EditText android:id="@+id/password" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Heslo" android:inputType="textPassword" />
+            <Button android:id="@+id/login" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="Přihlásit" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/dashboard_panel" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <TextView android:id="@+id/date" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end" android:textSize="16sp" android:textStyle="bold" />
+            <TextView style="@style/AppSection" android:text="📅 Rozvrh" />
+            <LinearLayout android:id="@+id/schedule_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" />
+            <TextView style="@style/AppSection" android:text="🔄 Suplování" />
+            <LinearLayout android:id="@+id/changes_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView style="@style/AppSection" android:text="📝 Testy" />
+            <LinearLayout android:id="@+id/tests_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView style="@style/AppSection" android:text="📚 Úkoly" />
+            <LinearLayout android:id="@+id/homework_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView style="@style/AppSection" android:text="🍽️ Oběd" />
+            <LinearLayout android:id="@+id/meal_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView style="@style/AppSection" android:text="🧥 Oblečení" />
+            <TextView android:id="@+id/clothing" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" />
+            <Button android:id="@+id/refresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="Aktualizovat" />
+            <Button android:id="@+id/logout" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Odhlásit" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

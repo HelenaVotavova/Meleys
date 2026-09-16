@@ -53,7 +53,10 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 setLessonBoxes(view, child.optJSONArray("lessons"))
                 setSection(view, R.id.widget_changes, "🔄 Suplování", child.optJSONArray("changes"), ::changeText)
                 setSection(view, R.id.widget_tests, "📝 Testy", child.optJSONArray("exams"), ::examText)
-                setSection(view, R.id.widget_homework, "📚 Úkoly", child.optJSONArray("homework"), ::homeworkText)
+                val pendingHomework = JSONArray(objects(child.optJSONArray("homework")).filterNot {
+                    SecureStore.taskKey(it) in store.completedTasks
+                })
+                setSection(view, R.id.widget_homework, "📚 Úkoly", pendingHomework, ::homeworkText)
                 setLabelText(view, R.id.widget_meal, "🍽️ Oběd", menuText(dashboard))
                 setLabelText(view, R.id.widget_clothing, "🧥 Oblečení", clothingText(dashboard))
                 val height = manager.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
