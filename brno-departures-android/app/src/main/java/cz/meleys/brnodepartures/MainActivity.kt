@@ -36,6 +36,23 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+        val fontLabel = findViewById<TextView>(R.id.font_label)
+        findViewById<SeekBar>(R.id.font_seek).apply {
+            max = 6
+            progress = store.fontSize - 11
+            fontLabel.text = "Velikost písma: ${store.fontSize}"
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
+                    fontLabel.text = "Velikost písma: ${progress + 11}"
+                }
+                override fun onStartTrackingTouch(bar: SeekBar) = Unit
+                override fun onStopTrackingTouch(bar: SeekBar) {
+                    store.fontSize = bar.progress + 11
+                    render()
+                    DeparturesWidgetProvider.refreshAll(this@MainActivity)
+                }
+            })
+        }
         findViewById<Button>(R.id.refresh).setOnClickListener { refresh() }
         render()
         refresh()
@@ -88,7 +105,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addText(parent: LinearLayout, value: String) = parent.addView(TextView(this).apply {
-        text = value; textSize = 15f; setPadding(dp(8), dp(7), dp(8), dp(7)); setBackgroundColor(Color.rgb(245, 248, 247))
+        text = value; textSize = (store.fontSize + 2).toFloat(); setPadding(dp(8), dp(7), dp(8), dp(7)); setBackgroundColor(Color.rgb(245, 248, 247))
     })
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 }

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.view.View
+import android.util.TypedValue
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -30,6 +31,8 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
         val rowIds = intArrayOf(R.id.route_1, R.id.route_2, R.id.route_3, R.id.route_4, R.id.route_5, R.id.route_6)
         ids.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_departures)
+            rowIds.forEach { views.setTextViewTextSize(it, TypedValue.COMPLEX_UNIT_SP, store.fontSize.toFloat()) }
+            views.setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, (store.fontSize - 3).coerceAtLeast(9).toFloat())
             views.setTextViewText(R.id.window, "+${store.windowMinutes} min")
             rowIds.forEachIndexed { index, id ->
                 val group = groups.getOrNull(index)

@@ -15,4 +15,7 @@ class DepartureStore(context: Context) {
     var windowMinutes: Int
         get() = prefs.getInt("window_minutes", 25)
         set(value) = prefs.edit().putInt("window_minutes", value.coerceIn(5, 60)).apply()
+    var fontSize: Int
+        get() = prefs.getInt("font_size", 14)
+        set(value) = prefs.edit().putInt("font_size", value.coerceIn(11, 17)).apply()
 }

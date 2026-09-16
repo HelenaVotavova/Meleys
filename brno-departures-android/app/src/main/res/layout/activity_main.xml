@@ -3,6 +3,8 @@
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Odjezdy Brno" android:textColor="#173E38" android:textSize="28sp" android:textStyle="bold" />
         <TextView android:id="@+id/window_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#52615C" android:textSize="15sp" />
         <SeekBar android:id="@+id/window_seek" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" />
+        <TextView android:id="@+id/font_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textColor="#52615C" android:textSize="15sp" />
+        <SeekBar android:id="@+id/font_seek" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" />
         <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textSize="13sp" />
         <Button android:id="@+id/refresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Aktualizovat" />
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="Trasy ve widgetu" android:textColor="#176B61" android:textSize="18sp" android:textStyle="bold" />
