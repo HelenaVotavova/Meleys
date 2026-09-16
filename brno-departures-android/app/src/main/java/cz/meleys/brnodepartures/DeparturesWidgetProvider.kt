@@ -19,7 +19,11 @@ class DeparturesWidgetProvider : AppWidgetProvider() {
         update(context, manager, ids)
         WidgetUpdater.schedule(context)
     }
-    override fun onEnabled(context: Context) = WidgetUpdater.schedule(context)
+    override fun onEnabled(context: Context) {
+        WidgetUpdater.schedule(context)
+        MinuteRefreshReceiver.schedule(context)
+    }
+    override fun onDisabled(context: Context) = MinuteRefreshReceiver.cancel(context)
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_REFRESH) WidgetUpdater.schedule(context)

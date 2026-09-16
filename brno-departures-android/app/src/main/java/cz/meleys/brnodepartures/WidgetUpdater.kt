@@ -10,12 +10,12 @@ class WidgetUpdater(context: Context, params: WorkerParameters) : CoroutineWorke
         return try {
             store.data = DepartureApi.load(store.windowMinutes); store.error = null
             DeparturesWidgetProvider.refreshAll(applicationContext)
-            schedule(applicationContext, 5)
+            MinuteRefreshReceiver.schedule(applicationContext)
             Result.success()
         } catch (error: Exception) {
             store.error = error.message
             DeparturesWidgetProvider.refreshAll(applicationContext)
-            schedule(applicationContext, 5)
+            MinuteRefreshReceiver.schedule(applicationContext)
             Result.retry()
         }
     }

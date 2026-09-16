@@ -2,12 +2,18 @@ package cz.meleys.brnodepartures
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
+    private val handler = Handler(Looper.getMainLooper())
+    private val minuteRefresh = object : Runnable {
+        override fun run() { refresh(); handler.postDelayed(this, 60_000) }
+    }
     private lateinit var store: DepartureStore
     private lateinit var status: TextView
     private lateinit var routes: LinearLayout
@@ -56,6 +62,17 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.refresh).setOnClickListener { refresh() }
         render()
         refresh()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handler.removeCallbacks(minuteRefresh)
+        handler.postDelayed(minuteRefresh, 60_000)
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(minuteRefresh)
+        super.onPause()
     }
 
     private fun refresh() {
