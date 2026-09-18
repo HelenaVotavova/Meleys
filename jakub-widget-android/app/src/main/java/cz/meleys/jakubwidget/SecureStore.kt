@@ -13,13 +13,13 @@ class SecureStore(context: Context) {
     )
     var token: String?
         get() = prefs.getString("token", null)
-        set(value) = prefs.edit().putString("token", value).apply()
+        set(value) { prefs.edit().putString("token", value).commit() }
     var dashboard: String?
         get() = prefs.getString("dashboard", null)
-        set(value) = prefs.edit().putString("dashboard", value).apply()
+        set(value) { prefs.edit().putString("dashboard", value).commit() }
     var error: String?
         get() = prefs.getString("error", null)
-        set(value) = prefs.edit().putString("error", value).apply()
+        set(value) { prefs.edit().putString("error", value).commit() }
     val completedTasks: Set<String>
         get() = prefs.getStringSet("completed_tasks", emptySet())?.toSet() ?: emptySet()
     fun setTaskCompleted(task: JSONObject, completed: Boolean) {

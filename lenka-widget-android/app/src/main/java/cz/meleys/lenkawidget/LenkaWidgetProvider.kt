@@ -53,7 +53,8 @@ class LenkaWidgetProvider : AppWidgetProvider() {
                 view.setViewVisibility(R.id.widget_message, View.GONE)
                 setLessonBoxes(view, child.optJSONArray("lessons"))
                 setSection(view, R.id.widget_changes, "🔄 Suplování", child.optJSONArray("changes"), ::changeText)
-                setSection(view, R.id.widget_tests, "📝 Testy", child.optJSONArray("exams"), ::examText)
+                val currentExams = JSONArray(objects(child.optJSONArray("exams")).filter(::isCurrentExam))
+                setSection(view, R.id.widget_tests, "📝 Testy", currentExams, ::examText)
                 val displayedDate = child.optString("date")
                 val pendingHomework = JSONArray(objects(child.optJSONArray("homework")).filter {
                     isCurrentHomework(it, displayedDate) && SecureStore.taskKey(it) !in store.completedTasks
@@ -184,6 +185,9 @@ class LenkaWidgetProvider : AppWidgetProvider() {
 
     private fun changeText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("start")} ${row.optString("subject")} – zrušeno"
     private fun examText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("date")})"
+    private fun isCurrentExam(row: JSONObject) = runCatching {
+        !LocalDate.parse(row.optString("date")).isBefore(LocalDate.now())
+    }.getOrDefault(false)
     private fun homeworkText(row: JSONObject) = "${subjectEmoji(row.optString("subject"))} ${row.optString("subject")}: ${row.optString("text")} (${row.optString("due")})"
     private fun isCurrentHomework(row: JSONObject, displayedDate: String): Boolean {
         if (row.optBoolean("done")) return false

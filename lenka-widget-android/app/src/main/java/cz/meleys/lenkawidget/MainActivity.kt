@@ -89,7 +89,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.date).text = child.optString("date")
         renderSchedule(expandLessons(objects(child.optJSONArray("lessons"))))
         renderLines(R.id.changes_list, child.optJSONArray("changes")) { "${it.optString("start")} ${it.optString("subject")} – zrušeno" }
-        renderLines(R.id.tests_list, child.optJSONArray("exams")) { "${it.optString("subject")}: ${it.optString("text")} · ${it.optString("date")}" }
+        val currentExams = JSONArray(objects(child.optJSONArray("exams")).filter(::isCurrentExam))
+        renderLines(R.id.tests_list, currentExams) { "${it.optString("subject")}: ${it.optString("text")} · ${it.optString("date")}" }
         renderHomework(child.optJSONArray("homework"), child.optString("date"))
         renderLines(R.id.meal_list, root.optJSONArray("menu")) { it.optString("name") }
         findViewById<TextView>(R.id.clothing).text = clothingText(root.optJSONObject("clothing"))
@@ -140,6 +141,10 @@ class MainActivity : AppCompatActivity() {
             !LocalDate.parse(task.optString("due")).isBefore(LocalDate.parse(displayedDate))
         }.getOrDefault(true)
     }
+
+    private fun isCurrentExam(row: JSONObject) = runCatching {
+        !LocalDate.parse(row.optString("date")).isBefore(LocalDate.now())
+    }.getOrDefault(false)
 
     private fun renderLines(containerId: Int, rows: JSONArray?, format: (JSONObject) -> String) {
         val target = findViewById<LinearLayout>(containerId)
