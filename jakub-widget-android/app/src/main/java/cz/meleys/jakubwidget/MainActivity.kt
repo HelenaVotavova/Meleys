@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
             showState()
         }
         showState()
+        if (store.token != null) refreshDashboard()
     }
 
     private fun showState() {
